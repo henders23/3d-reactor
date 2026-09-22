@@ -221,7 +221,7 @@ export const lessons: Lesson[] = [
       "Trace the orange primary loop again. Does it cross into the turbine?",
     check:
       "What crosses the steam-generator tube wall during normal operation?",
-    checkChoices: ["Primary coolant", "Heat", "Fuel particles"],
+    checkChoices: ["Primary coolant", "Heat", "Both heat and primary water"],
     checkCorrect: 1,
     feedback:
       "Heat crosses the wall, while primary and secondary water remain separate.",
@@ -268,7 +268,7 @@ export const lessons: Lesson[] = [
       "Electrical power immediately rises",
     ],
     correct: 0,
-    task: "Save a baseline. Increase insertion from 50% to 65%, run for at least 20 model seconds, then pause. Compare the power and temperature traces.",
+    task: "Use the guided button to increase insertion from 50% to 65%. The response pauses after 20 model seconds. Compare power with fuel temperature.",
     focus: "rods",
     view: "core",
     explanation:
@@ -277,7 +277,7 @@ export const lessons: Lesson[] = [
       "Reset and repeat with a smaller change. Compare the first few seconds of power with the temperature trend.",
     check: "Why does temperature lag behind fission power?",
     checkChoices: [
-      "The temperature gauge is broken",
+      "Temperature measures instantaneous fission power",
       "Fuel and water store heat and cool over time",
       "The rods only change temperature directly",
     ],
@@ -298,7 +298,7 @@ export const lessons: Lesson[] = [
       "It is completely independent of circulation",
     ],
     correct: 0,
-    task: "Reset to equilibrium, save a baseline, then reduce coolant flow to 65%. Observe for at least 20 model seconds. Compare fuel temperature with thermal power.",
+    task: "Use the guided button to reduce circulation to 65%. Compare the captured temperature and thermal-output changes after 20 model seconds.",
     focus: "pump",
     view: "plant",
     explanation:
@@ -309,7 +309,7 @@ export const lessons: Lesson[] = [
     checkChoices: [
       "No, temperature and power are identical",
       "Yes, if heat removal falls and temperature feedback reduces fission",
-      "Only if water enters the fuel rods",
+      "Only if heat removal stays constant",
     ],
     checkCorrect: 1,
     feedback:
@@ -337,9 +337,9 @@ export const lessons: Lesson[] = [
       "On the power graph, compare total thermal output with the decay-heat line after rod insertion.",
     check: "Which explanation best accounts for heat after shutdown?",
     checkChoices: [
-      "The turbine sends electricity back into the core",
+      "All remaining heat is stored; new heat generation has stopped",
       "Radioactive decay continues, and materials retain stored heat",
-      "Control rods become new nuclear fuel",
+      "Continued heat always means a sustained fission chain reaction",
     ],
     checkCorrect: 1,
     feedback:

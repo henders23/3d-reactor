@@ -38,22 +38,26 @@ dom.window.HTMLDialogElement.prototype.close = function () {
   this.removeAttribute("open");
 };
 const React = await import("react");
-const { render, screen, fireEvent, cleanup, within } =
+const { render, screen, fireEvent, cleanup, within, act } =
   await import("@testing-library/react");
 const { default: App } = await import("../src/App");
 afterEach(() => {
   cleanup();
   dom.window.localStorage.clear();
 });
-function mount() {
+function mount(guided = false) {
   const error = console.error;
   console.error = (...args: unknown[]) => {
     if (!String(args[0]).includes("Error creating WebGL context"))
       error(...args);
   };
   render(React.createElement(App));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: guided ? "Start with the essentials" : "Explore freely",
+    }),
+  );
   console.error = error;
-  fireEvent.click(screen.getByRole("button", { name: "Pause simulation" }));
 }
 test("WebGL failure falls back to a selectable, keyboard-accessible schematic", () => {
   mount();
@@ -97,8 +101,13 @@ test("complete guided investigation records a prediction, explanation and comple
         "The primary circuit transferred heat to secondary water without mixing; steam then carried energy to the turbine.",
     },
   });
-  fireEvent.click(screen.getByRole("button", { name: "Compare my reasoning" }));
-  fireEvent.click(screen.getByRole("button", { name: "Heat", exact: true }));
+  fireEvent.click(screen.getByRole("button", { name: "Test my explanation" }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "No, the steam-generator wall separates the circuits",
+      exact: true,
+    }),
+  );
   fireEvent.click(
     within(panel).getByRole("button", {
       name: "Check understanding",
@@ -117,6 +126,13 @@ test("quiz gives corrective feedback and permits another attempt", () => {
   mount();
   fireEvent.click(
     screen.getByRole("button", { name: "Check understanding", exact: true }),
+  );
+  assert.equal(screen.queryByRole("radio"), null);
+  fireEvent.change(screen.getByLabelText(/Before seeing answer choices/), {
+    target: { value: "Rods absorb neutrons; coolant removes energy." },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Reveal the questions when ready" }),
   );
   const groups = screen.getAllByRole("group");
   for (const g of groups) {
@@ -172,17 +188,18 @@ test("full rod insertion updates the model control and starts the response", () 
   assert.ok(screen.getByText("Shutdown response"));
   assert.ok(screen.getByRole("button", { name: "Pause simulation" }));
 });
-test("a run must spend the observation period at the changed setting", () => {
-  mount();
-  fireEvent.click(
-    screen.getByRole("button", { name: "Investigate", exact: true }),
-  );
+test("guided control changes remain fixed and stop automatically with captured evidence", (t) => {
+  let clock = 0;
+  t.mock.method(performance, "now", () => clock);
+  t.mock.timers.enable({ apis: ["setInterval"] });
+  mount(true);
   fireEvent.click(screen.getByRole("button", { name: /Change the reaction/ }));
   fireEvent.click(
     screen.getByRole("button", { name: /More neutrons are absorbed/ }),
   );
   fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
   fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  assert.equal(screen.queryByRole("slider"), null);
   assert.equal(
     (
       screen.getByRole("button", {
@@ -191,9 +208,34 @@ test("a run must spend the observation period at the changed setting", () => {
     ).disabled,
     true,
   );
-  fireEvent.change(
-    screen.getByRole("slider", { name: "Control-rod insertion" }),
-    { target: { value: "65" } },
+  fireEvent.click(screen.getByRole("button", { name: "Insert rods to 65%" }));
+  for (let i = 0; i < 70; i++)
+    act(() => {
+      clock += 100;
+      t.mock.timers.tick(100);
+    });
+  assert.ok(screen.getByText(/Observation captured/));
+  assert.equal(
+    screen.queryByRole("button", { name: "Pause observation" }),
+    null,
+  );
+  assert.equal(
+    (
+      screen.getByRole("button", {
+        name: "Explain my observations",
+      }) as HTMLButtonElement
+    ).disabled,
+    false,
+  );
+  assert.ok(
+    Math.abs(
+      Number(screen.getByRole("progressbar").getAttribute("value")) - 20,
+    ) < 1e-8,
+  );
+  const evidence = screen.getByLabelText("Before and after evidence");
+  assert.match(evidence.textContent!, /percentage points/);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Repeat this experiment" }),
   );
   assert.equal(
     (
@@ -203,4 +245,53 @@ test("a run must spend the observation period at the changed setting", () => {
     ).disabled,
     true,
   );
+});
+test("entry starts with orientation and free exploration starts paused", () => {
+  render(React.createElement(App));
+  assert.ok(screen.getByRole("heading", { name: /If the reactor shuts down/ }));
+  assert.equal(screen.queryByRole("slider"), null);
+  fireEvent.click(screen.getByRole("button", { name: "Explore freely" }));
+  assert.ok(screen.getByRole("button", { name: "Run simulation" }));
+});
+test("explanation is withheld until an answer and short written responses persist", () => {
+  mount(true);
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Steam from a separate secondary circuit",
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  const panel = screen.getByRole("complementary", {
+    name: "Guided investigation",
+  });
+  for (const name of [
+    "Fuel assemblies",
+    "Turbine & generator",
+    "Condenser & cooling",
+  ])
+    fireEvent.click(within(panel).getByRole("button", { name }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Explain my observations" }),
+  );
+  fireEvent.change(screen.getByLabelText("Your explanation"), {
+    target: { value: "Heat crosses; water stays separate." },
+  });
+  const saved = JSON.parse(localStorage.getItem("core-reactor-learning-v1")!);
+  assert.equal(saved.energy.explanation, "Heat crosses; water stays separate.");
+  fireEvent.click(screen.getByRole("button", { name: "Test my explanation" }));
+  assert.equal(screen.queryByText(/The fuel heats primary water/), null);
+  assert.equal(screen.queryByRole("region", { name: "Learning focus" }), null);
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "No, the steam-generator wall separates the circuits",
+    }),
+  );
+  fireEvent.click(
+    within(panel).getByRole("button", {
+      name: "Check understanding",
+      exact: true,
+    }),
+  );
+  assert.ok(screen.getByText(/The fuel heats primary water/));
 });

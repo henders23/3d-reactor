@@ -8,7 +8,7 @@ PHYSM0047 provides the project context supplied by the user. Current unit-level 
 
 ## A 35–45 minute session
 
-1. **Orient (5 minutes).** Ask: “Where is the electricity actually made?” Students inspect the whole plant before reading every component card.
+1. **Orient (5 minutes).** Ask: “Where is the electricity actually made?” Use the calm welcome screen to distinguish making heat, moving heat and making electricity. The essentials route starts with a 2D circuit diagram; students can switch to 3D.
 2. **Investigate (20–30 minutes).** Use the five activities in sequence or assign contrasting activities to pairs. Students make their own prediction before touching controls.
 3. **Explain (5 minutes).** Students connect a component, a physical process and an observation. Compare explanations in pairs before revealing the app’s explanation.
 4. **Transfer (5 minutes).** Use the understanding check and an unfamiliar case: “Can fuel become hotter while fission power falls?”
@@ -35,9 +35,13 @@ Avoid equating completing the interface with mastering the physics. The app chec
 
 ## Evidence and feedback
 
-The activity sequence is prediction → observation → explanation → a conceptual check. The task prompts specify which settings to change and how long to observe them. Incorrect check answers give an explanation and a prompt to revisit the evidence. The student can repeat experiments without losing a saved comparison.
+The activity sequence is prediction → observation → explanation → a conceptual check. Guided quantitative activities use one experiment button: the relevant control changes from equilibrium, other settings remain fixed and the response pauses automatically after 20 or 30 model seconds. Before/after readings and intervention markers support comparison. Students write a brief explanation before answering a new transfer situation. Feedback and the reference explanation appear only after an attempt. Written responses autosave without an arbitrary length requirement. Confidence choices support reflection, not grading.
+
+The cumulative check starts with an optional written recall attempt before answer choices appear. Suggest returning the next day to explain a relationship from memory. In free exploration, students can change all controls, compare saved runs and export data. Guided lesson entry starts a fresh baseline; comparison runs belong to free exploration.
 
 The data export includes model time, thermal and decay-heat percentages, fuel and coolant temperatures, and the sampled rod/flow/heat-sink settings. Samples are retained in a rolling buffer of 600 observations; the display uses the latest 300. For long runs, export before earlier samples are discarded.
+
+See [STUDENT-REVIEW.md](STUDENT-REVIEW.md) for the adversarial review, research rationale, implemented changes and proposed student try-out.
 
 ## Lecturer review before class
 

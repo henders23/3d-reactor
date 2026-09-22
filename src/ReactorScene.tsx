@@ -7,6 +7,7 @@ export type View = "plant" | "core" | "fission";
 type Props = {
   view: View;
   selected: PartID;
+  focusParts?: PartID[];
   onSelect: (id: PartID) => void;
   state: State;
   controls: Controls;
@@ -662,7 +663,7 @@ export default function ReactorScene(props: Props) {
     const labelLayer = document.createElement("div");
     labelLayer.className = "scene-labels";
     el.appendChild(labelLayer);
-    const labelItems =
+    const labelItems: { name: string; p: THREE.Vector3; id?: PartID }[] =
       props.view === "fission"
         ? [
             { name: "FUEL · FISSION", p: new THREE.Vector3(-2, 0.5, 0) },
@@ -687,6 +688,7 @@ export default function ReactorScene(props: Props) {
             )
             .map((p) => ({
               name: p.name.toUpperCase(),
+              id: p.id,
               p: positions[p.id]
                 .clone()
                 .add(new THREE.Vector3(0, p.id === "vessel" ? -1.7 : 1.2, 0)),
@@ -796,7 +798,7 @@ export default function ReactorScene(props: Props) {
       envelope.visible = p.selected === "containment";
       materials.forEach(({ mat, id }) => {
         mat.emissive.set(id === p.selected ? "#76602e" : "#000000");
-        mat.emissiveIntensity = id === p.selected ? 0.16 : 0;
+        mat.emissiveIntensity = id === p.selected ? 0.32 : 0;
       });
       const fg = fuelMesh.material as THREE.MeshStandardMaterial;
       fg.color.set(
@@ -895,7 +897,13 @@ export default function ReactorScene(props: Props) {
         labelNodes[i].style.transform =
           `translate(${(projection.x * 0.5 + 0.5) * el.clientWidth}px,${(-projection.y * 0.5 + 0.5) * el.clientHeight}px) translate(-50%,-50%)`;
         labelNodes[i].style.visibility =
-          projection.z < 1 ? "visible" : "hidden";
+          projection.z < 1 &&
+          (!p.focusParts ||
+            !l.id ||
+            p.focusParts.includes(l.id) ||
+            l.id === p.selected)
+            ? "visible"
+            : "hidden";
       });
       raf = requestAnimationFrame(animate);
     }

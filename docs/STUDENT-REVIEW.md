@@ -1,0 +1,52 @@
+# Adversarial undergraduate review and revision
+
+Reviewed 22 September 2026. This is a source- and workflow-based heuristic review from the perspective of a student encountering reactor physics for the first time. The student questions below are constructed scenarios, not interview quotations. No learner study or visual browser review was completed, and the changes are not evidence of measured learning gains.
+
+## Main diagnosis
+
+The original app made students manage a complex interface before they had a useful mental model. A running reactor, four readings, three sliders, ten selectable components and a separate instruction panel competed for attention. Clicking and getting a correct answer could be mistaken for understanding. The priority is to make the evidence for a physical explanation easier to find, without removing the freedom to explore.
+
+## Findings and changes
+
+| Priority | Student challenge                                                | Learning risk                                                                                     | Implemented revision                                                                                                                                                                                                                                 |
+| -------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| High     | “What am I trying to understand?”                                | Searching the interface consumes attention needed for the physics.                                | A calm opening question, three core functions and a prominent essentials route. Free exploration begins paused. Each investigation states one goal.                                                                                                  |
+| High     | “Which of these moving things matters?”                          | Motion and competing labels can dominate attention without supporting the task.                   | Specific observation cues; relevant component shortcuts and filtered 3D labels. Advanced display tools stay in free exploration. The model is hidden during prediction and checking.                                                                 |
+| High     | “Did the rods, pump or heat sink cause that change?”             | Simultaneous changes make causal attribution difficult.                                           | Three guided experiments each change one input from the same equilibrium; other inputs remain fixed. A single action starts the response and the run pauses after 20 or 30 model seconds.                                                            |
+| High     | “What changed, and compared with what?”                          | Students must remember starting readings and infer the timing of interventions.                   | Before/current values, numerical differences, a labelled control-change event, readable time axes and solid/dashed traces. Relevant graph tabs open by default.                                                                                      |
+| High     | “I just read the answer; does recognising it mean I understand?” | Explanation before assessment encourages recognition and copying.                                 | Written reasoning first, then a new transfer situation, then corrective feedback. The explanatory panel, model and key terms are withheld during the transfer attempt. Original predictions reappear for comparison after submission.                |
+| Medium   | “Am I learning, or completing a checklist?”                      | Clicking parts and typing enough characters can create misleading completion signals.             | Removed the arbitrary 40-character threshold. A short explanation is accepted and autosaved. Completion explicitly states that writing has not been graded. Transfer questions use varied answer positions.                                          |
+| Medium   | “I need a hint, but I also want to try my own ideas.”            | Too little support overwhelms novices; too much restriction frustrates more experienced students. | Optional definitions and sentence starters, a short guided route and a separate full exploration workspace. The latter retains sliders, views, comparison runs and exports.                                                                          |
+| Medium   | “Where did the instructions go on my laptop or phone?”           | Split attention and small text add avoidable effort.                                              | Guided instructions precede the model in DOM order; wider layouts put task and evidence alongside each other. Text/control sizes were increased and selection state is exposed to assistive technology. Actual device appearance remains unverified. |
+| Medium   | “Can I explain it tomorrow?”                                     | Immediate success does not demonstrate retention.                                                 | A written recall prompt before the cumulative questions and a next-day recall suggestion after each activity. No claim that a one-time prompt creates durable learning.                                                                              |
+
+## Why these changes are reasonable
+
+Mayer and Moreno describe reducing extraneous processing through coherence, signalling and proximity of related words and pictures [1]. This supports removing simultaneous, nonessential options and making the target observation explicit. Mayer's segmenting and pretraining discussion supports learner-paced stages and introducing the component roles before a complex dynamic display [2]. These principles inform the design; they do not prove this particular layout is effective.
+
+Podolefsky, Moore and Perkins describe simulation scaffolding through affordances, constraints, cues and feedback while preserving agency [3]. That motivates offering both a constrained single-variable investigation and a full exploration mode. Their example concerns a different simulation and learner population, so it is a design framework rather than a reactor-specific efficacy result.
+
+Karpicke and Blunt report benefits of retrieval practice for learning science text, including conceptual questions [4]. Asking students to produce an explanation before reading feedback is an application of that principle. The current ungraded reflection and later recall prompt are modest implementations, not equivalents of the study protocol. Confidence prompts encourage comparison with evidence; they are not validated measures of mastery.
+
+## Remaining weaknesses and trade-offs
+
+- The guided path deliberately restricts controls. Students should move into free exploration and choose their own comparison after the first successful investigation.
+- Component visits only show that a feature was opened. They do not establish attention or comprehension. Written reasoning still needs student, peer or lecturer review.
+- The simplified kinetics, artificial timing, lumped temperatures and schematic particle paths can be over-interpreted. Numerical results should support qualitative reasoning, not claims about a real plant.
+- Cumulative multiple-choice checks remain short and diagnostic. They are not a summative assessment or sufficient evidence of transfer.
+- The first lesson opens the 2D circuit diagram to make relationships explicit; the 3D view remains available. Whether this helps the target cohort should be checked.
+- GPU rendering, spatial label collisions, mobile composition, browser zoom and screen-reader behaviour require manual validation. The available browser blocked local previews.
+- The exact relationship to current PHYSM0047 materials needs lecturer confirmation; the unit code alone does not establish curricular alignment.
+
+## A practical student try-out
+
+Recruit a small mix of students with different prior physics knowledge. Ask them to think aloud while (1) finding the steam generator, (2) predicting and observing the circulation experiment, and (3) explaining why heat remains after shutdown. Observe without teaching them the interface.
+
+Record wrong turns, requests for help, whether attention follows the intended evidence, and whether students can distinguish power from temperature. Assess explanations with a short rubric: relevant component, causal process, observed evidence and correct distinction between generation/removal or moderation/absorption. Repeat with a novel question after a delay. Completion time and enjoyment are useful usability measures, but they must not substitute for the explanation quality.
+
+## Sources
+
+1. Mayer, R. E., & Moreno, R. (2005). _Principles for Reducing Extraneous Processing in Multimedia Learning: Coherence, Signaling, Redundancy, Spatial Contiguity, and Temporal Contiguity Principles_. In _The Cambridge Handbook of Multimedia Learning_. [Publisher chapter](https://www.cambridge.org/core/books/abs/cambridge-handbook-of-multimedia-learning/principles-for-reducing-extraneous-processing-in-multimedia-learning-coherence-signaling-redundancy-spatial-contiguity-and-temporal-contiguity-principles/C98AB3A6CE760DD63C048936EA0B3B44).
+2. Mayer, R. E. (2005). _Principles for Managing Essential Processing in Multimedia Learning: Segmenting, Pretraining, and Modality Principles_. In the same handbook. [Publisher chapter](https://www.cambridge.org/core/books/abs/cambridge-handbook-of-multimedia-learning/principles-for-managing-essential-processing-in-multimedia-learning-segmenting-pretraining-and-modality-principles/4110A2275F6DCD02DAB1F8B37BA7E5CE).
+3. Podolefsky, N. S., Moore, E. B., & Perkins, K. K. (2013, revised 2014). _Implicit scaffolding in interactive simulations: Design strategies to support multiple educational goals_. [Author preprint](https://arxiv.org/abs/1306.6544).
+4. Karpicke, J. D., & Blunt, J. R. (2011). _Retrieval practice produces more learning than elaborative studying with concept mapping_. Science, 331, 772–775. [Author-hosted paper](https://learninglab.psych.purdue.edu/downloads/2011/2011_Karpicke_Blunt_Science.pdf), [DOI](https://doi.org/10.1126/science.1199327).

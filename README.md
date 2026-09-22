@@ -24,6 +24,12 @@ npm run build:standalone # produce standalone/index.html with bundled scripts, C
 
 The standalone HTML can be downloaded and opened in a normal desktop browser. Browser policies may restrict local-file storage; learning summaries and CSV export remain available. A WebGL-capable browser is required for the 3D view. The app provides a selectable 2D alternative when WebGL is unavailable.
 
+## Learning design
+
+Start with the essentials for a guided route: one goal, a prediction, a focused observation, your explanation and a new situation to test it. Guided experiments change one variable, pause automatically and show before/after evidence. Feedback follows the attempt. Free exploration retains the full 3D model, sliders and comparison tools.
+
+The student-review revision adds a calm entry, optional key terms, clearer attention cues, larger type and controls, annotated graphs, autosaved short reflections and recall prompts. See the [adversarial review and research rationale](docs/STUDENT-REVIEW.md). These improvements have automated workflow coverage; learner efficacy and visual device validation remain untested.
+
 ## What is included
 
 - Whole-plant, reactor-core and microscopic schematic views.
@@ -64,6 +70,8 @@ src/Schematic.tsx       Keyboard-accessible plant diagram
 src/FissionDiagram.tsx  Accessible explanation of neutron outcomes
 src/simulation.ts       Pure simulation model, independent of rendering
 src/content.ts          Editable components, lessons and references
+src/learning.ts         Goals, focused experiments and transfer questions
+src/LearningUI.tsx      Orientation, attention cues and before/after evidence
 src/TrendChart.tsx      Traces and equivalent data table
 src/styles.css         Responsive interface styling
 tests/                 Model and DOM-based integration tests

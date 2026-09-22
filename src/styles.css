@@ -2379,3 +2379,648 @@ textarea::placeholder {
     font-size: 8px;
   }
 }
+
+/* Student review: a calm entry, readable controls and one evidence task at a time. */
+[hidden] {
+  display: none !important;
+}
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+button:focus-visible,
+summary:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 3px solid #476c3b;
+  outline-offset: 3px;
+}
+.brand {
+  text-align: left;
+}
+.welcome {
+  min-height: 100vh;
+  padding: 32px clamp(20px, 7vw, 112px);
+  background:
+    radial-gradient(ellipse at 100% 0%, #e2ead9, transparent 65%), #f7f8f2;
+}
+.welcome-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  color: #35543d;
+}
+.welcome-brand strong {
+  font-size: 26px;
+  letter-spacing: 3px;
+}
+.welcome-brand span {
+  margin-left: auto;
+  font-size: 13px;
+}
+.welcome-content {
+  max-width: 1040px;
+  margin: 70px auto 28px;
+}
+.welcome h1 {
+  font-family: Manrope, sans-serif;
+  font-size: clamp(32px, 4.3vw, 62px);
+  line-height: 1.15;
+  letter-spacing: -2px;
+  margin: 20px 0 25px;
+  max-width: 1000px;
+}
+.welcome-content > p {
+  max-width: 740px;
+  font-size: 18px;
+  line-height: 1.7;
+  color: #50634b;
+}
+.welcome-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 28px 0 16px;
+}
+.welcome-actions button {
+  font-size: 15px;
+  padding: 16px 22px;
+}
+.welcome .welcome-time,
+.welcome .welcome-note {
+  font-size: 13px;
+}
+.pretraining {
+  margin: 45px 0 25px;
+  padding-top: 28px;
+  border-top: 1px solid #cfdbc5;
+}
+.pretraining h2 {
+  font-size: 17px;
+  margin-bottom: 18px;
+}
+.pretraining > div {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.pretraining article {
+  border-left: 3px solid #9db789;
+  padding-left: 18px;
+}
+.pretraining article > span {
+  font-size: 12px;
+  color: #587246;
+}
+.pretraining h3 {
+  font-size: 19px;
+  margin: 8px 0;
+}
+.pretraining p {
+  font-size: 15px;
+  line-height: 1.6;
+  color: #50634b;
+}
+.mode-investigate .workspace,
+.mode-check .workspace {
+  grid-template-columns: 210px minmax(0, 1fr);
+  max-width: 1680px;
+}
+.mode-investigate .main-content {
+  min-width: 0;
+  padding: 28px;
+}
+.mode-investigate .lab-intro {
+  display: none;
+}
+.mode-investigate .inspector {
+  display: block;
+  border: 1px solid #cddac3;
+  border-radius: 10px;
+  grid-column: auto;
+  max-width: 820px;
+}
+.mode-investigate .inspector-top {
+  border: 0;
+  padding: 22px 24px 12px;
+}
+.mode-investigate .inspector-content {
+  padding: 12px 24px 24px;
+}
+.mode-investigate .inspector h2 {
+  max-width: none;
+  font-size: 26px;
+}
+.mode-investigate .inspector-content > p,
+.mode-investigate .inspector-content h3,
+.mode-investigate .choices button,
+.mode-investigate .selected-excerpt,
+.mode-investigate .feedback p,
+.mode-investigate .observation-tip p,
+.mode-investigate textarea {
+  font-size: 15px !important;
+  line-height: 1.65;
+}
+.mode-investigate .stage-indicator {
+  max-width: 400px;
+  margin-top: 15px;
+}
+.stage-indicator span {
+  font-size: 12px;
+}
+.mode-investigate .stage-indicator [aria-current="step"] {
+  color: #243d24;
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
+.learning-focus {
+  max-width: 100%;
+  background: #e9efe1;
+  border: 1px solid #cddac3;
+  border-radius: 10px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+.learning-focus > div + div {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #cbd8c1;
+}
+.learning-focus svg {
+  flex-shrink: 0;
+  margin-top: 3px;
+}
+.learning-focus p {
+  font-size: 15px;
+  line-height: 1.6;
+  margin-top: 5px;
+  max-width: 950px;
+}
+.learning-focus p strong {
+  display: block;
+  margin-bottom: 3px;
+}
+.learning-focus details {
+  font-size: 14px;
+  margin-top: 12px;
+}
+.learning-focus summary {
+  cursor: pointer;
+  min-height: 30px;
+}
+.learning-focus dl > div {
+  margin-top: 12px;
+}
+.learning-focus dt {
+  font-weight: 600;
+}
+.learning-focus dd {
+  margin: 4px 0 0;
+  line-height: 1.6;
+}
+.mode-investigate .advanced-display {
+  display: none;
+}
+.mode-investigate .lab-workbench {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-top: 20px;
+}
+.mode-investigate .guided-experiment {
+  order: -1;
+}
+.mode-investigate .scene-area {
+  height: 390px;
+}
+.mode-investigate.quantitative .scene-area {
+  height: 300px;
+}
+.mode-investigate .lab-footer {
+  margin-top: 20px;
+}
+.confidence-label {
+  display: block;
+  font-size: 13px;
+  margin: 18px 0;
+}
+.confidence-label select {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  margin-top: 8px;
+  padding: 10px;
+  border: 1px solid #a8b79b;
+  background: #fff;
+  color: #2b4030;
+  border-radius: 5px;
+  min-height: 44px;
+}
+.guided-experiment {
+  background: #fffef9;
+  border: 1px solid #cbd6c1;
+  border-radius: 10px;
+  padding: 22px;
+}
+.guided-experiment-heading {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+}
+.guided-experiment-heading > div {
+  flex: 1;
+  min-width: 200px;
+}
+.guided-experiment h2 {
+  font-size: 21px;
+  margin: 9px 0;
+}
+.guided-experiment-heading p {
+  font-size: 14px;
+  line-height: 1.6;
+  max-width: 600px;
+}
+.observation-progress {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 20px 0 10px;
+  font-size: 13px;
+}
+.observation-progress progress {
+  accent-color: #527140;
+  width: 140px;
+  height: 10px;
+}
+.observation-status {
+  font-size: 14px;
+  line-height: 1.6;
+  margin: 12px 0;
+}
+.evidence-readings {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+  margin: 16px 0;
+}
+.evidence-readings article {
+  padding: 14px;
+  background: #f0f4e9;
+  border-radius: 6px;
+}
+.evidence-readings h3 {
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+.evidence-readings p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-variant-numeric: tabular-nums;
+}
+.evidence-readings p > span {
+  font-size: 16px;
+  color: #586a4e;
+}
+.evidence-readings strong {
+  font-size: 24px;
+  letter-spacing: -0.5px;
+}
+.evidence-readings small {
+  display: block;
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.5;
+  color: #4d6044;
+}
+.model-time-note,
+.graph-event {
+  font-size: 12px;
+  line-height: 1.6;
+  margin-top: 12px;
+  color: #4d6044;
+}
+.graph-event {
+  margin: 10px 0;
+}
+.line-key {
+  display: inline-block;
+  width: 22px;
+  border-top: 3px solid #ab5b1f;
+}
+.line-key.secondary {
+  border-top: 3px dashed #287575;
+}
+.chart-legend {
+  flex-wrap: wrap;
+  font-size: 12px;
+  gap: 12px;
+}
+.chart-table {
+  font-size: 13px;
+  margin-top: 14px;
+}
+.chart-table summary {
+  min-height: 36px;
+  padding-top: 8px;
+  cursor: pointer;
+}
+.chart-table table {
+  font-size: 12px;
+}
+.trend svg {
+  min-height: 145px;
+}
+.retrieval-before-quiz {
+  padding: 20px;
+  border: 1px solid #cddac3;
+  background: #edf2e7;
+  border-radius: 8px;
+  margin: 25px 0;
+}
+.retrieval-before-quiz label {
+  font-size: 15px;
+  line-height: 1.6;
+}
+.retrieval-before-quiz textarea {
+  display: block;
+  width: 100%;
+  min-height: 100px;
+  margin: 12px 0;
+  font-size: 15px;
+}
+.revisit-prompt {
+  font-size: 14px;
+  line-height: 1.7;
+  margin: 18px 0;
+  text-align: left;
+}
+.retrieval-prompt {
+  border-left: 3px solid #73925d;
+  padding-left: 14px;
+}
+.primary-button,
+.secondary-button,
+.choices button,
+.quiz-choice {
+  min-height: 44px;
+  font-size: 14px;
+}
+.mini-parts button {
+  min-height: 44px;
+  font-size: 13px;
+}
+.mini-parts button[aria-pressed="true"] {
+  background: #d8e6c9;
+  border-color: #66834e;
+  color: #293e29;
+}
+.eyebrow,
+.section-label,
+.small-heading,
+.lab-footer,
+.lab-footer button,
+.scene-caption .eyebrow,
+.scene-caption p,
+.scene-footnote {
+  font-size: 11px;
+}
+.component-nav button,
+.lesson-nav strong,
+.main-nav button,
+.segmented button,
+.diagram-button,
+.scene-toolbar .segmented button,
+.sliders label > span,
+.sliders strong,
+.layer-select button {
+  font-size: 13px;
+}
+.component-nav button,
+.lesson-nav button,
+.main-nav button,
+.segmented button,
+.diagram-button,
+.scene-options button,
+.layer-select button,
+.camera-tools button {
+  min-height: 44px;
+}
+.camera-tools button {
+  width: 38px;
+}
+.lesson-nav small,
+.sliders small,
+.metrics > div > small,
+.metrics > div > span,
+.navigation-hint,
+.motion-toggle,
+.physics-detail {
+  font-size: 12px;
+}
+.inspector-content > p,
+.inspector-content h3,
+.connection-card p,
+.misconception p,
+.physics-detail p,
+.quiz-choice,
+.quiz legend {
+  font-size: 14px;
+}
+.reflection-label,
+.subtle,
+.quiz > p,
+.reflection-quote,
+.selected-excerpt,
+.observation-tip p {
+  font-size: 14px;
+}
+.quiz h1 {
+  font-size: 36px;
+}
+.scene-label {
+  font-size: 11px;
+  color: #344a30;
+}
+.scene-toolbar {
+  flex-wrap: wrap;
+}
+.scene-toolbar .segmented {
+  flex-wrap: wrap;
+}
+.sliders input {
+  min-height: 22px;
+  background: transparent;
+  margin: 10px 0;
+}
+.sliders input::-webkit-slider-runnable-track {
+  height: 5px;
+  border-radius: 4px;
+  background: #d3dfc8;
+}
+.sliders input::-webkit-slider-thumb {
+  margin-top: -5px;
+}
+@media (min-width: 1250px) {
+  .mode-investigate:is(.stage-observe, .stage-explain) .main-content {
+    display: grid;
+    grid-template-columns: minmax(290px, 340px) minmax(0, 1fr);
+    align-content: start;
+    gap: 20px;
+  }
+  .mode-investigate:is(.stage-observe, .stage-explain) .learning-focus {
+    grid-column: 1/-1;
+    margin: 0;
+  }
+  .mode-investigate:is(.stage-observe, .stage-explain) .inspector {
+    align-self: start;
+  }
+  .mode-investigate:is(.stage-observe, .stage-explain) .lab-workbench {
+    margin: 0;
+  }
+  .mode-investigate:is(.stage-observe, .stage-explain) .lab-footer {
+    grid-column: 1/-1;
+  }
+}
+@media (max-width: 850px) {
+  .mode-investigate .workspace,
+  .mode-check .workspace {
+    display: flex;
+    flex-direction: column;
+  }
+  .mode-investigate .sidebar,
+  .mode-check .sidebar {
+    padding: 12px 16px;
+    border: 0;
+    border-bottom: 1px solid #cddac3;
+    display: block;
+  }
+  .mode-investigate .sidebar-top,
+  .mode-investigate .section-label,
+  .mode-investigate .sidebar-bottom,
+  .mode-investigate .sidebar-note,
+  .mode-investigate .progress-track,
+  .mode-investigate .summary-export {
+    display: none;
+  }
+  .mode-investigate .lesson-nav {
+    display: flex;
+    flex-direction: row;
+    overflow-x: auto;
+  }
+  .mode-investigate .lesson-nav button {
+    flex-shrink: 0;
+    padding: 10px;
+  }
+  .mode-investigate .lesson-nav small {
+    display: none;
+  }
+  .mode-investigate .main-content {
+    padding: 18px;
+  }
+}
+@media (max-width: 640px) {
+  .welcome {
+    padding: 24px 20px;
+  }
+  .welcome-brand span {
+    display: none;
+  }
+  .welcome-content {
+    margin-top: 40px;
+  }
+  .welcome h1 {
+    letter-spacing: -1px;
+  }
+  .welcome-content > p {
+    font-size: 16px;
+  }
+  .pretraining > div {
+    grid-template-columns: 1fr;
+  }
+  .learning-focus,
+  .guided-experiment {
+    padding: 18px;
+  }
+  .mode-investigate .inspector-top {
+    padding: 20px 18px 8px;
+  }
+  .mode-investigate .inspector-content {
+    padding: 12px 18px 20px;
+  }
+  .mode-investigate .scene-area {
+    height: 350px;
+  }
+  .mode-investigate .inspector h2 {
+    font-size: 23px;
+  }
+  .main-nav {
+    min-height: 48px;
+    height: auto;
+  }
+  .main-nav button {
+    padding: 4px 5px;
+    font-size: 12px;
+  }
+  .scene-toolbar .segmented button,
+  .diagram-button {
+    font-size: 12px;
+    padding: 8px;
+  }
+  .layer-select {
+    flex-wrap: wrap;
+    gap: 6px 14px;
+  }
+  .scene-caption p {
+    max-width: 220px;
+  }
+  .metrics {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px 0;
+  }
+  .metrics > div > span {
+    font-size: 11px;
+  }
+  .metrics > div > small {
+    font-size: 11px;
+  }
+  .scene-label {
+    font-size: 10px;
+  }
+  .lab-footer {
+    gap: 12px;
+  }
+  .sliders {
+    grid-template-columns: 1fr;
+  }
+  .sliders label:last-child {
+    grid-column: auto;
+  }
+  .chart-legend {
+    margin-left: 0;
+  }
+  .trend-head {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+}
+.mode-check .sidebar {
+  display: none;
+}
+.mode-check .workspace {
+  display: block;
+}
+.mode-check .quiz {
+  max-width: 820px;
+  margin: auto;
+}
