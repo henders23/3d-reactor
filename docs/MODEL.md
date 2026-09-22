@@ -94,3 +94,13 @@ Spatial neutron transport, detailed hydraulics/CFD, boiling/voiding, xenon and s
 - [IAPWS IF97](https://iapws.org/relguide/IF97-Rev.html) — water/steam property reference. The application uses rounded teaching points rather than implementing this formulation.
 
 The coefficients above are explicit teaching design choices, not values attributed to these sources. Subject-specialist review is outstanding.
+
+## Displayed energy balance and recorded checkpoints
+
+`heatBalance(state, controls)` provides the instantaneous fission, decay, total generation, fuel-to-coolant transfer and external removal rates used by the model. Fuel energy accumulates at generation minus fuel-to-coolant transfer. This is distinct from net energy accumulation across the entire model, which also includes the coolant.
+
+Recorded samples now include fission power, transfer to coolant and net power into the fuel. Every power percentage uses initial total thermal power as its reference. Stored thermal energy itself is not plotted as a percentage or directly as temperature. The starting 95/5 fission/decay split is illustrative.
+
+The evidence inspector selects actual recorded samples: the initial state, the first sample at or beyond two model seconds, and the final sample. It labels the actual selected time and updates graph markers and readings. It does not interpolate invented measurements or rewind the 3D view.
+
+The numerical equations and coefficients are unchanged by the second science review. Power readouts are now evaluated at the returned end-of-step state, correcting a one-substep reporting offset in the original implementation.

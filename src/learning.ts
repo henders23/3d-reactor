@@ -55,7 +55,10 @@ export const learning: Record<string, LearningDesign> = {
     terms: [
       ["Fission", "Splitting a nucleus, releasing energy and neutrons."],
       ["Moderation", "Reducing a neutron’s energy through collisions."],
-      ["Absorption", "Capturing a neutron so it is removed from the chain."],
+      [
+        "Absorption",
+        "A nucleus takes in a neutron; in fuel this can lead to fission.",
+      ],
     ],
     focus: ["fuel", "water", "rods"],
     duration: 0,
@@ -65,7 +68,7 @@ export const learning: Record<string, LearningDesign> = {
       "A neutron slows down in water but is not captured. What can still happen?",
     transferChoices: [
       "It can still cause a later fission",
-      "It must be absorbed before it can cause fission",
+      "It must now be trapped in the water",
       "It can no longer participate in the chain reaction",
     ],
     transferCorrect: 0,
@@ -75,7 +78,7 @@ export const learning: Record<string, LearningDesign> = {
   control: {
     goal: "Compare how power and temperature respond to rod insertion.",
     watch:
-      "Watch thermal output first, then fuel temperature. Do both change immediately by the same amount?",
+      "Watch total thermal power first, then fuel temperature. Do both change immediately by the same amount?",
     terms: [
       ["Power", "The rate at which energy is produced or transferred."],
       [
@@ -103,7 +106,7 @@ export const learning: Record<string, LearningDesign> = {
   cooling: {
     goal: "Explain how heat generation and heat removal affect fuel temperature.",
     watch:
-      "Watch fuel temperature, then compare the thermal-output reading. Look for different directions of change.",
+      "Watch fuel temperature, then compare the total thermal power reading. Look for different directions of change.",
     terms: [
       [
         "Circulation",
@@ -120,7 +123,7 @@ export const learning: Record<string, LearningDesign> = {
     setting: { flow: 65 },
     metric: "temperature",
     starter:
-      "With less circulation, the fuel… Even though thermal output… This is because…",
+      "With less circulation, the fuel… Even though total thermal power… This is because…",
     transfer:
       "A fuel-temperature reading rises. Is that enough evidence to conclude that fission power increased?",
     transferChoices: [
@@ -135,7 +138,7 @@ export const learning: Record<string, LearningDesign> = {
   shutdown: {
     goal: "Explain what changes and what remains after rod insertion.",
     watch:
-      "After rod insertion, compare total thermal output with the dashed decay-heat line. Then look at fuel temperature.",
+      "After rod insertion, compare total thermal power with the dashed decay-heat line. Then look at fuel temperature.",
     terms: [
       ["Decay heat", "New heat released by radioactive decay after fission."],
       [
@@ -168,7 +171,7 @@ export function guidedEvidence(s: State) {
   const before = initialState();
   return [
     {
-      label: "Thermal output",
+      label: "Total thermal power",
       before: before.thermal * 100,
       now: s.thermal * 100,
       unit: "%",

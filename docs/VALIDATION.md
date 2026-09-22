@@ -35,7 +35,13 @@ The interface tests use React Testing Library and jsdom. They exercise applicati
 
 ## Student-review revision
 
-The revised suite contains 19 tests. It includes a simulated UI clock that executes the guided rod experiment through automatic stopping and replay, rather than merely checking the button exists. A floating-point comparison in the test was corrected to use a tolerance. The physical model equations are unchanged by this revision.
+The first review suite contained 19 tests. It includes a simulated UI clock that executes the guided rod experiment through automatic stopping and replay, rather than merely checking the button exists. A floating-point comparison in the test was corrected to use a tolerance. The physical model equations are unchanged by this revision.
+
+## Second review validation
+
+The current suite contains 23 tests. Additional coverage checks instantaneous power accounting and agreement with the numerical fuel energy derivative; annotation-to-component selection; graph checkpoint selection; neutron-diagram selection; and a wrong-answer → evidence review → written revision → successful retry workflow with the first draft preserved.
+
+The second review found and corrected an ambiguous neutron distractor, a one-substep power-reporting offset, and duplicate React keys for graph/inspector siblings. The PWR schematic was redrawn to connect the primary tube path and distinguish water circuits. These code and DOM checks do not validate final visual appearance.
 
 ## Remaining manual verification
 

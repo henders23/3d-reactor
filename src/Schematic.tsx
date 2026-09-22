@@ -22,235 +22,245 @@ export default function Schematic({
     },
     tabIndex: 0,
     role: "button",
+    "aria-pressed": selected === id,
     "aria-label": `Inspect ${id === "steam" ? "steam generator" : id}`,
   });
   return (
     <div className="schematic">
+      <p className="schematic-scroll-hint">
+        On a small screen, scroll the diagram sideways or use the component
+        buttons.
+      </p>
       <svg
-        viewBox="0 0 800 440"
+        viewBox="0 0 800 430"
         role="group"
-        aria-label="Accessible reactor schematic. Follow three separate water circuits."
+        aria-label="Accessible reactor schematic. Primary water travels through sealed tubes; secondary water boils outside them. A separate external circuit cools the condenser."
       >
         <defs>
           <marker
-            id="arrowHot"
+            id="flowArrow"
             viewBox="0 0 10 10"
-            refX="6"
+            refX="9"
             refY="5"
-            markerWidth="5"
-            markerHeight="5"
-            orient="auto-start-reverse"
+            markerWidth="4"
+            markerHeight="4"
+            orient="auto"
           >
-            <path d="M0 0 10 5 0 10z" fill="#cb754a" />
-          </marker>
-          <marker
-            id="arrowCool"
-            viewBox="0 0 10 10"
-            refX="6"
-            refY="5"
-            markerWidth="5"
-            markerHeight="5"
-            orient="auto-start-reverse"
-          >
-            <path d="M0 0 10 5 0 10z" fill="#538f9c" />
+            <path d="M0 0L10 5L0 10Z" fill="#3f5942" />
           </marker>
         </defs>
         <rect
-          x="48"
-          y="65"
+          x="30"
+          y="60"
           width="390"
-          height="325"
-          rx="35"
+          height="318"
+          rx="30"
           fill="none"
-          stroke="#b3bfba"
+          stroke="#8f9d90"
           strokeDasharray="6 6"
         />
-        <text x="64" y="410" className="diagram-note">
+        <text x="40" y="402" className="diagram-note">
           Containment boundary
         </text>
-        <path
-          d="M160 180 H315 V215"
-          fill="none"
-          stroke="#ce794d"
-          strokeWidth="9"
-          markerMid="url(#arrowHot)"
-        />
-        <path
-          d="M315 270 V335 H158 V295"
-          fill="none"
-          stroke="#6195a9"
-          strokeWidth="9"
-          markerMid="url(#arrowCool)"
-        />
-        <path
-          d="M373 155 H558 V180"
-          fill="none"
-          stroke="#489b91"
-          strokeWidth="7"
-        />
-        <path
-          d="M590 210 V299 H614"
-          fill="none"
-          stroke="#489b91"
-          strokeWidth="7"
-        />
-        <path
-          d="M570 337 H387 V270"
-          fill="none"
-          stroke="#489b91"
-          strokeWidth="7"
-        />
-        <path
-          d="M738 310 H664 M664 333 H738"
-          fill="none"
-          stroke="#83aeb6"
-          strokeWidth="6"
-        />
         <g {...part("vessel")}>
           <rect
-            x="105"
-            y="143"
+            x="80"
+            y="170"
             width="104"
-            height="164"
+            height="150"
             rx="25"
-            fill="#d6ded9"
-            stroke="#849790"
+            fill="#dce5dd"
+            stroke="#738a7a"
+            strokeWidth="4"
+          />
+          <text x="132" y="355" textAnchor="middle">
+            Reactor
+          </text>
+        </g>
+        <g {...part("water")}>
+          <path
+            d="M184 205H280V285H306 M370 300V338H132V320"
+            fill="none"
+            stroke="#b26731"
+            strokeWidth="8"
+          />
+          <path
+            d="M210 205H254 M272 338H201"
+            stroke="#b26731"
             strokeWidth="5"
+            markerEnd="url(#flowArrow)"
           />
         </g>
         <g {...part("fuel")}>
-          <rect x="120" y="208" width="72" height="76" rx="4" fill="#d7ab68" />
-          {[130, 145, 160, 175].map((x) => (
+          <rect x="103" y="234" width="60" height="64" rx="3" fill="#d7ab68" />
+          {[111, 124, 137, 150].map((x) => (
             <path
               key={x}
-              d={`M${x} 215 V276`}
-              stroke="#936738"
-              strokeWidth="6"
+              d={`M${x} 240V290`}
+              stroke="#8f622d"
+              strokeWidth="5"
             />
           ))}
         </g>
         <g {...part("rods")}>
-          <rect x="118" y="124" width="78" height="10" fill="#4a6360" />
-          {[134, 158, 182].map((x) => (
+          <rect x="93" y="150" width="77" height="9" fill="#425c57" />
+          {[106, 130, 154].map((x) => (
             <path
               key={x}
-              d={`M${x} 128 V${170 + controls.rods * 0.75}`}
+              d={`M${x} 155V${190 + controls.rods * 0.75}`}
               stroke="#425c57"
               strokeWidth="5"
             />
           ))}
-          <text x="157" y="111" textAnchor="middle">
+          <text x="130" y="131" textAnchor="middle">
             Control rods
           </text>
         </g>
-        <text x="157" y="325" textAnchor="middle">
-          Reactor
-        </text>
-        <text x="155" y="366" textAnchor="middle" className="diagram-note">
-          {Math.round(state.fuel)}°C fuel
-        </text>
         <g {...part("pressuriser")}>
           <rect
-            x="236"
-            y="82"
-            width="36"
-            height="65"
-            rx="15"
+            x="223"
+            y="111"
+            width="34"
+            height="62"
+            rx="13"
             fill="#ddc39b"
-            stroke="#9a875f"
+            stroke="#8c764f"
             strokeWidth="2"
           />
-          <path d="M254 147 V180" stroke="#9a875f" strokeWidth="4" />
-          <text x="257" y="65" textAnchor="middle">
+          <path d="M240 173V205" stroke="#8c764f" strokeWidth="4" />
+          <text x="240" y="91" textAnchor="middle">
             Pressuriser
           </text>
         </g>
         <g {...part("steam")}>
           <rect
-            x="312"
-            y="135"
-            width="88"
-            height="155"
-            rx="24"
-            fill="#d8e6df"
-            stroke="#65978f"
+            x="303"
+            y="120"
+            width="102"
+            height="183"
+            rx="21"
+            fill="#d8e8e1"
+            stroke="#4a8073"
             strokeWidth="3"
           />
           <path
-            d="M330 267 V185 Q348 150 357 185 V267"
+            d="M303 285H330V178Q350 145 370 178V303"
             fill="none"
-            stroke="#c78051"
-            strokeWidth="7"
+            stroke="#6b5743"
+            strokeWidth="12"
           />
-          <text x="357" y="114" textAnchor="middle">
+          <path
+            d="M303 285H330V178Q350 145 370 178V303"
+            fill="none"
+            stroke="#d19658"
+            strokeWidth="6"
+          />
+          <text x="355" y="102" textAnchor="middle">
             Steam generator
           </text>
         </g>
         <g {...part("pump")}>
           <circle
-            cx="243"
-            cy="335"
-            r="19"
+            cx="242"
+            cy="338"
+            r="17"
             fill="#c3d6df"
-            stroke="#5b899c"
+            stroke="#527c88"
             strokeWidth="3"
           />
-          <path d="m235 326 19 9-19 9z" fill="#5b899c" />
-          <text x="244" y="373" textAnchor="middle">
+          <path d="M250 331L235 338L250 345Z" fill="#527c88" />
+          <text x="242" y="372" textAnchor="middle">
             Pump
           </text>
         </g>
+        <path
+          d="M405 145H550V169 M593 215V279 M560 315H432V267H405"
+          fill="none"
+          stroke="#287b70"
+          strokeWidth="7"
+        />
+        <path
+          d="M445 145H510 M518 315H463"
+          stroke="#287b70"
+          strokeWidth="4"
+          markerEnd="url(#flowArrow)"
+        />
         <g {...part("turbine")}>
           <path
-            d="M530 173 608 152 V235 L530 215Z"
+            d="M531 173L609 152V234L531 216Z"
             fill="#c9cfc2"
-            stroke="#889782"
+            stroke="#728267"
             strokeWidth="3"
           />
-          <path d="M608 195 H641" stroke="#63766b" strokeWidth="6" />
-          <circle cx="664" cy="195" r="25" fill="#59756b" />
-          <text x="664" y="201" textAnchor="middle" fill="white">
+          <path d="M609 194H665" stroke="#526851" strokeWidth="5" />
+          <circle cx="685" cy="194" r="24" fill="#42644f" />
+          <text x="685" y="200" textAnchor="middle" fill="white">
             G
           </text>
-          <text x="607" y="133" textAnchor="middle">
+          <text x="619" y="121" textAnchor="middle">
             Turbine & generator
           </text>
         </g>
         <g {...part("condenser")}>
           <rect
-            x="562"
-            y="289"
-            width="120"
-            height="57"
-            rx="12"
-            fill="#d8e5e7"
-            stroke="#789fa3"
+            x="559"
+            y="278"
+            width="133"
+            height="55"
+            rx="10"
+            fill="#d8e8e1"
+            stroke="#4a8073"
             strokeWidth="3"
           />
           <path
-            d="M580 302 H660 M580 314 H660 M580 326 H660"
-            stroke="#789fa3"
-            strokeWidth="3"
+            d="M770 290H620V317H770"
+            fill="none"
+            stroke="#54869e"
+            strokeWidth="7"
           />
-          <text x="622" y="375" textAnchor="middle">
+          <path
+            d="M749 290H707 M707 317H749"
+            stroke="#54869e"
+            strokeWidth="4"
+            markerEnd="url(#flowArrow)"
+          />
+          <text x="624" y="363" textAnchor="middle">
             Condenser
           </text>
         </g>
-        <text x="472" y="145" textAnchor="middle" className="diagram-note">
-          Steam →
+        <text x="465" y="128" className="diagram-note">
+          Steam
         </text>
-        <text x="479" y="361" textAnchor="middle" className="diagram-note">
-          ← Feedwater
+        <text x="433" y="350" className="diagram-note">
+          Feedwater returns
         </text>
-        <text x="734" y="287" textAnchor="middle" className="diagram-note">
-          External
+        <text x="724" y="268" textAnchor="middle" className="diagram-note">
+          Cooling water in
         </text>
-        <text x="734" y="369" textAnchor="middle" className="diagram-note">
-          cooling
+        <text x="734" y="350" textAnchor="middle" className="diagram-note">
+          Warmer water out
+        </text>
+        <text x="82" y="425" className="diagram-note">
+          Fuel: {state.fuel.toFixed(0)}°C · illustrative average
         </text>
       </svg>
+      <div className="circuit-key">
+        <span>
+          <i className="circuit-primary" />
+          Primary · pressurised liquid
+        </span>
+        <span>
+          <i className="circuit-secondary" />
+          Secondary · water / steam
+        </span>
+        <span>
+          <i className="circuit-external" />
+          External cooling water
+        </span>
+      </div>
       <p className="scene-footnote">
-        Simplified arrangement · select a component to investigate it
+        Fluid paths stay separate at the steam generator and condenser. Pipe
+        positions and component sizes are schematic.
       </p>
     </div>
   );

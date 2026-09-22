@@ -69,3 +69,28 @@ test("reset creates independent precursor and decay inventories", () => {
   a.decay[0] = 99;
   assert.equal(b.decay[0], 0.01);
 });
+
+test("instantaneous displayed powers sum correctly and agree with fuel energy balance", async () => {
+  const { heatBalance, sample } = await import("../src/simulation");
+  for (const controls of [
+    { ...defaults, flow: 65 },
+    { ...defaults, rods: 65 },
+    { ...defaults, rods: 100 },
+  ]) {
+    for (const seconds of [0, 2, 20, 30]) {
+      const s = run(controls, seconds),
+        rates = heatBalance(s, controls),
+        record = sample(s, controls);
+      assert.ok(Math.abs(record.power - record.fission - record.decay) < 1e-10);
+      assert.ok(
+        Math.abs(record.netFuel - (record.power - record.transfer)) < 1e-10,
+      );
+      assert.ok(Math.abs(s.thermal - rates.generated) < 1e-10);
+      const dt = 1e-5,
+        next = step(s, controls, dt);
+      assert.ok(
+        Math.abs((next.fuel - s.fuel) / dt - rates.netFuel / 0.09) < 1e-5,
+      );
+    }
+  }
+});

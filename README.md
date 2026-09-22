@@ -30,6 +30,8 @@ Start with the essentials for a guided route: one goal, a prediction, a focused 
 
 The student-review revision adds a calm entry, optional key terms, clearer attention cues, larger type and controls, annotated graphs, autosaved short reflections and recall prompts. See the [adversarial review and research rationale](docs/STUDENT-REVIEW.md). These improvements have automated workflow coverage; learner efficacy and visual device validation remain untested.
 
+The [second student review](docs/STUDENT-REVIEW-2.md) adds three further improvements: numbered science annotations, recorded evidence checkpoints with a fuel energy balance, and misconception-specific feedback with revision of the original explanation. It also corrects the distinction between neutron absorption and non-fission capture, and makes all power readouts use one explicit reference.
+
 ## What is included
 
 - Whole-plant, reactor-core and microscopic schematic views.
@@ -72,6 +74,8 @@ src/simulation.ts       Pure simulation model, independent of rendering
 src/content.ts          Editable components, lessons and references
 src/learning.ts         Goals, focused experiments and transfer questions
 src/LearningUI.tsx      Orientation, attention cues and before/after evidence
+src/science.ts         Scientific annotations, hints and misconception feedback
+src/ScienceUI.tsx      Science pathways, evidence inspection and writing support
 src/TrendChart.tsx      Traces and equivalent data table
 src/styles.css         Responsive interface styling
 tests/                 Model and DOM-based integration tests

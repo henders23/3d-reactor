@@ -66,7 +66,7 @@ export const parts: Part[] = [
     connection:
       "Hot primary water flows to the steam generator and returns cooler. It stays separate from the steam sent to the turbine.",
     physics:
-      "Moderation reduces neutron energy; absorption removes neutrons. In the chosen teaching model, rising fuel and moderator temperatures provide negative reactivity feedback. Actual coefficients depend on operating conditions.",
+      "Moderation reduces neutron energy by scattering. Absorption takes a neutron into a nucleus; absorption in fuel can lead to fission. In the chosen teaching model, rising fuel and moderator temperatures provide negative reactivity feedback. Actual coefficients depend on operating conditions.",
     misconception:
       "Slowing neutrons does not mean simply slowing the overall chain reaction. Moderation can help sustain fission.",
   },
@@ -82,7 +82,7 @@ export const parts: Part[] = [
     connection:
       "The primary pipework connects the vessel to the steam generator, pump and pressuriser.",
     physics:
-      "The primary circuit operates at high pressure so its hot water remains predominantly liquid during normal operation. The vessel and containment are distinct barriers.",
+      "High primary pressure suppresses bulk boiling in normal PWR operation. Water in the core remains predominantly liquid; the pressuriser intentionally contains a steam space. The vessel and containment are distinct barriers.",
     misconception:
       "The cutaway is an explanatory view. A working reactor does not have an open front or removable wall during operation.",
   },
@@ -213,7 +213,7 @@ export const lessons: Lesson[] = [
     ],
     correct: 1,
     task: "Select the fuel, steam generator, turbine and condenser. Use the flow layer to follow the three separate circuits.",
-    focus: "steam",
+    focus: "fuel",
     view: "plant",
     explanation:
       "The fuel heats primary water. Heat crosses the steam-generator tubes into secondary water, which becomes steam and drives the turbine. A third circuit removes heat at the condenser.",
@@ -239,7 +239,7 @@ export const lessons: Lesson[] = [
     ],
     correct: 1,
     task: "Inspect the fuel and control rods, then switch to the fission view. Compare neutron slowing in water with neutron absorption by a control rod.",
-    focus: "water",
+    focus: "fuel",
     view: "fission",
     explanation:
       "Fuel undergoes fission. Water slows neutrons through collisions and carries heat away. Control rods absorb neutrons. These are different functions even though they all influence the chain reaction.",
@@ -334,7 +334,7 @@ export const lessons: Lesson[] = [
     explanation:
       "Inserting rods suppresses the chain reaction. Radioactive decay of fission products continues to produce heat, and the fuel and water also retain thermal energy. Shutdown and cooling are separate functions.",
     retry:
-      "On the power graph, compare total thermal output with the decay-heat line after rod insertion.",
+      "On the power graph, compare total thermal power with the decay-heat line after rod insertion.",
     check: "Which explanation best accounts for heat after shutdown?",
     checkChoices: [
       "All remaining heat is stored; new heat generation has stopped",

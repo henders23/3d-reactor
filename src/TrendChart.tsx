@@ -6,10 +6,12 @@ export default function TrendChart({
   baseline,
   preferredMetric = "power",
   event,
+  inspection,
 }: {
   samples: Sample[];
   baseline: Sample[];
   preferredMetric?: Metric;
+  inspection?: Sample;
   event?: { time: number; label: string };
 }) {
   const [metric, setMetric] = useState<Metric>(preferredMetric);
@@ -32,7 +34,9 @@ export default function TrendChart({
       ? (["power", "decay"] as const)
       : (["fuel", "coolant"] as const);
   const names =
-    metric === "power" ? ["Thermal output", "Decay heat"] : ["Fuel", "Coolant"];
+    metric === "power"
+      ? ["Total thermal power", "Decay heat"]
+      : ["Fuel", "Coolant"];
   const all = [...data, ...base];
   const max =
     metric === "power"
@@ -54,7 +58,7 @@ export default function TrendChart({
   const y = (n: number) => bottom - ((n - min) / (max - min)) * (bottom - top);
   const line = (a: Sample[], key: (typeof keys)[number]) =>
     a.map((s, i) => `${i ? "L" : "M"}${x(s.time)},${y(s[key])}`).join(" ");
-  const last = data.at(-1);
+  const last = inspection ?? data.at(-1);
   return (
     <section ref={chart} className="trend" aria-label="Experiment graphs">
       <div className="trend-head">
@@ -87,7 +91,7 @@ export default function TrendChart({
         role="img"
         aria-label={
           metric === "power"
-            ? "Thermal output and decay heat over model time, as percentages of initial thermal output"
+            ? "Total thermal power and decay heat over model time, as percentages of initial total thermal power"
             : "Fuel and coolant temperatures over model time, in degrees Celsius"
         }
       >
@@ -103,7 +107,7 @@ export default function TrendChart({
         </defs>
         <text x={left} y="14" fontSize="12" fill="#45594d">
           {metric === "power"
-            ? "% of initial thermal output"
+            ? "% of initial total thermal power"
             : "Temperature (°C)"}
         </text>
         {[0, 0.5, 1].map((f) => (
@@ -148,6 +152,31 @@ export default function TrendChart({
               strokeDasharray="3 3"
             />
           )}
+          {inspection && (
+            <g
+              aria-label={`Recorded instant ${inspection.time.toFixed(1)} model seconds`}
+            >
+              <line
+                x1={x(inspection.time)}
+                x2={x(inspection.time)}
+                y1={top}
+                y2={bottom}
+                stroke="#304f36"
+                strokeWidth="2"
+              />
+              {keys.map((k) => (
+                <circle
+                  key={k}
+                  cx={x(inspection.time)}
+                  cy={y(inspection[k])}
+                  r="5"
+                  fill="#fff"
+                  stroke="#304f36"
+                  strokeWidth="2"
+                />
+              ))}
+            </g>
+          )}
           {keys.map((k, i) => (
             <path
               key={k}
@@ -182,6 +211,12 @@ export default function TrendChart({
           Elapsed model time (seconds)
         </text>
       </svg>
+      {inspection && (
+        <p className="graph-inspection">
+          Readings at {inspection.time.toFixed(1)} model s · selected recorded
+          instant
+        </p>
+      )}
       <div className="chart-legend">
         {keys.map((k, i) => (
           <span key={k}>
@@ -205,7 +240,8 @@ export default function TrendChart({
             <thead>
               <tr>
                 <th>Model s</th>
-                <th>Thermal %</th>
+                <th>Total thermal %</th>
+                <th>Fission %</th>
                 <th>Decay %</th>
                 <th>Fuel °C</th>
                 <th>Coolant °C</th>
@@ -216,6 +252,7 @@ export default function TrendChart({
                 <tr key={i}>
                   <td>{s.time.toFixed(1)}</td>
                   <td>{s.power.toFixed(1)}</td>
+                  <td>{s.fission.toFixed(1)}</td>
                   <td>{s.decay.toFixed(1)}</td>
                   <td>{s.fuel.toFixed(1)}</td>
                   <td>{s.coolant.toFixed(1)}</td>

@@ -34,6 +34,8 @@ import ReactorScene, { type View } from "./ReactorScene";
 import Schematic from "./Schematic";
 import FissionDiagram from "./FissionDiagram";
 import TrendChart from "./TrendChart";
+import { ScienceTour, ExplanationHelp } from "./ScienceUI";
+import { misconceptionFeedback, explanationSupport } from "./science";
 import { Welcome, LearningFocus, GuidedExperiment } from "./LearningUI";
 import { learning, guidedControls, advanceGuided } from "./learning";
 import { parts, lessons, sources, type PartID } from "./content";
@@ -53,6 +55,9 @@ type RecordEntry = {
   prediction: string;
   explanation: string;
   completed: boolean;
+  firstExplanation?: string;
+  evidence?: string;
+  revised?: boolean;
 };
 type Records = Record<string, RecordEntry>;
 const storageKey = "core-reactor-learning-v1";
@@ -119,6 +124,7 @@ function Modal({
 }
 export default function App() {
   const [started, setStarted] = useState(false);
+  const [revising, setRevising] = useState(false);
   const [guidedStarted, setGuidedStarted] = useState(false);
   const guidedRun = useRef<string | null>(null);
   const [recalled, setRecalled] = useState(false);
@@ -277,6 +283,7 @@ export default function App() {
   function startLesson(index: number) {
     const l = lessons[index];
     setLessonIndex(index);
+    setRevising(false);
     setSpeed(1);
     setMode("investigate");
     setStarted(true);
@@ -334,13 +341,16 @@ export default function App() {
   function exportData() {
     saveFile(
       "core-reactor-results.csv",
-      "model_seconds,thermal_percent,decay_percent,fuel_celsius,coolant_celsius,rod_insertion_percent,flow_percent,sink_percent\n" +
+      "model_seconds,thermal_percent,fission_percent,decay_percent,transfer_to_coolant_percent,net_into_fuel_percent,fuel_celsius,coolant_celsius,rod_insertion_percent,flow_percent,sink_percent\n" +
         samples
           .map((s) =>
             [
               s.time,
               s.power,
+              s.fission,
               s.decay,
+              s.transfer,
+              s.netFuel,
               s.fuel,
               s.coolant,
               s.rods,
@@ -361,7 +371,7 @@ export default function App() {
       `# CORE — learning summary\n\nPHYSM0047 companion · conceptual PWR model\n\n${lessons
         .map((l) => {
           const r = records[l.id];
-          return `## ${l.name}\nStatus: ${r?.completed ? "completed" : "not completed"}\nPrediction: ${r?.prediction || "not recorded"}\nExplanation: ${r?.explanation || "not recorded"}\n`;
+          return `## ${l.name}\nStatus: ${r?.completed ? "completed" : "not completed"}\nPrediction: ${r?.prediction || "not recorded"}\nEvidence: ${r?.evidence || "not captured"}\nFirst explanation: ${r?.firstExplanation || r?.explanation || "not recorded"}\nLatest explanation: ${r?.explanation || "not recorded"}\nRevised after feedback: ${r?.revised ? "yes" : "no"}\n`;
         })
         .join(
           "\n",
@@ -373,6 +383,7 @@ export default function App() {
     setRecords((r) => ({
       ...r,
       [lesson.id]: {
+        ...r[lesson.id],
         prediction: lesson.choices[prediction ?? 0],
         explanation: reflection,
         completed: true,
@@ -477,6 +488,7 @@ export default function App() {
                     setRecords((r) => ({
                       ...r,
                       [lesson.id]: {
+                        ...r[lesson.id],
                         prediction: lesson.choices[prediction ?? 0],
                         explanation: r[lesson.id]?.explanation || "",
                         completed: r[lesson.id]?.completed || false,
@@ -540,10 +552,12 @@ export default function App() {
                     </button>
                   ))}
                 </div>
-                <p className="selected-excerpt">
-                  <strong>{part.name}</strong>
-                  {part.purpose}
-                </p>
+                {learning[lesson.id].duration > 0 && (
+                  <p className="selected-excerpt">
+                    <strong>{part.name}</strong>
+                    {part.purpose}
+                  </p>
+                )}
                 <button
                   className="primary-button wide"
                   disabled={!observed}
@@ -575,6 +589,18 @@ export default function App() {
                   Use a component, a process and an observation in your
                   explanation.
                 </p>
+                {revising && (
+                  <div className="revision-context">
+                    <h3>Use the feedback to improve your explanation</h3>
+                    <p>{misconceptionFeedback[lesson.id][answer ?? 0]}</p>
+                    <p>{explanationSupport[lesson.id].deeper}</p>
+                    <details>
+                      <summary>My first explanation</summary>
+                      <p>{records[lesson.id]?.firstExplanation}</p>
+                    </details>
+                  </div>
+                )}
+                <ExplanationHelp key={lesson.id} id={lesson.id} />
                 <label className="reflection-label" htmlFor="reflection">
                   Your explanation
                 </label>
@@ -588,6 +614,7 @@ export default function App() {
                     setRecords((r) => ({
                       ...r,
                       [lesson.id]: {
+                        ...r[lesson.id],
                         prediction: lesson.choices[prediction ?? 0],
                         explanation: value,
                         completed: r[lesson.id]?.completed || false,
@@ -608,15 +635,38 @@ export default function App() {
                     setRecords((r) => ({
                       ...r,
                       [lesson.id]: {
+                        ...r[lesson.id],
                         prediction: lesson.choices[prediction ?? 0],
                         explanation: reflection,
                         completed: r[lesson.id]?.completed || false,
                       },
                     }));
+                    setRecords((r) => ({
+                      ...r,
+                      [lesson.id]: {
+                        ...r[lesson.id],
+                        firstExplanation:
+                          r[lesson.id]?.firstExplanation ?? reflection,
+                        evidence: learning[lesson.id].duration
+                          ? `At ${state.time.toFixed(1)} model s: total thermal power ${(state.thermal * 100).toFixed(1)}% of its initial value; fuel ${state.fuel.toFixed(1)}°C; fission ${(state.neutrons * 95).toFixed(1)}% of initial total thermal power.`
+                          : `Inspected: ${visited.map((id) => parts.find((p) => p.id === id)?.name).join(", ")}.`,
+                        revised:
+                          r[lesson.id]?.revised ||
+                          (revising &&
+                            reflection.trim() !==
+                              r[lesson.id]?.firstExplanation?.trim()),
+                      },
+                    }));
+                    setAnswer(null);
+                    setAnswerSent(false);
+                    setRevising(false);
                     setStage("check");
                   }}
                 >
-                  Test my explanation <ArrowRight size={15} />
+                  {revising
+                    ? "Save revision and try again"
+                    : "Test my explanation"}{" "}
+                  <ArrowRight size={15} />
                 </button>
               </>
             )}
@@ -689,7 +739,7 @@ export default function App() {
                       {answer === learning[lesson.id].transferCorrect
                         ? "That’s right. "
                         : "Try that again. "}
-                      {learning[lesson.id].transferFeedback}
+                      {misconceptionFeedback[lesson.id][answer ?? 0]}
                     </p>
                     <p>
                       {answer === learning[lesson.id].transferCorrect
@@ -700,6 +750,15 @@ export default function App() {
                           ? "A confident answer can still need revision. Use the explanation to locate the mistaken link."
                           : "Uncertainty is useful here. Revisit the relevant part and try again."}
                     </p>
+                    <button
+                      className="secondary-button wide"
+                      onClick={() => {
+                        setRevising(true);
+                        setStage("explain");
+                      }}
+                    >
+                      Revisit evidence and revise
+                    </button>
                     {answer === learning[lesson.id].transferCorrect ? (
                       <button
                         className="primary-button wide"
@@ -726,6 +785,9 @@ export default function App() {
                 <details>
                   <summary>Review my explanation</summary>
                   <p className="reflection-quote">“{reflection}”</p>
+                  {records[lesson.id]?.revised && (
+                    <p>Revised after feedback.</p>
+                  )}
                 </details>
                 <p className="revisit-prompt">
                   Tomorrow, explain the same idea without opening the model
@@ -1152,12 +1214,12 @@ export default function App() {
                 {mode !== "investigate" && (
                   <div className="metrics" aria-label="Current model readings">
                     <div>
-                      <span>THERMAL OUTPUT</span>
+                      <span>TOTAL THERMAL POWER</span>
                       <strong>
                         {(state.thermal * 100).toFixed(1)}
                         <small>%</small>
                       </strong>
-                      <small>of initial heat production</small>
+                      <small>fission + decay heat; initial = 100%</small>
                     </div>
                     <div>
                       <span>FUEL TEMPERATURE</span>
@@ -1219,7 +1281,7 @@ export default function App() {
                   </div>
                   <div className="scene-area">
                     {(flat || webglFailed) && view === "fission" ? (
-                      <FissionDiagram />
+                      <FissionDiagram selected={selected} onSelect={choose} />
                     ) : flat || webglFailed ? (
                       <Schematic
                         selected={selected}
@@ -1363,6 +1425,18 @@ export default function App() {
                     </span>
                   </div>
                 </section>
+                {mode === "investigate" &&
+                  learning[lesson.id].duration === 0 && (
+                    <ScienceTour
+                      id={lesson.id}
+                      selected={selected}
+                      onSelect={(id) => {
+                        choose(id);
+                        if (!flat && !webglFailed && view !== "fission")
+                          setFocusTick((t) => t + 1);
+                      }}
+                    />
+                  )}
                 {mode === "investigate" && learning[lesson.id].duration > 0 && (
                   <GuidedExperiment
                     id={lesson.id}
@@ -1675,7 +1749,7 @@ export default function App() {
             <br />
             Heat transfer increases with temperature difference and circulation
             <br />
-            Thermal output = fission heat + decay heat
+            Total thermal power = fission power + decay heat
           </div>
           <h3>What is illustrative</h3>
           <p>

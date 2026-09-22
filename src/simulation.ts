@@ -29,6 +29,23 @@ export const initialState = (): State => ({
   electric: 1,
   reactivity: 0,
 });
+/** Instantaneous rates, normalised to initial total thermal power. */
+export function heatBalance(s: State, c: Controls) {
+  const fission = 0.95 * s.neutrons;
+  const decay = s.decay.reduce((a, b) => a + b, 0);
+  const generated = fission + decay;
+  const toCoolant = ((s.fuel - s.coolant) / 290) * Math.pow(c.flow / 100, 0.55);
+  const removed =
+    ((s.coolant - 270) / 40) * Math.pow(c.flow / 100, 0.7) * (c.sink / 100);
+  return {
+    fission,
+    decay,
+    generated,
+    toCoolant,
+    removed,
+    netFuel: generated - toCoolant,
+  };
+}
 export function step(state: State, c: Controls, dt: number): State {
   let s = { ...state, decay: [...state.decay] };
   const count = Math.max(1, Math.ceil(dt / 0.02));
@@ -41,11 +58,11 @@ export function step(state: State, c: Controls, dt: number): State {
       rodReactivity - (s.fuel - 600) * 0.000012 - (s.coolant - 310) * 0.000018;
     const dn = ((rho - beta) / lifetime) * s.neutrons + lambda * s.precursor;
     const dc = (beta / lifetime) * s.neutrons - lambda * s.precursor;
-    const fuelTransfer =
-      ((s.fuel - s.coolant) / 290) * Math.pow(c.flow / 100, 0.55);
-    const removed =
-      ((s.coolant - 270) / 40) * Math.pow(c.flow / 100, 0.7) * (c.sink / 100);
-    const thermal = 0.95 * s.neutrons + s.decay.reduce((a, b) => a + b, 0);
+    const {
+      toCoolant: fuelTransfer,
+      removed,
+      generated: thermal,
+    } = heatBalance(s, c);
     s = {
       ...s,
       time: s.time + h,
@@ -63,7 +80,8 @@ export function step(state: State, c: Controls, dt: number): State {
       electric: s.electric + ((Math.max(0, removed) - s.electric) / 8) * h,
     };
   }
-  return s;
+  const rates = heatBalance(s, c);
+  return { ...s, thermal: rates.generated, removed: rates.removed };
 }
 export function outsideRange(s: State) {
   return (
@@ -77,6 +95,9 @@ export function outsideRange(s: State) {
 export type Sample = {
   time: number;
   power: number;
+  fission: number;
+  transfer: number;
+  netFuel: number;
   fuel: number;
   coolant: number;
   decay: number;
@@ -86,7 +107,10 @@ export type Sample = {
 };
 export const sample = (s: State, c: Controls = defaults): Sample => ({
   time: s.time,
-  power: s.thermal * 100,
+  power: heatBalance(s, c).generated * 100,
+  fission: heatBalance(s, c).fission * 100,
+  transfer: heatBalance(s, c).toCoolant * 100,
+  netFuel: heatBalance(s, c).netFuel * 100,
   fuel: s.fuel,
   coolant: s.coolant,
   decay: s.decay.reduce((a, b) => a + b, 0) * 100,

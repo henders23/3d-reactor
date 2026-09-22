@@ -43,6 +43,14 @@ The data export includes model time, thermal and decay-heat percentages, fuel an
 
 See [STUDENT-REVIEW.md](STUDENT-REVIEW.md) for the adversarial review, research rationale, implemented changes and proposed student try-out.
 
+## Using the added explanation support
+
+Use the numbered pathway annotations when learners can name components but cannot connect their roles. The steam-generator section separates fluid movement from energy transfer; the neutron pathway distinguishes scattering, capture and fission.
+
+After a quantitative run, compare the before-change, early-response and final-response checkpoints. Ask students to explain a direction before opening the causal explanation. In the circulation activity, use the fuel energy balance to distinguish lower generation from lower transfer to coolant. All power percentages refer to the initial total thermal power.
+
+After a wrong transfer answer, use “Revisit evidence and revise”. Optional hints and the claim/evidence/reasoning scaffold support an improved explanation. The export retains the first draft, latest draft and captured evidence; this is suitable for a discussion of changed reasoning, not automated marking. See [the second review](STUDENT-REVIEW-2.md).
+
 ## Lecturer review before class
 
 - Confirm the chosen PWR emphasis and terminology against the current unit materials.

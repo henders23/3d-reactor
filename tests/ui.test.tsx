@@ -87,7 +87,7 @@ test("complete guided investigation records a prediction, explanation and comple
     name: "Guided investigation",
   });
   for (const name of [
-    "Fuel assemblies",
+    "Steam generator",
     "Turbine & generator",
     "Condenser & cooling",
   ])
@@ -234,6 +234,16 @@ test("guided control changes remain fixed and stop automatically with captured e
   );
   const evidence = screen.getByLabelText("Before and after evidence");
   assert.match(evidence.textContent!, /percentage points/);
+  fireEvent.click(screen.getByRole("button", { name: /Before change/ }));
+  assert.ok(screen.getByText(/Readings at 0.0 model s/));
+  assert.equal(
+    screen
+      .getByRole("button", { name: /Before change/ })
+      .getAttribute("aria-pressed"),
+    "true",
+  );
+  fireEvent.click(screen.getByRole("button", { name: /Early response/ }));
+  assert.ok(screen.getByText(/selected recorded instant/));
   fireEvent.click(
     screen.getByRole("button", { name: "Repeat this experiment" }),
   );
@@ -266,7 +276,7 @@ test("explanation is withheld until an answer and short written responses persis
     name: "Guided investigation",
   });
   for (const name of [
-    "Fuel assemblies",
+    "Steam generator",
     "Turbine & generator",
     "Condenser & cooling",
   ])
@@ -294,4 +304,137 @@ test("explanation is withheld until an answer and short written responses persis
     }),
   );
   assert.ok(screen.getByText(/The fuel heats primary water/));
+});
+
+test("annotation steps select matching components and explain the intact tube wall", () => {
+  mount(true);
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Steam from a separate secondary circuit",
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  const tour = screen.getByRole("region", {
+    name: "Annotated science pathway",
+  });
+  fireEvent.click(
+    within(tour).getByRole("button", { name: /2 · Heat crosses/ }),
+  );
+  assert.equal(
+    screen
+      .getByRole("button", { name: "Inspect steam generator" })
+      .getAttribute("aria-pressed"),
+    "true",
+  );
+  assert.ok(screen.getByText(/No fluid crosses the intact wall/));
+  fireEvent.click(
+    within(tour).getByRole("button", { name: "Next relationship" }),
+  );
+  assert.equal(
+    screen
+      .getByRole("button", { name: "Inspect turbine" })
+      .getAttribute("aria-pressed"),
+    "true",
+  );
+});
+test("misconception feedback supports evidence revision while preserving the first draft", () => {
+  mount(true);
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Steam from a separate secondary circuit",
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  const panel = screen.getByRole("complementary", {
+    name: "Guided investigation",
+  });
+  for (const name of [
+    "Steam generator",
+    "Turbine & generator",
+    "Condenser & cooling",
+  ])
+    fireEvent.click(within(panel).getByRole("button", { name }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Explain my observations" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "I need a hint" }));
+  assert.ok(screen.getByText(/Trace one parcel of primary water/));
+  fireEvent.change(screen.getByLabelText("Your explanation"), {
+    target: { value: "Primary water reaches the turbine." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Test my explanation" }));
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Yes, because all the water follows one loop",
+    }),
+  );
+  fireEvent.click(
+    within(panel).getByRole("button", {
+      name: "Check understanding",
+      exact: true,
+    }),
+  );
+  assert.ok(
+    screen.getByText(/You have joined the primary and secondary water paths/),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Revisit evidence and revise" }),
+  );
+  assert.equal(
+    (screen.getByLabelText("Your explanation") as HTMLTextAreaElement).value,
+    "Primary water reaches the turbine.",
+  );
+  assert.ok(screen.getByRole("region", { name: "Annotated science pathway" }));
+  fireEvent.change(screen.getByLabelText("Your explanation"), {
+    target: {
+      value: "Heat crosses the tube wall; primary water stays in its circuit.",
+    },
+  });
+  fireEvent.click(
+    screen.getByRole("button", { name: "Save revision and try again" }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "No, the steam-generator wall separates the circuits",
+    }),
+  );
+  fireEvent.click(
+    within(panel).getByRole("button", {
+      name: "Check understanding",
+      exact: true,
+    }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Complete investigation" }),
+  );
+  const saved = JSON.parse(localStorage.getItem("core-reactor-learning-v1")!);
+  assert.equal(
+    saved.energy.firstExplanation,
+    "Primary water reaches the turbine.",
+  );
+  assert.match(saved.energy.explanation, /Heat crosses/);
+  assert.match(saved.energy.evidence, /Steam generator/);
+  assert.equal(saved.energy.revised, true);
+  assert.equal(saved.energy.completed, true);
+});
+
+test("neutron diagram selection matches its science annotation", () => {
+  mount(true);
+  fireEvent.click(screen.getByRole("button", { name: /Meet the core/ }));
+  fireEvent.click(screen.getByRole("button", { name: /Slow neutrons so/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  const diagram = screen.getByRole("group", {
+    name: "Three neutron interactions",
+  });
+  fireEvent.click(
+    within(diagram).getByRole("button", { name: /Water · moderation/ }),
+  );
+  assert.ok(screen.getByText(/It also absorbs some neutrons/));
+  fireEvent.click(
+    within(diagram).getByRole("button", { name: /Control rod · capture/ }),
+  );
+  assert.ok(screen.getByText(/absorption in fuel can lead to fission/));
 });
