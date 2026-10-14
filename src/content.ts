@@ -298,7 +298,7 @@ export const lessons: Lesson[] = [
       "It is completely independent of circulation",
     ],
     correct: 0,
-    task: "Use the guided button to reduce circulation to 65%. Compare the captured temperature and thermal-output changes after 20 model seconds.",
+    task: "Predict, then reduce circulation to 65%. The run pauses after 40 model seconds. Compare fuel temperature with heat in and heat out.",
     focus: "pump",
     view: "plant",
     explanation:

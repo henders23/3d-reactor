@@ -183,6 +183,12 @@ export function checkpoints(
     { label: "Final response", sample: samples.at(-1)! },
   ];
 }
+/** The recorded moment fuel temperature peaked, if it rose and then turned back. */
+export function temperaturePeak(samples: Sample[]): Sample | undefined {
+  if (samples.length < 3) return undefined;
+  const peak = samples.reduce((a, b) => (b.fuel > a.fuel ? b : a));
+  return peak !== samples[0] && peak !== samples.at(-1) ? peak : undefined;
+}
 export function describeBalance(s: Sample) {
   if (Math.abs(s.netFuel) < 0.05)
     return "Generation and transfer to coolant are nearly balanced; fuel temperature is changing very little at this instant.";

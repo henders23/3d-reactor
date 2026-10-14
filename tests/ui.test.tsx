@@ -256,6 +256,60 @@ test("guided control changes remain fixed and stop automatically with captured e
     true,
   );
 });
+test("circulation experiment releases its evidence one beat at a time", (t) => {
+  let clock = 0;
+  t.mock.method(performance, "now", () => clock);
+  t.mock.timers.enable({ apis: ["setInterval"] });
+  mount(true);
+  fireEvent.click(screen.getByRole("button", { name: /Move the heat/ }));
+  fireEvent.click(screen.getByRole("button", { name: /It tends to rise/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  assert.equal(
+    screen.queryByRole("region", { name: "Reactor visualisation" }),
+    null,
+  );
+  assert.equal(screen.queryByRole("img", { name: /Fuel temperature/ }), null);
+  assert.equal(screen.queryByRole("button", { name: /Run it/ }), null);
+  fireEvent.click(
+    screen.getByRole("button", { name: "Rise, then stop and turn back" }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /Run it/ }));
+  assert.ok(
+    screen.getByRole("heading", { name: "Watch the fuel temperature." }),
+  );
+  for (let i = 0; i < 140; i++)
+    act(() => {
+      clock += 100;
+      t.mock.timers.tick(100);
+    });
+  assert.ok(
+    screen.getByRole("heading", {
+      name: /It rose to 630 °C, then turned back/,
+    }),
+  );
+  assert.ok(screen.getByText(/You predicted: rise, then stop/));
+  assert.equal(
+    screen.queryByRole("img", { name: /Heat in and heat out/ }),
+    null,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: "Show heat in and heat out" }),
+  );
+  assert.ok(screen.getByRole("img", { name: /Heat in and heat out/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "I’ve looked. Show me." }),
+  );
+  assert.ok(screen.getByRole("heading", { name: "They cross." }));
+  assert.match(
+    screen.getByText(/heat in is/).textContent!,
+    /At 3\d\.\d model seconds/,
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /Explain what happened/ }),
+  );
+  assert.ok(screen.getByLabelText("Your explanation"));
+});
 test("entry starts with orientation and free exploration starts paused", () => {
   render(React.createElement(App));
   assert.ok(screen.getByRole("heading", { name: /If the reactor shuts down/ }));

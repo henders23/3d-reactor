@@ -37,6 +37,7 @@ import TrendChart from "./TrendChart";
 import { ScienceTour, ExplanationHelp } from "./ScienceUI";
 import { misconceptionFeedback, explanationSupport } from "./science";
 import { Welcome, LearningFocus, GuidedExperiment } from "./LearningUI";
+import HeatBalanceBeats from "./HeatBalanceBeats";
 import { learning, guidedControls, advanceGuided } from "./learning";
 import { parts, lessons, sources, type PartID } from "./content";
 import {
@@ -183,6 +184,11 @@ export default function App() {
   }, [mode, started]);
   const lesson = lessons[lessonIndex],
     part = parts.find((p) => p.id === selected)!;
+  // Staged experiments replace the whole workbench with one focused column.
+  const beats =
+    mode === "investigate" && stage === "observe"
+      ? learning[lesson.id].beats
+      : undefined;
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(records));
@@ -922,7 +928,7 @@ export default function App() {
     );
   return (
     <div
-      className={`app mode-${mode} stage-${stage} ${learning[lesson.id].duration > 0 ? "quantitative" : "qualitative"}`}
+      className={`app mode-${mode} stage-${stage} ${learning[lesson.id].duration > 0 ? "quantitative" : "qualitative"}${beats ? " focus-stage" : ""}`}
     >
       <a className="skip-link" href="#main">
         Skip to reactor laboratory
@@ -1167,6 +1173,23 @@ export default function App() {
                 </p>
               )}
             </section>
+          ) : beats ? (
+            <HeatBalanceBeats
+              key={lesson.id}
+              action={learning[lesson.id].action!}
+              duration={learning[lesson.id].duration}
+              ranges={beats}
+              samples={samples}
+              running={running}
+              started={guidedStarted}
+              observed={observed}
+              onRun={runGuided}
+              onToggle={() => setRunning((v) => !v)}
+              onDone={() => {
+                setRunning(false);
+                setStage("explain");
+              }}
+            />
           ) : (
             <>
               {mode === "investigate" && (
