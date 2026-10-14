@@ -268,7 +268,7 @@ export const lessons: Lesson[] = [
       "Electrical power immediately rises",
     ],
     correct: 0,
-    task: "Use the guided button to increase insertion from 50% to 65%. The response pauses after 20 model seconds. Compare power with fuel temperature.",
+    task: "Predict, then insert rods from 50% to 65%. The run pauses after 20 model seconds. Compare power with fuel temperature.",
     focus: "rods",
     view: "core",
     explanation:
@@ -328,7 +328,7 @@ export const lessons: Lesson[] = [
       "Only while the turbine rotates",
     ],
     correct: 1,
-    task: "Reset, then press “Insert all rods”. Leave circulation running. Observe the power and decay-heat traces for at least 30 model seconds.",
+    task: "Predict, then insert all rods with circulation left running. The run pauses after 40 model seconds. Compare fission with decay heat.",
     focus: "rods",
     view: "core",
     explanation:

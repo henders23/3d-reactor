@@ -37,7 +37,8 @@ import TrendChart from "./TrendChart";
 import { ScienceTour, ExplanationHelp } from "./ScienceUI";
 import { misconceptionFeedback, explanationSupport } from "./science";
 import { Welcome, LearningFocus, GuidedExperiment } from "./LearningUI";
-import HeatBalanceBeats from "./HeatBalanceBeats";
+import ExperimentBeats from "./ExperimentBeats";
+import { experimentBeats } from "./beats";
 import { learning, guidedControls, advanceGuided } from "./learning";
 import { parts, lessons, sources, type PartID } from "./content";
 import {
@@ -187,7 +188,7 @@ export default function App() {
   // Staged experiments replace the whole workbench with one focused column.
   const beats =
     mode === "investigate" && stage === "observe"
-      ? learning[lesson.id].beats
+      ? experimentBeats[lesson.id]
       : undefined;
   useEffect(() => {
     try {
@@ -1174,11 +1175,11 @@ export default function App() {
               )}
             </section>
           ) : beats ? (
-            <HeatBalanceBeats
+            <ExperimentBeats
               key={lesson.id}
+              design={beats}
               action={learning[lesson.id].action!}
               duration={learning[lesson.id].duration}
-              ranges={beats}
               samples={samples}
               running={running}
               started={guidedStarted}

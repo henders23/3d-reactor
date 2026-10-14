@@ -20,8 +20,6 @@ export type LearningDesign = {
   transferChoices: string[];
   transferCorrect: number;
   transferFeedback: string;
-  /** Fixed chart ranges for the staged heat-balance experiment. */
-  beats?: { temperature: [number, number]; power: [number, number] };
 };
 export const learning: Record<string, LearningDesign> = {
   energy: {
@@ -124,7 +122,6 @@ export const learning: Record<string, LearningDesign> = {
     action: "Reduce circulation to 65%",
     setting: { flow: 65 },
     metric: "temperature",
-    beats: { temperature: [595, 635], power: [75, 105] },
     starter:
       "With less circulation, the fuel… Even though total thermal power… This is because…",
     transfer:
@@ -150,7 +147,7 @@ export const learning: Record<string, LearningDesign> = {
       ],
     ],
     focus: ["rods", "fuel", "water"],
-    duration: 30,
+    duration: 40,
     action: "Insert all rods",
     setting: { rods: 100 },
     metric: "power",

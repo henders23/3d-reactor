@@ -35,7 +35,15 @@ Avoid equating completing the interface with mastering the physics. The app chec
 
 ## Evidence and feedback
 
-The activity sequence is prediction → observation → explanation → a conceptual check. Guided quantitative activities use one experiment button: the relevant control changes from equilibrium, other settings remain fixed and the response pauses automatically after 20, 30 or 40 model seconds. Before/after readings and intervention markers support comparison. “Move the heat” releases its evidence in stages on a single focused screen: students predict the shape of the 40-second response, watch fuel temperature alone, reveal heat in and heat out, and then see the marked moment where the two cross and the temperature peaks. Students write a brief explanation before answering a new transfer situation. Feedback and the reference explanation appear only after an attempt. Written responses autosave without an arbitrary length requirement. Confidence choices support reflection, not grading.
+The activity sequence is prediction → observation → explanation → a conceptual check. Guided quantitative activities use one experiment button: the relevant control changes from equilibrium, other settings remain fixed and the response pauses automatically after 20 or 40 model seconds. Each run releases its evidence in stages on a single focused screen: students predict the shape of the response, watch one line, reveal the lines that explain it, and then see one marked moment.
+
+| Activity            | First line       | Revealed               | Marked moment                                             |
+| ------------------- | ---------------- | ---------------------- | --------------------------------------------------------- |
+| Change the reaction | Thermal power    | Fuel temperature       | About 2 s in: power has fallen fast, temperature has not  |
+| Move the heat       | Fuel temperature | Heat in and heat out   | The temperature peak, where heat in and heat out cross    |
+| After shutdown      | Heat generated   | Fission and decay heat | Decay heat overtakes fission, while the fuel is still hot |
+
+Before/after readings and checkpoints remain beside the explanation step. Students write a brief explanation before answering a new transfer situation. Feedback and the reference explanation appear only after an attempt. Written responses autosave without an arbitrary length requirement. Confidence choices support reflection, not grading.
 
 The cumulative check starts with an optional written recall attempt before answer choices appear. Suggest returning the next day to explain a relationship from memory. In free exploration, students can change all controls, compare saved runs and export data. Guided lesson entry starts a fresh baseline; comparison runs belong to free exploration.
 

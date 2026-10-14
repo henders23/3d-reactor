@@ -3617,3 +3617,8 @@ textarea:focus-visible {
     padding: 14px 10px 8px;
   }
 }
+.beats-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
