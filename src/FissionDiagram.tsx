@@ -26,12 +26,12 @@ export function NeutronFigure({
           markerHeight="4"
           orient="auto"
         >
-          <path d="M0 0L10 5L0 10Z" fill="#825b27" />
+          <path d="M0 0L10 5L0 10Z" fill="#ffbc59" />
         </marker>
       </defs>
       <g
         fill="none"
-        stroke="#825b27"
+        stroke="#ffbc59"
         strokeWidth="3"
         markerEnd="url(#neutron-arrow)"
       >
@@ -44,13 +44,13 @@ export function NeutronFigure({
         )}
         {interaction === "water" && <path d="M203 116L345 157" />}
       </g>
-      <circle cx="75" cy="95" r="7" fill="#825b27" />
+      <circle cx="75" cy="95" r="7" fill="#ffbc59" />
       {interaction === "fuel" ? (
         <>
-          <circle cx="200" cy="73" r="25" fill="#c6a06a" />
-          <circle cx="200" cy="124" r="19" fill="#91a283" />
-          <circle cx="320" cy="59" r="7" fill="#825b27" />
-          <circle cx="320" cy="138" r="7" fill="#825b27" />
+          <circle cx="200" cy="73" r="25" fill="#ffb23e" />
+          <circle cx="200" cy="124" r="19" fill="#98b1ac" />
+          <circle cx="320" cy="59" r="7" fill="#ffbc59" />
+          <circle cx="320" cy="138" r="7" fill="#ffbc59" />
           <text x="202" y="182" textAnchor="middle">
             Fission fragments
           </text>
@@ -64,11 +64,11 @@ export function NeutronFigure({
             cx="200"
             cy="89"
             r="30"
-            fill="#b1d2cf"
-            stroke="#266771"
+            fill="#243f3c"
+            stroke="#5bd1f2"
             strokeWidth="2"
           />
-          <circle cx="302" cy="145" r="7" fill="#825b27" />
+          <circle cx="302" cy="145" r="7" fill="#ffbc59" />
           <text x="190" y="40" textAnchor="middle">
             Light nucleus
           </text>
@@ -78,7 +78,7 @@ export function NeutronFigure({
         </>
       ) : (
         <>
-          <rect x="167" y="55" width="64" height="95" rx="10" fill="#4a6256" />
+          <rect x="167" y="55" width="64" height="95" rx="10" fill="#c4d3d0" />
           <path
             d="M182 80L216 114 M182 114L216 80"
             stroke="white"

@@ -50,6 +50,7 @@ export function GuidedExperiment({
   observed,
   onRun,
   onToggle,
+  highlight,
 }: {
   id: string;
   state: State;
@@ -59,6 +60,7 @@ export function GuidedExperiment({
   observed: boolean;
   onRun: () => void;
   onToggle: () => void;
+  highlight?: boolean;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(2);
   useEffect(() => {
@@ -90,7 +92,7 @@ export function GuidedExperiment({
           </p>
         </div>
         <button
-          className="primary-button"
+          className={`primary-button${highlight ? " is-next" : ""}`}
           onClick={onRun}
           disabled={started && !observed}
         >

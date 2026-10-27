@@ -47,6 +47,7 @@ import {
   type CourseProps,
 } from "./CourseKit";
 import { deepDiveScreens } from "./DeepDives";
+import { IntroScreen } from "./Intro";
 export type { CourseProps } from "./CourseKit";
 
 /* ---------- Course map ---------- */
@@ -216,6 +217,9 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
             </span>
             <span>{cleared.length} of 5 cleared</span>
           </div>
+          <button className="c-overview-link" onClick={() => go("intro")}>
+            Course overview
+          </button>
           <a className="c-notebook-link" href="#notebook">
             <BookOpen size={18} aria-hidden="true" />
             Notebook
@@ -406,49 +410,6 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
             );
           })}
         </ol>
-      </section>
-
-      <section
-        className="c-section c-outcomes"
-        aria-labelledby="outcomes-title"
-      >
-        <h2 id="outcomes-title" className="c-h2">
-          Learning outcomes
-        </h2>
-        <ol>
-          <li>
-            Trace energy through separate water circuits and calculate
-            thermal-to-electrical efficiency.
-          </li>
-          <li>
-            Distinguish fission, moderation and capture; interpret a neutron
-            multiplication factor.
-          </li>
-          <li>
-            Use an energy balance to explain why temperature lags behind a power
-            change.
-          </li>
-          <li>
-            Relate coolant flow to heat transport, stating what is held fixed.
-          </li>
-          <li>
-            Distinguish decay heat from stored thermal energy and apply a simple
-            half-life model.
-          </li>
-        </ol>
-        <details>
-          <summary>What should I know first?</summary>
-          <p>
-            Bring basic ratios, percentages and algebra. A derivative here means
-            “rate of change”; each equation has a worked example. No prior
-            reactor engineering is needed.
-          </p>
-          <p>
-            Energy is an amount (joules). Power is energy per second (watts).
-            Temperature describes thermal state (°C or K), not the amount of
-            heat stored. 1 MW = 1 million J/s.
-          </p>
-        </details>
       </section>
 
       <section className="c-section" aria-labelledby="c-q-title">
@@ -1910,6 +1871,7 @@ function ChainScreen({ go, progress, setProgress }: CourseProps) {
 }
 
 const screens: Record<CourseScreen, (p: CourseProps) => ReactNode> = {
+  intro: IntroScreen,
   map: MapScreen,
   puzzle: PuzzleScreen,
   equation: EquationScreen,

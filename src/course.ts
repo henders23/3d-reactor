@@ -3,6 +3,7 @@ import { guidedControls } from "./learning";
 
 /** Screens of the curiosity-led course that sits in front of the 3D lab. */
 export type CourseScreen =
+  | "intro"
   | "map"
   | "energy"
   | "chain"
@@ -843,5 +844,41 @@ export const shutdownChallenge: NumericPart[] = [
       [400, 1, false, "Count again: 2 → 1 → 0.5 → 0.25 is three halvings."],
     ],
     fallback: "Not yet. How many times must 2 MW halve to reach 0.25 MW?",
+  },
+];
+
+/* ---------- Course intro ---------- */
+export const outcomes: { id: string; text: string }[] = [
+  {
+    id: "energy",
+    text: "Trace energy through separate water circuits and calculate thermal-to-electrical efficiency.",
+  },
+  {
+    id: "neutrons",
+    text: "Distinguish fission, moderation and capture; interpret a neutron multiplication factor.",
+  },
+  {
+    id: "control",
+    text: "Use an energy balance to explain why temperature lags behind a power change.",
+  },
+  {
+    id: "cooling",
+    text: "Relate coolant flow to heat transport, stating what is held fixed.",
+  },
+  {
+    id: "shutdown",
+    text: "Distinguish decay heat from stored thermal energy and apply a simple half-life model.",
+  },
+];
+export const courseSteps = [
+  {
+    name: "Puzzle",
+    text: "Start from something surprising the reactor does.",
+  },
+  { name: "Predict", text: "Commit to an answer before you see the data." },
+  { name: "Equation", text: "Meet the law that explains it, term by term." },
+  {
+    name: "Evidence",
+    text: "Test your prediction against the lab model, then apply it somewhere new.",
   },
 ];

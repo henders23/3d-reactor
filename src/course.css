@@ -1568,6 +1568,109 @@
   color: var(--c-muted);
 }
 
+/* ---------- Course intro ---------- */
+.c-overview-link {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--c-line2);
+  background: none;
+  color: var(--c-text);
+  font-size: 14px;
+  cursor: pointer;
+}
+.c-overview-link:hover {
+  background: var(--c-surface2);
+}
+.c-steps {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: none;
+}
+.c-steps li {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 18px;
+  background: var(--c-surface);
+  border: 1px solid var(--c-line);
+}
+.c-steps li:not(:last-child)::after {
+  content: "→";
+  position: absolute;
+  right: -11px;
+  top: 28px;
+  font-size: 16px;
+  color: var(--c-amber);
+}
+.c-steps strong {
+  font-family: var(--c-display);
+  font-size: 17px;
+  font-weight: 600;
+}
+.c-steps p {
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--c-text2);
+}
+.c-steps-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--c-amber-bg);
+  color: var(--c-amber);
+}
+.c-outcomes li {
+  justify-content: space-between;
+}
+.c-outcomes li::before {
+  content: none;
+}
+.c-outcome-tag {
+  font-family: var(--c-display);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--c-blue);
+}
+.c-outcomes .c-eq--card {
+  font-size: 22px;
+  padding-top: 10px;
+  border-top: 1px solid var(--c-line);
+}
+.c-know {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+.c-know > div {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 18px;
+  border: 1px solid var(--c-line);
+  color: var(--c-blue);
+}
+.c-know strong {
+  font-family: var(--c-display);
+  font-size: 16px;
+  color: var(--c-text);
+}
+.c-know p {
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--c-text2);
+}
+
 /* ---------- Deep dives 01, 04, 05 ---------- */
 .c-predict {
   display: flex;

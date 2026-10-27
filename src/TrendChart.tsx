@@ -104,7 +104,7 @@ export default function TrendChart({
             />
           </clipPath>
         </defs>
-        <text x={left} y="14" fontSize="12" fill="#45594d">
+        <text x={left} y="14" fontSize="12" fill="#c6d5d1">
           {metric === "power"
             ? "% of initial total thermal power"
             : "Temperature (°C)"}
@@ -116,14 +116,14 @@ export default function TrendChart({
               x2={right}
               y1={y(min + f * (max - min))}
               y2={y(min + f * (max - min))}
-              stroke="#c6d0c4"
+              stroke="#213a37"
               strokeDasharray="3 4"
             />
             <text
               x={left - 8}
               y={y(min + f * (max - min)) + 4}
               textAnchor="end"
-              fill="#45594d"
+              fill="#c6d5d1"
               fontSize="12"
             >
               {Math.round(min + f * (max - min))}
@@ -134,7 +134,7 @@ export default function TrendChart({
           {base.length > 1 && (
             <path
               d={line(base, keys[0])}
-              stroke="#6c766f"
+              stroke="#afc2bf"
               strokeWidth="2"
               strokeDasharray="2 5"
               fill="none"
@@ -146,7 +146,7 @@ export default function TrendChart({
               x2={x(event.time) + 1}
               y1={top}
               y2={bottom}
-              stroke="#5d6754"
+              stroke="#c1d1cd"
               strokeWidth="2"
               strokeDasharray="3 3"
             />
@@ -160,7 +160,7 @@ export default function TrendChart({
                 x2={x(inspection.time)}
                 y1={top}
                 y2={bottom}
-                stroke="#304f36"
+                stroke="#ccd9d6"
                 strokeWidth="2"
               />
               {keys.map((k) => (
@@ -169,8 +169,8 @@ export default function TrendChart({
                   cx={x(inspection.time)}
                   cy={y(inspection[k])}
                   r="5"
-                  fill="#fff"
-                  stroke="#304f36"
+                  fill="#0a1211"
+                  stroke="#ccd9d6"
                   strokeWidth="2"
                 />
               ))}
@@ -181,7 +181,7 @@ export default function TrendChart({
               key={k}
               d={line(data, k)}
               fill="none"
-              stroke={i ? "#287575" : "#ab5b1f"}
+              stroke={i ? "#58d0f1" : "#ffba52"}
               strokeWidth="3"
               strokeDasharray={i ? "8 4" : undefined}
               strokeLinejoin="round"
@@ -194,7 +194,7 @@ export default function TrendChart({
             x={x(start + f * (end - start))}
             y={bottom + 18}
             textAnchor={f === 0 ? "start" : f === 1 ? "end" : "middle"}
-            fill="#45594d"
+            fill="#c6d5d1"
             fontSize="12"
           >
             {(start + f * (end - start)).toFixed(0)}
@@ -204,7 +204,7 @@ export default function TrendChart({
           x={(left + right) / 2}
           y="182"
           textAnchor="middle"
-          fill="#45594d"
+          fill="#c6d5d1"
           fontSize="12"
         >
           Elapsed model time (seconds)

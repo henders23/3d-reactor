@@ -95,7 +95,7 @@ export function BoundaryDiagram() {
             markerHeight="5"
             orient="auto"
           >
-            <path d="M0 0L10 5L0 10Z" fill="#92501f" />
+            <path d="M0 0L10 5L0 10Z" fill="#ffbc57" />
           </marker>
           <marker
             id="wall-water"
@@ -106,13 +106,13 @@ export function BoundaryDiagram() {
             markerHeight="4"
             orient="auto"
           >
-            <path d="M0 0L10 5L0 10Z" fill="#266771" />
+            <path d="M0 0L10 5L0 10Z" fill="#5bd1f2" />
           </marker>
         </defs>
-        <rect x="0" y="40" width="182" height="180" rx="10" fill="#f7e9d7" />
-        <rect x="182" y="40" width="36" height="180" fill="#7c8981" />
-        <rect x="218" y="40" width="182" height="180" rx="10" fill="#dcece8" />
-        <g fontSize="18" textAnchor="middle" fill="#263d31">
+        <rect x="0" y="40" width="182" height="180" rx="10" fill="#312514" />
+        <rect x="182" y="40" width="36" height="180" fill="#a3b9b5" />
+        <rect x="218" y="40" width="182" height="180" rx="10" fill="#112f34" />
+        <g fontSize="18" textAnchor="middle" fill="#d1ddda">
           <text x="85" y="24">
             Primary liquid
           </text>
@@ -131,7 +131,7 @@ export function BoundaryDiagram() {
         </g>
         <g
           fill="none"
-          stroke="#266771"
+          stroke="#5bd1f2"
           strokeWidth="3"
           markerEnd="url(#wall-water)"
         >
@@ -140,13 +140,13 @@ export function BoundaryDiagram() {
         </g>
         <path
           d="M100 130H300"
-          stroke="#92501f"
+          stroke="#ffbc57"
           strokeWidth="4"
           strokeDasharray="7 4"
           markerEnd="url(#wall-heat)"
         />
-        <rect x="123" y="148" width="154" height="30" rx="5" fill="#fffef9" />
-        <text x="200" y="169" textAnchor="middle" fontSize="17" fill="#703e1c">
+        <rect x="123" y="148" width="154" height="30" rx="5" fill="#2c2212" />
+        <text x="200" y="169" textAnchor="middle" fontSize="17" fill="#ffbf5e">
           Heat through wall
         </text>
       </svg>

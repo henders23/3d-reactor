@@ -326,7 +326,7 @@ function Slider({
 }
 
 /* ---------- Investigation 01 · Follow the energy ---------- */
-function PlantVisual() {
+export function PlantVisual() {
   return (
     <svg
       viewBox="0 0 560 380"

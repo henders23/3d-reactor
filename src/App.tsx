@@ -8,11 +8,15 @@ import {
 import {
   Atom,
   ArrowDown,
+  ArrowLeft,
+  ClipboardCheck,
+  FlaskConical,
+  MousePointerClick,
+  PencilLine,
   ArrowRight,
   BookOpen,
   Check,
   CheckCircle2,
-  ChevronRight,
   Download,
   Expand,
   Eye,
@@ -20,8 +24,6 @@ import {
   Home,
   Info,
   Layers,
-  Maximize2,
-  Menu,
   Minus,
   Pause,
   Play,
@@ -40,6 +42,7 @@ import TrendChart from "./TrendChart";
 import { ScienceTour, ExplanationHelp } from "./ScienceUI";
 import { misconceptionFeedback, explanationSupport } from "./science";
 import { LearningFocus, GuidedExperiment } from "./LearningUI";
+import { NextStep, PartChips, StartGuide } from "./LabGuide";
 import Course from "./Course";
 import {
   deepDiveCleared,
@@ -135,7 +138,18 @@ function Modal({
 }
 export default function App() {
   const [started, setStarted] = useState(false);
-  const [courseScreen, setCourseScreen] = useState<CourseScreen>("map");
+  // New students see the course intro first; anyone with progress goes straight to the map.
+  const [courseScreen, setCourseScreen] = useState<CourseScreen>(() => {
+    const c = readCourse();
+    const started =
+      Object.values(readRecords()).some((r) => r.completed) ||
+      c.sealed ||
+      c.chainSolved ||
+      c.controlSolved ||
+      Object.keys(c.solved).length > 0 ||
+      Object.keys(c.predictions).length > 0;
+    return started ? "map" : "intro";
+  });
   const [course, setCourse] = useState<CourseProgress>(readCourse);
   const updateCourse = useCallback(
     (update: (p: CourseProgress) => CourseProgress) => setCourse(update),
@@ -288,7 +302,9 @@ export default function App() {
         .getElementById(
           stage === "explain" ? "equation-title" : "guided-stage-title",
         )
-        ?.focus();
+        ?.focus({ preventScroll: true });
+    if (started && mode === "investigate")
+      document.documentElement.scrollTop = 0;
   }, [stage, lesson.id, mode, started]);
   const reset = useCallback((play = false) => {
     const s = initialState();
@@ -303,8 +319,10 @@ export default function App() {
     setGraphEvent(undefined);
     setObserved(false);
   }, []);
+  const [pickedPart, setPickedPart] = useState(false);
   const choose = useCallback((id: PartID) => {
     setSelected(id);
+    setPickedPart(true);
     setVisited((v) => (v.includes(id) ? v : [...v, id]));
   }, []);
   function switchView(v: View) {
@@ -438,6 +456,201 @@ export default function App() {
       : pressure <= 5
         ? 180 + ((pressure - 1) / 4) * 84
         : 264 + ((pressure - 5) / 10.5) * 81;
+  // The single next action in an investigation, and which control to highlight for it.
+  const targets: PartID[] =
+    lesson.id === "energy"
+      ? ["fuel", "steam", "turbine", "condenser"]
+      : lesson.id === "neutrons"
+        ? ["fuel", "water", "rods"]
+        : [lesson.focus];
+  const pending = targets.filter((id) => !visited.includes(id));
+  const guidedAction = learning[lesson.id].action;
+  const transferRight = answer === learning[lesson.id].transferCorrect;
+  const [next, nextStep]: [
+    string,
+    { step: number; icon: ReactNode; text: ReactNode; detail?: ReactNode },
+  ] =
+    stage === "predict"
+      ? predictionSent
+        ? [
+            "begin",
+            {
+              step: 1,
+              icon: <FlaskConical size={22} />,
+              text: "Press Begin experiment.",
+            },
+          ]
+        : prediction === null
+          ? [
+              "choice",
+              {
+                step: 1,
+                icon: <MousePointerClick size={22} />,
+                text: "Pick the answer you think is right.",
+                detail:
+                  "Then press Record prediction. A wrong guess is fine: you’ll test it.",
+              },
+            ]
+          : [
+              "record",
+              {
+                step: 1,
+                icon: <Check size={22} />,
+                text: "Press Record prediction.",
+              },
+            ]
+      : stage === "observe"
+        ? guidedAction
+          ? !guidedStarted
+            ? [
+                "run",
+                {
+                  step: 2,
+                  icon: <Play size={22} />,
+                  text: `Press “${guidedAction}” and watch the graph.`,
+                  detail:
+                    "Everything else stays fixed. The run stops by itself.",
+                },
+              ]
+            : !observed
+              ? [
+                  "watch",
+                  {
+                    step: 2,
+                    icon: <Eye size={22} />,
+                    text: "Watch the graph. The run stops by itself.",
+                    detail: learning[lesson.id].watch,
+                  },
+                ]
+              : [
+                  "explain",
+                  {
+                    step: 2,
+                    icon: <ArrowRight size={22} />,
+                    text: "Run complete. Press Explain my observations.",
+                  },
+                ]
+          : pending.length
+            ? [
+                "parts",
+                {
+                  step: 2,
+                  icon: <MousePointerClick size={22} />,
+                  text: `Click each highlighted part: ${targets.length - pending.length} of ${targets.length} found.`,
+                  detail:
+                    "Use the checklist, or click the glowing labels on the model.",
+                },
+              ]
+            : !observed
+              ? [
+                  "fission",
+                  {
+                    step: 2,
+                    icon: <MousePointerClick size={22} />,
+                    text: "Now open the Fission view above the model.",
+                    detail: "Watch what happens to one neutron at a time.",
+                  },
+                ]
+              : [
+                  "explain",
+                  {
+                    step: 2,
+                    icon: <ArrowRight size={22} />,
+                    text: "All found. Press Explain my observations.",
+                  },
+                ]
+        : stage === "explain"
+          ? reflection.trim()
+            ? [
+                "test",
+                {
+                  step: 3,
+                  icon: <ArrowRight size={22} />,
+                  text: "Press Test my explanation.",
+                },
+              ]
+            : [
+                "reflection",
+                {
+                  step: 3,
+                  icon: <PencilLine size={22} />,
+                  text: "Use the equation, then write your explanation.",
+                  detail: "One or two sentences: what changed, and why.",
+                },
+              ]
+          : stage === "check"
+            ? answer === null
+              ? [
+                  "answer",
+                  {
+                    step: 4,
+                    icon: <MousePointerClick size={22} />,
+                    text: "Answer the new question.",
+                  },
+                ]
+              : !answerSent
+                ? [
+                    "check",
+                    {
+                      step: 4,
+                      icon: <ClipboardCheck size={22} />,
+                      text: "Press Check understanding.",
+                    },
+                  ]
+                : transferRight
+                  ? [
+                      "complete",
+                      {
+                        step: 4,
+                        icon: <CheckCircle2 size={22} />,
+                        text: "Correct. Press Complete investigation.",
+                      },
+                    ]
+                  : [
+                      "answer",
+                      {
+                        step: 4,
+                        icon: <RotateCcw size={22} />,
+                        text: "Not quite. Read the feedback, then try another answer.",
+                      },
+                    ]
+            : [
+                "next",
+                {
+                  step: 4,
+                  icon: <CheckCircle2 size={22} />,
+                  text: "All four steps done.",
+                  detail: "Press Next investigation when you’re ready.",
+                },
+              ];
+  const nextClass = (key: string) => (next === key ? " is-next" : "");
+  const exploreSteps = [
+    {
+      icon: <MousePointerClick size={20} />,
+      title: "Click a part",
+      hint: "Use the row above the model, or click a label on it.",
+      done: pickedPart,
+      target: "part-chips",
+    },
+    {
+      icon: <SlidersHorizontal size={20} />,
+      title: "Change one setting",
+      hint: "Drag a slider under the model.",
+      done: (Object.keys(defaults) as (keyof Controls)[]).some(
+        (k) => controls[k] !== defaults[k],
+      ),
+      target: "experiment-sliders",
+    },
+    {
+      icon: <Play size={20} />,
+      title: "Press Run",
+      hint: "Then watch the graph respond.",
+      done: state.time > 0,
+      target: "run-button",
+    },
+  ];
+  const exploreNext =
+    mode === "explore" ? exploreSteps.findIndex((s) => !s.done) : -1;
   const inspectorPanel = (
     <aside
       className="inspector"
@@ -481,7 +694,7 @@ export default function App() {
               <>
                 <h3>First, make a prediction.</h3>
                 <p>{lesson.question}</p>
-                <div className="choices">
+                <div className={`choices${nextClass("choice")}`}>
                   {lesson.choices.map((c, i) => (
                     <button
                       key={c}
@@ -510,7 +723,7 @@ export default function App() {
                   </select>
                 </label>
                 <button
-                  className="primary-button wide"
+                  className={`primary-button wide${nextClass("record")}`}
                   disabled={prediction === null}
                   onClick={() => {
                     setPredictionSent(true);
@@ -534,7 +747,7 @@ export default function App() {
                       model.
                     </p>
                     <button
-                      className="primary-button wide"
+                      className={`primary-button wide${nextClass("begin")}`}
                       onClick={beginExperiment}
                     >
                       Begin experiment <ArrowRight size={15} />
@@ -550,16 +763,7 @@ export default function App() {
                     ? "Change one thing. Watch closely."
                     : "Follow the pathway."}
                 </h3>
-                <div className="observation-tip">
-                  <Eye size={19} />
-                  <p>
-                    {observed
-                      ? "You have gathered the required observations. Pause and explain what you noticed."
-                      : lesson.id === "energy" || lesson.id === "neutrons"
-                        ? "Visit the named components using the list below or by clicking the model."
-                        : "Use the single experiment button below. Other settings stay fixed, and the run pauses automatically."}
-                  </p>
-                </div>
+
                 <div className="mini-parts">
                   {(lesson.id === "energy"
                     ? ["fuel", "steam", "turbine", "condenser"]
@@ -569,6 +773,11 @@ export default function App() {
                   ).map((id) => (
                     <button
                       key={id}
+                      className={
+                        next === "parts" && !visited.includes(id as PartID)
+                          ? "is-next"
+                          : ""
+                      }
                       aria-pressed={selected === id}
                       onClick={() => choose(id as PartID)}
                     >
@@ -588,7 +797,7 @@ export default function App() {
                   </p>
                 )}
                 <button
-                  className="primary-button wide"
+                  className={`primary-button wide${nextClass("explain")}`}
                   disabled={!observed}
                   onClick={() => {
                     setRunning(false);
@@ -597,6 +806,15 @@ export default function App() {
                 >
                   Explain my observations <ArrowRight size={15} />
                 </button>
+                {!observed && (
+                  <small className="disabled-reason">
+                    {guidedAction
+                      ? "Unlocks when the experiment run finishes."
+                      : pending.length
+                        ? `Unlocks when you’ve found ${pending.length} more ${pending.length === 1 ? "part" : "parts"}.`
+                        : "Unlocks when you’ve opened the Fission view."}
+                  </small>
+                )}
                 <button
                   className="text-button"
                   onClick={() => {
@@ -636,6 +854,7 @@ export default function App() {
                 </label>
                 <textarea
                   id="reflection"
+                  className={nextClass("reflection").trim()}
                   rows={4}
                   value={reflection}
                   onChange={(e) => {
@@ -659,7 +878,7 @@ export default function App() {
                   answer.
                 </small>
                 <button
-                  className="primary-button wide"
+                  className={`primary-button wide${nextClass("test")}`}
                   disabled={!reflection.trim()}
                   onClick={() => {
                     setRecords((r) => ({
@@ -707,7 +926,7 @@ export default function App() {
                   explanation.
                 </p>
                 <h3>{learning[lesson.id].transfer}</h3>
-                <div className="choices">
+                <div className={`choices${nextClass("answer")}`}>
                   {learning[lesson.id].transferChoices.map((c, i) => (
                     <button
                       key={c}
@@ -734,7 +953,7 @@ export default function App() {
                   </select>
                 </label>
                 <button
-                  className="primary-button wide"
+                  className={`primary-button wide${nextClass("check")}`}
                   disabled={answer === null}
                   onClick={() => setAnswerSent(true)}
                 >
@@ -790,7 +1009,7 @@ export default function App() {
                     </button>
                     {answer === learning[lesson.id].transferCorrect ? (
                       <button
-                        className="primary-button wide"
+                        className={`primary-button wide${nextClass("complete")}`}
                         onClick={completeLesson}
                       >
                         Complete investigation <Check size={15} />
@@ -824,7 +1043,7 @@ export default function App() {
                 </p>
                 {lessonIndex < 4 ? (
                   <button
-                    className="primary-button wide"
+                    className={`primary-button wide${nextClass("next")}`}
                     onClick={() => startLesson(lessonIndex + 1)}
                   >
                     Next investigation <ArrowRight size={15} />
@@ -848,11 +1067,6 @@ export default function App() {
       ) : (
         <>
           <div className="inspector-top">
-            <div className="part-category">
-              <span className="part-badge">
-                {String(parts.indexOf(part) + 1).padStart(2, "0")}
-              </span>
-            </div>
             <div className="component-illustration">
               <Atom size={64} strokeWidth={0.8} />
               <span style={{ background: part.color }} />
@@ -1005,6 +1219,16 @@ export default function App() {
         </nav>
         <div className="header-meta">
           <button
+            className="course-link"
+            onClick={() => {
+              setRunning(false);
+              setStarted(false);
+              setCourseScreen("map");
+            }}
+          >
+            <ArrowLeft size={16} /> Course map
+          </button>
+          <button
             className="icon-button"
             aria-label="How to use the laboratory"
             onClick={() => setModal("help")}
@@ -1014,106 +1238,6 @@ export default function App() {
         </div>
       </header>
       <div className="workspace">
-        <aside className="sidebar">
-          <div className="sidebar-rail" aria-hidden="true">
-            <Menu size={18} />
-            <span>Virtual lab</span>
-          </div>
-          <div className="sidebar-top">
-            <h2>Inside a reactor.</h2>
-            <p>
-              Explore the parts.
-              <br />
-              Discover the connections.
-            </p>
-          </div>
-          {mode === "investigate" ? (
-            <>
-              <div className="section-label">
-                Investigations <span>{count}/5</span>
-              </div>
-              <div className="lesson-nav">
-                {lessons.map((l, i) => (
-                  <button
-                    key={l.id}
-                    className={i === lessonIndex ? "selected" : ""}
-                    onClick={() => startLesson(i)}
-                  >
-                    <span className="lesson-number">
-                      {records[l.id]?.completed ? (
-                        <Check size={14} />
-                      ) : (
-                        String(i + 1).padStart(2, "0")
-                      )}
-                    </span>
-                    <span>
-                      <strong>{l.name}</strong>
-                      <small>{l.minutes}</small>
-                    </span>
-                    <ChevronRight size={14} />
-                  </button>
-                ))}
-              </div>
-              <div className="progress-track">
-                <span style={{ width: `${(count / 5) * 100}%` }} />
-              </div>
-              <p className="sidebar-note">
-                {storageFailed
-                  ? "Progress cannot be saved in this browser. Export your summary."
-                  : "Progress is saved on this device."}
-              </p>
-              <button
-                className="text-button summary-export"
-                onClick={exportLearning}
-              >
-                <Download size={14} />
-                Export learning summary
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="section-label">
-                Components <span>10</span>
-              </div>
-              <nav className="component-nav" aria-label="Reactor components">
-                {parts.map((p, i) => (
-                  <button
-                    key={p.id}
-                    className={selected === p.id ? "selected" : ""}
-                    onClick={() => choose(p.id)}
-                  >
-                    <span className="part-index">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span>{p.name}</span>
-                    <span
-                      className="part-dot"
-                      style={{ background: p.color }}
-                    />
-                  </button>
-                ))}
-              </nav>
-            </>
-          )}
-          <div className="sidebar-bottom">
-            <div className="reactor-tag">
-              <span className="dot teal" />
-              PRESSURISED-WATER REACTOR
-            </div>
-            <button className="text-button" onClick={() => setModal("science")}>
-              <BookOpen size={14} />
-              The science & sources <ArrowRight size={14} />
-            </button>
-            <label className="motion-toggle">
-              <input
-                type="checkbox"
-                checked={reduced}
-                onChange={(e) => setReduced(e.target.checked)}
-              />
-              Reduce visual motion
-            </label>
-          </div>
-        </aside>
         <main id="main" className="main-content" tabIndex={-1}>
           {mode === "check" ? (
             <section className="quiz">
@@ -1209,6 +1333,26 @@ export default function App() {
             <>
               {mode === "investigate" && (
                 <>
+                  <nav className="lesson-strip" aria-label="Investigations">
+                    {lessons.map((l, i) => (
+                      <button
+                        key={l.id}
+                        className={i === lessonIndex ? "selected" : ""}
+                        aria-current={i === lessonIndex ? "true" : undefined}
+                        onClick={() => startLesson(i)}
+                      >
+                        <span className="lesson-number">
+                          {records[l.id]?.completed ? (
+                            <Check size={13} aria-label="completed" />
+                          ) : (
+                            String(i + 1).padStart(2, "0")
+                          )}
+                        </span>
+                        {l.name}
+                      </button>
+                    ))}
+                  </nav>
+                  <NextStep {...nextStep} />
                   {stage !== "check" && stage !== "complete" && (
                     <LearningFocus
                       id={lesson.id}
@@ -1218,27 +1362,27 @@ export default function App() {
                   {stage !== "explain" && inspectorPanel}
                 </>
               )}
-              <section className="lab-intro">
-                <div>
-                  <h1>
-                    {mode === "investigate"
-                      ? lesson.name
-                      : "Small changes. Visible consequences."}
-                  </h1>
-                  <p>
-                    {mode === "investigate"
-                      ? lesson.short
-                      : "Look inside a PWR and discover how its systems work together."}
-                  </p>
-                </div>
-                <button
-                  className="intro-help"
-                  onClick={() => setModal("help")}
-                  aria-label="View navigation help"
-                >
-                  <Maximize2 size={18} />
-                </button>
-              </section>
+              {mode === "explore" && (
+                <>
+                  <section className="lab-intro">
+                    <div>
+                      <h1>Explore the reactor</h1>
+                      <p>
+                        Click any part to see what it does. Then change a
+                        setting and run the model.
+                      </p>
+                    </div>
+                    <button
+                      className="intro-help"
+                      onClick={() => setModal("help")}
+                      aria-label="View navigation help"
+                    >
+                      <Info size={18} />
+                    </button>
+                  </section>
+                  <StartGuide steps={exploreSteps} />
+                </>
+              )}
               <div
                 className="lab-workbench"
                 hidden={
@@ -1246,42 +1390,6 @@ export default function App() {
                   ["predict", "check", "complete"].includes(stage)
                 }
               >
-                {mode !== "investigate" && (
-                  <div className="metrics" aria-label="Current model readings">
-                    <div>
-                      <span>TOTAL THERMAL POWER</span>
-                      <strong>
-                        {(state.thermal * 100).toFixed(1)}
-                        <small>%</small>
-                      </strong>
-                      <small>fission + decay heat; initial = 100%</small>
-                    </div>
-                    <div>
-                      <span>FUEL TEMPERATURE</span>
-                      <strong>
-                        {state.fuel.toFixed(0)}
-                        <small>°C</small>
-                      </strong>
-                      <small>lumped fuel temperature</small>
-                    </div>
-                    <div>
-                      <span>PRIMARY COOLANT</span>
-                      <strong>
-                        {state.coolant.toFixed(0)}
-                        <small>°C</small>
-                      </strong>
-                      <small>representative average</small>
-                    </div>
-                    <div>
-                      <span>ELECTRICAL OUTPUT</span>
-                      <strong>
-                        {(state.electric * 100).toFixed(0)}
-                        <small>%</small>
-                      </strong>
-                      <small>relative output index</small>
-                    </div>
-                  </div>
-                )}
                 {mode === "investigate" && stage === "explain" && (
                   <>
                     <EquationLesson
@@ -1313,12 +1421,19 @@ export default function App() {
                   className="scene-card"
                   aria-label="Reactor visualisation"
                 >
+                  {mode === "explore" && (
+                    <PartChips
+                      selected={selected}
+                      onSelect={choose}
+                      pulse={exploreNext === 0}
+                    />
+                  )}
                   <div className="scene-toolbar">
                     <div className="segmented" aria-label="Scale of model">
                       {(["plant", "core", "fission"] as View[]).map((v, i) => (
                         <button
                           key={v}
-                          className={view === v && !flat ? "active" : ""}
+                          className={`${view === v && !flat ? "active" : ""}${v === "fission" && mode === "investigate" ? nextClass("fission") : ""}`}
                           onClick={() => {
                             setFlat(false);
                             switchView(v);
@@ -1370,6 +1485,11 @@ export default function App() {
                             : undefined
                         }
                         layer={layer}
+                        pending={
+                          mode === "investigate" && next === "parts"
+                            ? pending
+                            : undefined
+                        }
                         reduced={reduced}
                         focusTick={focusTick}
                         homeTick={homeTick}
@@ -1481,6 +1601,42 @@ export default function App() {
                     </span>
                   </div>
                 </section>
+                {mode !== "investigate" && (
+                  <div className="metrics" aria-label="Current model readings">
+                    <div>
+                      <span>TOTAL THERMAL POWER</span>
+                      <strong>
+                        {(state.thermal * 100).toFixed(1)}
+                        <small>%</small>
+                      </strong>
+                      <small>fission + decay heat; initial = 100%</small>
+                    </div>
+                    <div>
+                      <span>FUEL TEMPERATURE</span>
+                      <strong>
+                        {state.fuel.toFixed(0)}
+                        <small>°C</small>
+                      </strong>
+                      <small>lumped fuel temperature</small>
+                    </div>
+                    <div>
+                      <span>PRIMARY COOLANT</span>
+                      <strong>
+                        {state.coolant.toFixed(0)}
+                        <small>°C</small>
+                      </strong>
+                      <small>representative average</small>
+                    </div>
+                    <div>
+                      <span>ELECTRICAL OUTPUT</span>
+                      <strong>
+                        {(state.electric * 100).toFixed(0)}
+                        <small>%</small>
+                      </strong>
+                      <small>relative output index</small>
+                    </div>
+                  </div>
+                )}
                 {mode === "investigate" &&
                   (stage !== "explain" || reviewEvidence || revising) &&
                   learning[lesson.id].duration === 0 && (
@@ -1505,6 +1661,7 @@ export default function App() {
                       started={guidedStarted}
                       observed={observed}
                       onRun={runGuided}
+                      highlight={next === "run"}
                       onToggle={() => setRunning((v) => !v)}
                     />
                   )}
@@ -1533,7 +1690,11 @@ export default function App() {
                           {modelStatus}
                         </span>
                       </div>
-                      <div className="sliders">
+                      <div
+                        id="experiment-sliders"
+                        tabIndex={-1}
+                        className={`sliders${exploreNext === 1 ? " is-next" : ""}`}
+                      >
                         <label>
                           <span>
                             Control-rod insertion
@@ -1591,7 +1752,8 @@ export default function App() {
                       </div>
                       <div className="playback">
                         <button
-                          className="play-button"
+                          id="run-button"
+                          className={`play-button${exploreNext === 2 && mode === "explore" ? " is-next" : ""}`}
                           disabled={rangeStop}
                           aria-label={
                             running ? "Pause simulation" : "Run simulation"
@@ -1683,8 +1845,21 @@ export default function App() {
           <footer className="lab-footer">
             <span>
               <Atom size={13} />
-              CORE · A nuclear science learning environment
+              {storageFailed
+                ? "Progress cannot be saved in this browser. Export your summary."
+                : "Progress is saved on this device."}
             </span>
+            <button onClick={exportLearning}>
+              <Download size={12} /> Export learning summary
+            </button>
+            <label className="motion-toggle">
+              <input
+                type="checkbox"
+                checked={reduced}
+                onChange={(e) => setReduced(e.target.checked)}
+              />
+              Reduce visual motion
+            </label>
             <button onClick={() => setModal("science")}>
               Model assumptions & references <ArrowRight size={12} />
             </button>
@@ -1711,9 +1886,9 @@ export default function App() {
             <div>
               <strong>01 · Look inside</strong>
               <p>
-                Drag to orbit, scroll to zoom, or use the + / − buttons. Select
-                a component from the left-hand list and choose “Take a closer
-                look”.
+                Drag to orbit, scroll to zoom, or use the + / − buttons. Click a
+                part in the row above the model, or click its label on the
+                model, then choose “Take a closer look”.
               </p>
             </div>
             <div>
@@ -1739,8 +1914,9 @@ export default function App() {
             </div>
           </div>
           <p>
-            The 2D diagram, component list and data table provide alternatives
-            to the 3D view. All experiment controls work with a keyboard.
+            The 2D diagram, the row of parts and the data table provide
+            alternatives to the 3D view. All experiment controls work with a
+            keyboard.
           </p>
           <button
             className="primary-button"

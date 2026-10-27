@@ -66,7 +66,7 @@ export default function Schematic({
                 markerHeight="4"
                 orient="auto"
               >
-                <path d="M0 0L10 5L0 10Z" fill="#3f5942" />
+                <path d="M0 0L10 5L0 10Z" fill="#c7d6d2" />
               </marker>
             </defs>
             <rect
@@ -76,7 +76,7 @@ export default function Schematic({
               height="318"
               rx="30"
               fill="none"
-              stroke="#8f9d90"
+              stroke="#95afaa"
               strokeDasharray="6 6"
             />
             <text x="40" y="402" className="diagram-note">
@@ -89,8 +89,8 @@ export default function Schematic({
                 width="104"
                 height="150"
                 rx="25"
-                fill="#dce5dd"
-                stroke="#738a7a"
+                fill="#1d3633"
+                stroke="#a6bcb7"
                 strokeWidth="4"
               />
               <text x="132" y="355" textAnchor="middle">
@@ -101,12 +101,12 @@ export default function Schematic({
               <path
                 d="M184 205H280V285H306 M370 300V338H132V320"
                 fill="none"
-                stroke="#b26731"
+                stroke="#ffb84d"
                 strokeWidth="8"
               />
               <path
                 d="M210 205H254 M272 338H201"
-                stroke="#b26731"
+                stroke="#ffb84d"
                 strokeWidth="5"
                 markerEnd="url(#flowArrow)"
               />
@@ -118,24 +118,24 @@ export default function Schematic({
                 width="60"
                 height="64"
                 rx="3"
-                fill="#d7ab68"
+                fill="#ffb03b"
               />
               {[111, 124, 137, 150].map((x) => (
                 <path
                   key={x}
                   d={`M${x} 240V290`}
-                  stroke="#8f622d"
+                  stroke="#ffbb55"
                   strokeWidth="5"
                 />
               ))}
             </g>
             <g {...part("rods")}>
-              <rect x="93" y="150" width="77" height="9" fill="#425c57" />
+              <rect x="93" y="150" width="77" height="9" fill="#c6d5d1" />
               {[106, 130, 154].map((x) => (
                 <path
                   key={x}
                   d={`M${x} 155V${190 + controls.rods * 0.75}`}
-                  stroke="#425c57"
+                  stroke="#c6d5d1"
                   strokeWidth="5"
                 />
               ))}
@@ -150,11 +150,11 @@ export default function Schematic({
                 width="34"
                 height="62"
                 rx="13"
-                fill="#ddc39b"
-                stroke="#8c764f"
+                fill="#ffac2f"
+                stroke="#b1c4c0"
                 strokeWidth="2"
               />
-              <path d="M240 173V205" stroke="#8c764f" strokeWidth="4" />
+              <path d="M240 173V205" stroke="#b1c4c0" strokeWidth="4" />
               <text x="240" y="91" textAnchor="middle">
                 Pressuriser
               </text>
@@ -166,20 +166,20 @@ export default function Schematic({
                 width="102"
                 height="183"
                 rx="21"
-                fill="#d8e8e1"
-                stroke="#4a8073"
+                fill="#123037"
+                stroke="#b7c9c5"
                 strokeWidth="3"
               />
               <path
                 d="M303 285H330V178Q350 145 370 178V303"
                 fill="none"
-                stroke="#6b5743"
+                stroke="#c4d3cf"
                 strokeWidth="12"
               />
               <path
                 d="M303 285H330V178Q350 145 370 178V303"
                 fill="none"
-                stroke="#d19658"
+                stroke="#ffb23f"
                 strokeWidth="6"
               />
               <text x="355" y="102" textAnchor="middle">
@@ -191,11 +191,11 @@ export default function Schematic({
                 cx="242"
                 cy="338"
                 r="17"
-                fill="#c3d6df"
-                stroke="#527c88"
+                fill="#15373e"
+                stroke="#b2c5c1"
                 strokeWidth="3"
               />
-              <path d="M250 331L235 338L250 345Z" fill="#527c88" />
+              <path d="M250 331L235 338L250 345Z" fill="#b2c5c1" />
               <text x="242" y="372" textAnchor="middle">
                 Pump
               </text>
@@ -203,24 +203,24 @@ export default function Schematic({
             <path
               d="M405 145H550V169 M593 215V279 M560 315H432V267H405"
               fill="none"
-              stroke="#287b70"
+              stroke="#54cff1"
               strokeWidth="7"
             />
             <path
               d="M445 145H510 M518 315H463"
-              stroke="#287b70"
+              stroke="#54cff1"
               strokeWidth="4"
               markerEnd="url(#flowArrow)"
             />
             <g {...part("turbine")}>
               <path
                 d="M531 173L609 152V234L531 216Z"
-                fill="#c9cfc2"
-                stroke="#728267"
+                fill="#223b38"
+                stroke="#acc1bd"
                 strokeWidth="3"
               />
-              <path d="M609 194H665" stroke="#526851" strokeWidth="5" />
-              <circle cx="685" cy="194" r="24" fill="#42644f" />
+              <path d="M609 194H665" stroke="#c2d2ce" strokeWidth="5" />
+              <circle cx="685" cy="194" r="24" fill="#c5d4d0" />
               <text x="685" y="200" textAnchor="middle" fill="white">
                 G
               </text>
@@ -235,19 +235,19 @@ export default function Schematic({
                 width="133"
                 height="55"
                 rx="10"
-                fill="#d8e8e1"
-                stroke="#4a8073"
+                fill="#123037"
+                stroke="#b7c9c5"
                 strokeWidth="3"
               />
               <path
                 d="M770 290H620V317H770"
                 fill="none"
-                stroke="#54869e"
+                stroke="#28c3ee"
                 strokeWidth="7"
               />
               <path
                 d="M749 290H707 M707 317H749"
-                stroke="#54869e"
+                stroke="#28c3ee"
                 strokeWidth="4"
                 markerEnd="url(#flowArrow)"
               />

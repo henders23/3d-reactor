@@ -52,6 +52,9 @@ function mount(guided = false) {
       error(...args);
   };
   render(React.createElement(App));
+  // New students land on the course intro; the guided route starts from the map.
+  if (guided)
+    fireEvent.click(screen.getByRole("button", { name: /Start the course/ }));
   fireEvent.click(
     screen.getByRole("button", {
       name: guided ? "Start with the essentials" : "Explore freely",
@@ -262,7 +265,7 @@ test("entry starts with orientation and free exploration starts paused", () => {
   render(React.createElement(App));
   assert.ok(
     screen.getByRole("heading", {
-      name: /Where’s the rest/,
+      name: /How does a nuclear power station work/,
     }),
   );
   assert.equal(screen.queryByRole("slider"), null);
@@ -457,7 +460,8 @@ test("orientation states outcomes before entry and equations support explanation
     name: "Learning outcomes",
   });
   assert.equal(within(outcomes).getAllByRole("listitem").length, 5);
-  assert.ok(screen.getByText(/basic ratios, percentages and algebra/));
+  assert.ok(screen.getByText(/ratios, percentages and algebra/));
+  fireEvent.click(screen.getByRole("button", { name: /Start the course/ }));
   fireEvent.click(
     screen.getByRole("button", { name: "Start with the essentials" }),
   );
@@ -630,6 +634,7 @@ test("course map opens a sealed prediction, an equation lab and the recorded evi
 });
 test("investigation 01 deep dive: locked prediction, live energy flow, challenge clears it", () => {
   render(React.createElement(App));
+  fireEvent.click(screen.getByRole("button", { name: /Start the course/ }));
   fireEvent.click(
     screen.getAllByRole("button", { name: /Open the puzzle/ })[0],
   );
@@ -720,7 +725,55 @@ test("investigations 04 and 05 hide the model evidence until a prediction is loc
 });
 test("students can jump ahead to a later investigation without clearing earlier ones", () => {
   render(React.createElement(App));
+  fireEvent.click(screen.getByRole("button", { name: /Start the course/ }));
   assert.ok(screen.getByText("0 of 5 cleared"));
   fireEvent.click(screen.getAllByRole("button", { name: "Jump ahead" })[0]);
   assert.ok(screen.getByRole("heading", { level: 1, name: /Why no runaway/ }));
+});
+test("explore shows three numbered steps and moves the highlight as each is done", () => {
+  mount();
+  const guide = screen.getByRole("region", { name: "Start here" });
+  assert.equal(within(guide).getAllByRole("button").length, 3);
+  assert.ok(
+    document.getElementById("part-chips")?.classList.contains("is-next"),
+  );
+  fireEvent.click(
+    within(screen.getByRole("group", { name: "Choose a part" })).getByRole(
+      "button",
+      { name: "Turbine & generator" },
+    ),
+  );
+  assert.ok(screen.getByRole("heading", { name: "Turbine & generator" }));
+  assert.equal(within(guide).getAllByText("Done").length, 1);
+  assert.ok(
+    document
+      .getElementById("experiment-sliders")
+      ?.classList.contains("is-next"),
+  );
+  fireEvent.change(screen.getByLabelText("Coolant circulation"), {
+    target: { value: "80" },
+  });
+  assert.ok(
+    document.getElementById("run-button")?.classList.contains("is-next"),
+  );
+});
+test("investigation says what to do next and highlights that control", () => {
+  mount(true);
+  const step = () =>
+    screen.getByRole("region", { name: "Your next step" }).textContent ?? "";
+  assert.match(step(), /Step 1 of 4/);
+  assert.match(step(), /Pick the answer you think is right/);
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Steam from a separate secondary circuit",
+    }),
+  );
+  assert.match(step(), /Press Record prediction/);
+  const record = screen.getByRole("button", { name: "Record prediction" });
+  assert.ok(record.classList.contains("is-next"));
+  fireEvent.click(record);
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  assert.match(step(), /Step 2 of 4/);
+  assert.match(step(), /1 of 4 found/);
+  assert.ok(screen.getByText("Unlocks when you’ve found 3 more parts."));
 });

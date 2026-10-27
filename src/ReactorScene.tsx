@@ -8,6 +8,8 @@ type Props = {
   view: View;
   selected: PartID;
   focusParts?: PartID[];
+  /** Parts the student still needs to visit; their labels pulse. */
+  pending?: PartID[];
   onSelect: (id: PartID) => void;
   state: State;
   controls: Controls;
@@ -65,7 +67,7 @@ export default function ReactorScene(props: Props) {
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
-    renderer.setClearColor("#edf0ec");
+    renderer.setClearColor("#0d1918");
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -77,7 +79,7 @@ export default function ReactorScene(props: Props) {
     );
     renderer.domElement.setAttribute("role", "img");
     const scene = new THREE.Scene();
-    scene.fog = new THREE.Fog("#edf0ec", 24, 48);
+    scene.fog = new THREE.Fog("#0d1918", 24, 48);
     const camera = new THREE.PerspectiveCamera(37, 1, 0.1, 100);
     const orbit = new OrbitControls(camera, renderer.domElement);
     orbit.enableDamping = !props.reduced;
@@ -173,7 +175,7 @@ export default function ReactorScene(props: Props) {
       o.rotation.x = Math.PI / 2;
       return o;
     };
-    const slab = box(12.6, 0.16, 7, [0, -0.3, 0.2], mat("#c9d0c9", 0.1, 0.7));
+    const slab = box(12.6, 0.16, 7, [0, -0.3, 0.2], mat("#1f3532", 0.1, 0.7));
     slab.receiveShadow = true;
     for (let x = -5; x < 6; x += 1) {
       const line = box(
@@ -181,17 +183,17 @@ export default function ReactorScene(props: Props) {
         0.005,
         6.6,
         [x, -0.212, 0.2],
-        mat("#b9c3bc", 0, 0.9),
+        mat("#2c4a46", 0, 0.9),
       );
       line.castShadow = false;
     }
     for (let z = -3; z < 4; z += 1) {
-      const line = box(12, 0.005, 0.012, [0, -0.21, z], mat("#b9c3bc", 0, 0.9));
+      const line = box(12, 0.005, 0.012, [0, -0.21, z], mat("#2c4a46", 0, 0.9));
       line.castShadow = false;
     }
     const floor = mesh(
       new THREE.PlaneGeometry(200, 200),
-      mat("#edf0ec", 0, 1),
+      mat("#0d1918", 0, 1),
       [0, -0.4, 0],
       undefined,
       scene,
@@ -698,10 +700,17 @@ export default function ReactorScene(props: Props) {
         name: "FUEL ROD DETAIL · PELLETS & CLADDING",
         p: new THREE.Vector3(-1.5, 3.05, 1.1),
       });
+    // Labels that name a part are buttons, so clicking the words works as well as clicking the model.
     const labelNodes = labelItems.map((item) => {
-      const e = document.createElement("span");
-      e.className = "scene-label";
+      const e = document.createElement(item.id ? "button" : "span");
+      e.className = item.id ? "scene-label is-clickable" : "scene-label";
       e.textContent = item.name;
+      if (item.id) {
+        const id = item.id;
+        (e as HTMLButtonElement).type = "button";
+        e.setAttribute("aria-label", `Select ${item.name.toLowerCase()}`);
+        e.addEventListener("click", () => latest.current.onSelect(id));
+      }
       labelLayer.appendChild(e);
       return e;
     });
@@ -893,6 +902,11 @@ export default function ReactorScene(props: Props) {
       renderer.render(scene, camera);
       labelLayer.style.display = p.labels ? "block" : "none";
       labelItems.forEach((l, i) => {
+        labelNodes[i].classList.toggle("is-selected", l.id === p.selected);
+        labelNodes[i].classList.toggle(
+          "is-next",
+          !!l.id && !!p.pending?.includes(l.id),
+        );
         projection.copy(l.p).project(camera);
         labelNodes[i].style.transform =
           `translate(${(projection.x * 0.5 + 0.5) * el.clientWidth}px,${(-projection.y * 0.5 + 0.5) * el.clientHeight}px) translate(-50%,-50%)`;
