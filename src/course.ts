@@ -70,47 +70,42 @@ export type Mystery = {
 };
 export const mysteries: Record<string, Mystery> = {
   energy: {
-    headline:
-      "A reactor makes 3,000 MW of heat. Only about a third becomes electricity. Where does the rest go?",
+    headline: "3,000 MW of heat. 1,000 MW of electricity. Where’s the rest?",
     intro:
-      "Follow the energy from a splitting nucleus to the power socket. Somewhere along the way, most of it leaves the plant — on purpose.",
-    card: "How much heat becomes electricity?",
+      "Follow the energy from a splitting nucleus to the socket. Most of it leaves the plant, on purpose.",
+    card: "Heat to electricity",
     teaser: "Most of a power station’s heat never becomes electricity. Why?",
     clue: "About a third of the heat becomes electricity; the rest must leave through the condenser. Heat crosses between circuits — water doesn’t.",
   },
   neutrons: {
-    headline:
-      "Each fission releases about 2.4 neutrons. So why doesn’t every reactor run away?",
+    headline: "Each fission frees about 2.4 neutrons. Why no runaway?",
     intro:
-      "Most neutrons never cause another fission. They leak out, or something swallows them. The whole game is the neutron budget.",
-    card: "Will the chain sustain itself?",
+      "Most neutrons never cause another fission: they leak out, or something absorbs them. It all comes down to the neutron budget.",
+    card: "The chain reaction",
     teaser: "A slowed-down neutron makes fission more likely, not less. How?",
     clue: "Moderated is not absorbed. A slow neutron can still cause fission.",
   },
   control: {
-    headline:
-      "Power drops in one second. The fuel takes its time. Where is the energy hiding?",
+    headline: "Power drops in a second. The fuel doesn’t. Why?",
     intro:
-      "Push the control rods in and fission power falls almost at once — yet the fuel cools as if it hadn’t heard. Something is storing energy. Find it, measure it, then write the law that governs it.",
-    card: "Why does temperature lag behind power?",
+      "Push the rods in and fission power falls at once, yet the fuel cools slowly. Something is storing energy.",
+    card: "The temperature lag",
     teaser: "The rods go in. Why doesn’t the fuel cool straight away?",
     clue: "Temperature tracks stored energy, not power. Its slope is set by generation minus transfer.",
   },
   cooling: {
-    headline:
-      "Slow the pump and the fuel heats up — while the power falls. How can both be true?",
+    headline: "A hotter core, making less power?",
     intro:
-      "Less water flowing means each kilogram has to carry more heat. Then the core starts regulating itself.",
-    card: "Can a hotter core make less power?",
+      "Less flow means each kilogram of water carries more heat. Then the core regulates itself.",
+    card: "Moving the heat",
     teaser: "Slow the pump, and the fuel heats up while power falls.",
     clue: "A temperature rise is not evidence of more fission. Check heat removal too.",
   },
   shutdown: {
-    headline:
-      "Every rod is in. The chain reaction is over. The core still makes megawatts. From what?",
+    headline: "Every rod is in. Why is it still hot?",
     intro:
-      "Shutting a reactor down stops the chain reaction, not the heat. Find out what keeps glowing, and for how long.",
-    card: "Every rod is in. Why is the core still hot?",
+      "Shutdown stops the chain reaction, not the heat. What keeps it going, and for how long?",
+    card: "Heat after shutdown",
     teaser: "A shut-down core still makes megawatts. From what?",
     clue: "Cooling is still needed after a successful shutdown: decay heat and stored heat remain.",
   },
@@ -211,28 +206,24 @@ export const confidenceLevels = [
 ];
 export const verdicts: Record<
   Curve,
-  { tag: string; title: string; body: string; ok: boolean }
+  { title: string; body: string; ok: boolean }
 > = {
   A: {
-    tag: "SURPRISE",
     title: "The fuel didn’t follow the power.",
     body: "Power fell 9 points in one second; the fuel fell less than 1 °C. The fuel holds so much stored energy that one second of deficit barely dents it. Your sketch treated temperature like power — the most common mistake there is.",
     ok: false,
   },
   B: {
-    tag: "MATCH",
     title: "Your sketch matches the data.",
     body: "No sudden drop: the fuel loses stored energy at a rate set by generation minus transfer. Now push further: by 10 s power had almost settled, yet the fuel was still falling more than 1 °C every second. Which part of the balance is still off?",
     ok: true,
   },
   C: {
-    tag: "CLOSE, BUT",
     title: "There was no flat delay.",
     body: "The fuel started cooling at once, just slowly. The moment generation fell below transfer, dT/dt went negative.",
     ok: false,
   },
   D: {
-    tag: "SURPRISE",
     title: "Nothing pushed the temperature up.",
     body: "Generation dropped below transfer, so dT/dt was negative from the first instant. A rise would need P > Q̇.",
     ok: false,

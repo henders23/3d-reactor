@@ -211,12 +211,10 @@ export function InnerHeader({
   go,
   back,
   now,
-  label,
 }: {
   go: Go;
   back: [string, CourseScreen];
   now?: number;
-  label?: string;
 }) {
   return (
     <header className="c-header">
@@ -224,7 +222,7 @@ export function InnerHeader({
         <ArrowLeft size={18} aria-hidden="true" />
         {back[0]}
       </button>
-      {now ? (
+      {now && (
         <nav aria-label="Acts">
           <ol className="c-acts">
             {acts.map(([name, target], i) => (
@@ -240,8 +238,6 @@ export function InnerHeader({
             ))}
           </ol>
         </nav>
-      ) : (
-        <span className="c-eyebrow c-eyebrow--blue">{label}</span>
       )}
     </header>
   );

@@ -61,27 +61,21 @@ function useSolved(id: string, all: boolean, props: CourseProps) {
 }
 function Hero({
   id,
-  number,
   visual,
   note,
 }: {
   id: string;
-  number: string;
   visual: ReactNode;
   note?: ReactNode;
 }) {
   return (
     <section className="c-hero c-hero--tight">
       <div className="c-stack c-stack--lg">
-        <span className="c-eyebrow">INVESTIGATION {number} · THE MYSTERY</span>
         <h1 className="c-h1" tabIndex={-1}>
           {mysteries[id].headline}
         </h1>
         <p className="c-lead">{mysteries[id].intro}</p>
         <div className="c-law">
-          <span className="c-eyebrow c-eyebrow--muted">
-            THE LAW YOU’LL EARN
-          </span>
           <Law id={id} size="hero" />
           {note && <p className="c-sub">{note}</p>}
         </div>
@@ -109,7 +103,6 @@ function Predict({
   const revealed = locked !== undefined;
   return (
     <section className="c-section" aria-labelledby={`c-pr-${id}`}>
-      <span className="c-eyebrow">PREDICT FIRST</span>
       <h2 id={`c-pr-${id}`} className="c-h2">
         {prompt}
       </h2>
@@ -147,9 +140,11 @@ function Predict({
               className={`c-verdict ${options[locked].ok ? "is-ok" : "is-retry"}`}
               role="status"
             >
-              <span className="c-eyebrow">
-                {options[locked].ok ? "YOUR PREDICTION HELD" : "SURPRISE"}
-              </span>
+              <strong>
+                {options[locked].ok
+                  ? "Your prediction held."
+                  : "Not what happened."}
+              </strong>
               <p>{options[locked].feedback}</p>
             </div>
           )}
@@ -199,9 +194,6 @@ function Challenge({
     <section className="c-challenge" aria-labelledby={`c-ch-${id}`}>
       <div className="c-section-head">
         <div className="c-stack c-stack--xs">
-          <span className="c-eyebrow">
-            CHALLENGE · THREE STEPS, NO MULTIPLE CHOICE
-          </span>
           <h2 id={`c-ch-${id}`} className="c-h2 c-h2--sm">
             {title}
           </h2>
@@ -225,7 +217,6 @@ function MindBender({
   const [open, setOpen] = useState(false);
   return (
     <div className="c-tip c-tip--amber c-tip--big">
-      <span>MIND-BENDER</span>
       <p className="c-clue-big">{question}</p>
       <p className="c-eqtext c-eqtext--lg c-amber2">{equation}</p>
       {open ? (
@@ -259,11 +250,7 @@ function Finale({
     <section className="c-grid2 c-grid2--narrow c-section">
       {bender}
       <div className="c-clue c-clue--earned">
-        <span>
-          {solved
-            ? `CLUE ${number} · IN YOUR NOTEBOOK`
-            : `CLUE ${number} · SOLVE THE CHALLENGE TO KEEP IT`}
-        </span>
+        <h3>Clue {number}</h3>
         <p className="c-clue-big">{mysteries[id].clue}</p>
         <button className="c-link" onClick={next[1]}>
           {next[0]} →
@@ -287,7 +274,7 @@ function Readout({
 }) {
   return (
     <div className={`c-readout c-readout--${tone}`} role="status">
-      <span className="c-eyebrow c-eyebrow--muted">{label}</span>
+      <span className="c-label">{label}</span>
       <div className="c-readout-main">
         <strong>{value}</strong>
         <span>{unit}</span>
@@ -595,20 +582,15 @@ function EnergyScreen(props: CourseProps) {
   const impossible = eta > ceiling;
   return (
     <>
-      <InnerHeader
-        go={go}
-        back={["Course map", "map"]}
-        label="INVESTIGATION 01 · FOLLOW THE ENERGY"
-      />
+      <InnerHeader go={go} back={["Course map", "map"]} />
       <Hero
         id="energy"
-        number="01"
         visual={<PlantVisual />}
         note="Three separate water circuits. Heat crosses between them; the water never does."
       />
       <Predict
         id="energy"
-        prompt="A plant makes 3,000 MW of heat and 1,000 MW of electricity. Where do the other 2,000 MW go?"
+        prompt="3,000 MW in, 1,000 MW out. Where do the other 2,000 go?"
         options={energyPredict}
         props={props}
       >
@@ -655,8 +637,8 @@ function EnergyScreen(props: CourseProps) {
             <Readout
               label={
                 impossible
-                  ? "IMPOSSIBLE · ABOVE THE CARNOT CEILING"
-                  : "ELECTRICAL OUTPUT"
+                  ? "Impossible: above the Carnot ceiling"
+                  : "Electrical output"
               }
               value={Math.round((pth * eta) / 100).toLocaleString("en-GB")}
               unit="MW"
@@ -752,7 +734,7 @@ function EnergyScreen(props: CourseProps) {
       />
       <Challenge
         id="energy"
-        title="From heat in to heat out — and the limit on both"
+        title="Heat in, heat out, and the limit"
         brief="Each step uses the one before. The last asks why no plant can get anywhere near 100%."
         parts={energyChallenge}
         props={props}
@@ -857,27 +839,22 @@ function CoolingScreen(props: CourseProps) {
   const [p0, p20] = [runAt(run, 0), runAt(run, 20)];
   return (
     <>
-      <InnerHeader
-        go={go}
-        back={["Course map", "map"]}
-        label="INVESTIGATION 04 · MOVE THE HEAT"
-      />
+      <InnerHeader go={go} back={["Course map", "map"]} />
       <Hero
         id="cooling"
-        number="04"
         visual={<Channel flow={18000} outlet={320} />}
         note="Heat carried each second = mass flow × specific heat × temperature rise. Say what you hold fixed."
       />
       <Predict
         id="cooling"
-        prompt="We cut pump flow to 65%. Nobody touches the rods. The fuel gets hotter. What does fission power do?"
+        prompt="Flow cut to 65%, rods untouched. What does power do?"
         options={coolingPredict}
         props={props}
       >
         {(revealed) => (
           <>
             <div className="c-runlabel">
-              <span>RUN 04-A · FLOW 100% → 65% · 20 MODEL SECONDS</span>
+              <span>Lab model run: flow 100% → 65% over 20 s</span>
             </div>
             <span className="c-chart-title">Fuel temperature</span>
             <ChartFrame
@@ -952,8 +929,8 @@ function CoolingScreen(props: CourseProps) {
             <Readout
               label={
                 boiling
-                  ? "PAST ~345 °C · WATER AT 15.5 MPA WOULD BOIL"
-                  : "TEMPERATURE RISE ACROSS THE CORE"
+                  ? "Past ~345 °C: water at 15.5 MPa would boil"
+                  : "Temperature rise across the core"
               }
               value={rise.toFixed(1)}
               unit="K"
@@ -1020,7 +997,7 @@ function CoolingScreen(props: CourseProps) {
       />
       <Challenge
         id="cooling"
-        title="Slow the pumps and follow the consequences"
+        title="Slow the pumps"
         brief="The same core, three ways. Watch what you hold fixed in each part."
         parts={coolingChallenge}
         props={props}
@@ -1108,27 +1085,22 @@ function ShutdownScreen(props: CourseProps) {
   const [p0, p1, p30] = [runAt(run, 0), runAt(run, 1), runAt(run, 30)];
   return (
     <>
-      <InnerHeader
-        go={go}
-        back={["Course map", "map"]}
-        label="INVESTIGATION 05 · AFTER SHUTDOWN"
-      />
+      <InnerHeader go={go} back={["Course map", "map"]} />
       <Hero
         id="shutdown"
-        number="05"
         visual={<DecayField />}
         note="For one isolated population, decay power halves every half-life. Real fuel holds hundreds of them."
       />
       <Predict
         id="shutdown"
-        prompt="Every rod drops in. Thirty seconds later, how much heat is the core still making?"
+        prompt="All rods in. How much heat is left after 30 s?"
         options={shutdownPredict}
         props={props}
       >
         {(revealed) => (
           <>
             <div className="c-runlabel">
-              <span>RUN 05-A · ALL RODS IN · 30 MODEL SECONDS</span>
+              <span>Lab model run: all rods in, 30 s</span>
             </div>
             <span className="c-chart-title">
               Total thermal power{" "}
@@ -1179,7 +1151,7 @@ function ShutdownScreen(props: CourseProps) {
             </ChartFrame>
             {revealed && (
               <table className="c-table">
-                <caption>RECORDED IN THE LAB MODEL</caption>
+                <caption>Recorded in the lab model</caption>
                 <thead>
                   <tr>
                     <th scope="col">Quantity</th>
@@ -1295,7 +1267,7 @@ function ShutdownScreen(props: CourseProps) {
           </div>
           <div className="c-stack">
             <Readout
-              label={`DECAY POWER AT t = ${t} s`}
+              label={`Decay power at t = ${t} s`}
               value={total.toFixed(2)}
               unit="MW"
               tone="up"

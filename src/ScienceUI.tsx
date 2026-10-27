@@ -24,7 +24,6 @@ export function ScienceTour({
   return (
     <section className="science-tour" aria-label="Annotated science pathway">
       <div className="tour-heading">
-        <span className="eyebrow">FOLLOW ONE RELATIONSHIP</span>
         <span>
           {index >= 0
             ? `${index + 1} / ${steps.length}`

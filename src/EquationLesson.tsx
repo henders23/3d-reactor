@@ -58,7 +58,6 @@ export default function EquationLesson({
       className="equation-lesson"
       aria-label="Connect the equation to your observation"
     >
-      <span className="eyebrow">FROM OBSERVATION TO EQUATION</span>
       <h2 id="equation-title" tabIndex={-1}>
         {e.title}
       </h2>

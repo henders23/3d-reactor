@@ -62,7 +62,6 @@ export default function TrendChart({
   return (
     <section ref={chart} className="trend" aria-label="Experiment graphs">
       <div className="trend-head">
-        <div className="small-heading">OBSERVE THE RESPONSE</div>
         <div className="segmented small" aria-label="Graph measurement">
           <button
             aria-pressed={metric === "power"}

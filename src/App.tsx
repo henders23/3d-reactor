@@ -144,6 +144,10 @@ export default function App() {
   useEffect(() => {
     saveCourse(course);
   }, [course]);
+  // Entering or leaving the lab starts at the top, not at the course map's scroll position.
+  useEffect(() => {
+    document.documentElement.scrollTop = 0;
+  }, [started]);
   const [revising, setRevising] = useState(false);
   const [reviewEvidence, setReviewEvidence] = useState(false);
   const [guidedStarted, setGuidedStarted] = useState(false);
@@ -446,9 +450,6 @@ export default function App() {
       {mode === "investigate" ? (
         <>
           <div className="inspector-top">
-            <span className="eyebrow">
-              INVESTIGATION {String(lessonIndex + 1).padStart(2, "0")}
-            </span>
             <h2 tabIndex={-1} id="guided-stage-title">
               {lesson.name}
             </h2>
@@ -741,7 +742,6 @@ export default function App() {
                 </button>
                 {answerSent && (
                   <div className="explanation-card">
-                    <span className="eyebrow">COMPARE YOUR REASONING</span>
                     <p>{lesson.explanation}</p>
                     <p>
                       <strong>
@@ -849,7 +849,6 @@ export default function App() {
         <>
           <div className="inspector-top">
             <div className="part-category">
-              <span className="eyebrow">{part.group.toUpperCase()}</span>
               <span className="part-badge">
                 {String(parts.indexOf(part) + 1).padStart(2, "0")}
               </span>
@@ -867,7 +866,7 @@ export default function App() {
             <h3>Why it matters</h3>
             <p>{part.why}</p>
             <div className="connection-card">
-              <span className="eyebrow">CONNECTED TO THE SYSTEM</span>
+              <h3>How it connects</h3>
               <p>{part.connection}</p>
             </div>
             <button
@@ -919,7 +918,6 @@ export default function App() {
                 onClick={() => startLesson(0)}
               >
                 <span>
-                  <small>PUT THE IDEAS TO WORK</small>
                   <strong>Start an investigation</strong>
                 </span>
                 <ArrowRight size={18} />
@@ -1022,7 +1020,6 @@ export default function App() {
             <span>Virtual lab</span>
           </div>
           <div className="sidebar-top">
-            <span className="eyebrow">THE VIRTUAL LAB</span>
             <h2>Inside a reactor.</h2>
             <p>
               Explore the parts.
@@ -1033,7 +1030,7 @@ export default function App() {
           {mode === "investigate" ? (
             <>
               <div className="section-label">
-                YOUR INVESTIGATIONS <span>{count}/5</span>
+                Investigations <span>{count}/5</span>
               </div>
               <div className="lesson-nav">
                 {lessons.map((l, i) => (
@@ -1076,7 +1073,7 @@ export default function App() {
           ) : (
             <>
               <div className="section-label">
-                COMPONENTS <span>10</span>
+                Components <span>10</span>
               </div>
               <nav className="component-nav" aria-label="Reactor components">
                 {parts.map((p, i) => (
@@ -1120,7 +1117,6 @@ export default function App() {
         <main id="main" className="main-content" tabIndex={-1}>
           {mode === "check" ? (
             <section className="quiz">
-              <span className="eyebrow">CONNECT WHAT YOU HAVE LEARNED</span>
               <h1>Explain the system.</h1>
               <p>
                 Five questions about the relationships inside a PWR. Use the
@@ -1224,9 +1220,6 @@ export default function App() {
               )}
               <section className="lab-intro">
                 <div>
-                  <div className="eyebrow">
-                    NUCLEAR SCIENCE <span>/</span> INTERACTIVE STUDY 01
-                  </div>
                   <h1>
                     {mode === "investigate"
                       ? lesson.name
@@ -1408,15 +1401,6 @@ export default function App() {
                       </div>
                     )}
                     <div className="scene-caption">
-                      <span className="eyebrow">
-                        {flat || webglFailed
-                          ? "SYSTEM SCHEMATIC"
-                          : view === "plant"
-                            ? "THE ENERGY PATHWAY"
-                            : view === "core"
-                              ? "INSIDE THE PRESSURE VESSEL"
-                              : "FISSION · MODERATION · ABSORPTION"}
-                      </span>
                       <p>
                         {view === "fission" && !flat
                           ? "Particles enlarged · motion slowed · illustrative paths"
