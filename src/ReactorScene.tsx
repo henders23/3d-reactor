@@ -5,7 +5,7 @@ import { parts, type PartID } from "./content";
 import type { State, Controls } from "./simulation";
 export type View = "plant" | "core" | "fission";
 /** Visual motion (flow, neutrons, fission cycle, turbine) runs this many times faster than model time. */
-export const VISUAL_SPEED = 5;
+export const VISUAL_SPEED = 2.5;
 type Props = {
   view: View;
   selected: PartID;

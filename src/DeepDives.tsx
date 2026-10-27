@@ -402,7 +402,7 @@ export function PlantVisual() {
             height="100"
             rx="5"
             fill="#FFB648"
-            style={{ animationDelay: `${i * 0.06}s` }}
+            style={{ animationDelay: `${i * 0.12}s` }}
           />
         ))}
         <text x="52" y="316">
@@ -485,14 +485,14 @@ export function PlantVisual() {
             cx="512"
             cy="186"
             r="8"
-            style={{ animationDelay: ".1s" }}
+            style={{ animationDelay: ".2s" }}
           />
           <circle
             className="c-a-plume"
             cx="500"
             cy="186"
             r="7"
-            style={{ animationDelay: ".2s" }}
+            style={{ animationDelay: ".4s" }}
           />
         </g>
         <text x="470" y="320" fill="#A8E9FF">
@@ -759,7 +759,7 @@ function EnergyScreen(props: CourseProps) {
 /* ---------- Investigation 04 · Move the heat ---------- */
 function Channel({ flow, outlet }: { flow: number; outlet: number }) {
   // Particle speed follows mass flow; the outlet colour deepens as ΔT grows.
-  const dur = Math.max(0.1, Math.min(0.8, 1200 / flow));
+  const dur = Math.max(0.2, Math.min(1.6, 2400 / flow));
   const hotness = Math.max(0, Math.min(1, (outlet - 300) / 45));
   return (
     <svg
@@ -785,7 +785,7 @@ function Channel({ flow, outlet }: { flow: number; outlet: number }) {
         height="34"
         rx="17"
         fill="#FFB648"
-        style={{ animationDelay: ".12s" }}
+        style={{ animationDelay: ".24s" }}
       />
       <rect x="40" y="104" width="480" height="92" fill="#0F2630" />
       <g>
@@ -1022,14 +1022,14 @@ function CoolingScreen(props: CourseProps) {
 /* ---------- Investigation 05 · After shutdown ---------- */
 function DecayField() {
   const reduced = useOnce(reducedMotion);
-  // Nucleus i decays after log2(64 / (64 − i)) half-lives; one half-life every 0.2 s.
+  // Nucleus i decays after log2(64 / (64 − i)) half-lives; one half-life every 0.4 s.
   const order = Array.from({ length: 64 }, (_, i) => (i * 37) % 64);
   return (
     <svg
       viewBox="0 0 520 380"
       width="100%"
       role="img"
-      aria-label="Sixty-four radioactive nuclei. Every fifth of a second, about half of those still glowing go dark: the population halves every half-life but never suddenly reaches zero"
+      aria-label="Sixty-four radioactive nuclei. Every 0.4 seconds, about half of those still glowing go dark: the population halves every half-life but never suddenly reaches zero"
     >
       {order.map((rank, i) => {
         const t = Math.log2(64 / (64 - rank));
@@ -1047,7 +1047,7 @@ function DecayField() {
                 attributeName="opacity"
                 values="1;1;0.12;0.12"
                 keyTimes={`0;${f.toFixed(3)};${(f + 0.02).toFixed(3)};1`}
-                dur="1.2s"
+                dur="2.4s"
                 repeatCount="indefinite"
               />
             )}
@@ -1062,7 +1062,7 @@ function DecayField() {
         fontSize="14"
         fill="#9DB3AE"
       >
-        every 0.2 s = 1 half-life · watch half of the glowing nuclei go dark
+        every 0.4 s = 1 half-life · watch half of the glowing nuclei go dark
       </text>
     </svg>
   );
