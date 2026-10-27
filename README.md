@@ -1,6 +1,6 @@
 # CORE — Reactor laboratory
 
-A browser-based, interactive pressurised-water reactor learning environment, developed as a companion for **PHYSM0047 Nuclear Science**.
+A browser-based, interactive pressurised-water reactor learning environment, developed as a companion for **Nuclear Science** teaching.
 
 Students can select components, orbit and zoom into a procedural 3D plant, reveal its internal structure, manipulate experiment controls and use the resulting graphs to explain what happened. All geometry, teaching content and simulation code are included. No API keys, external model downloads, accounts or backend are needed.
 
@@ -63,7 +63,7 @@ See [the teaching guide](docs/TEACHING.md) for prompts and lecturer review point
 
 This is a **conceptual teaching model**, not a plant-calibrated engineering simulator. Model time, transfer coefficients, lumped temperatures and particle paths are illustrative. The reactor is a generic PWR, not a specific plant. Water is its moderator; graphite would belong to a different reactor design, such as an AGR.
 
-Current PHYSM0047 assessment requirements were not available for verification during development. The module code provides context, not a claim of approval or complete syllabus coverage. A nuclear-science lecturer should review the content and assumptions before formal use.
+Current assessment requirements were not available for verification during development. This is not a claim of approval or complete syllabus coverage. A nuclear-science lecturer should review the content and assumptions before formal use.
 
 ## Project structure
 

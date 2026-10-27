@@ -19,7 +19,7 @@ export function Welcome({
       <div className="welcome-brand">
         <Atom size={32} />
         <strong>CORE</strong>
-        <span>PHYSM0047 · Nuclear Science</span>
+        <span>Nuclear Science</span>
       </div>
       <div className="welcome-content">
         <span className="eyebrow">A QUESTION TO START WITH</span>
@@ -29,7 +29,7 @@ export function Welcome({
           why does it still need cooling?
         </h1>
         <p>
-          A companion to PHYSM0047 Nuclear Science: connect nuclear reactions to
+          A nuclear science companion: connect nuclear reactions to
           heat transfer and electricity generation in a generic
           pressurised-water reactor (PWR). You will make a prediction, change
           one thing and use the evidence to explain what happened.

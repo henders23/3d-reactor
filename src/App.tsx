@@ -378,7 +378,7 @@ export default function App() {
   function exportLearning() {
     saveFile(
       "core-learning-summary.md",
-      `# CORE — learning summary\n\nPHYSM0047 companion · conceptual PWR model\n\n${lessons
+      `# CORE — learning summary\n\nConceptual PWR model\n\n${lessons
         .map((l) => {
           const r = records[l.id];
           return `## ${l.name}\nStatus: ${r?.completed ? "completed" : "not completed"}\nPrediction: ${r?.prediction || "not recorded"}\nEvidence: ${r?.evidence || "not captured"}\nFirst explanation: ${r?.firstExplanation || r?.explanation || "not recorded"}\nLatest explanation: ${r?.explanation || "not recorded"}\nRevised after feedback: ${r?.revised ? "yes" : "no"}\n`;
@@ -978,7 +978,6 @@ export default function App() {
           ))}
         </nav>
         <div className="header-meta">
-          <span>PHYSM0047</span>
           <button
             className="icon-button"
             aria-label="How to use the laboratory"
@@ -1778,7 +1777,7 @@ export default function App() {
           onClose={() => setModal(null)}
         >
           <p>
-            CORE is a conceptual PWR companion for PHYSM0047. The lesson
+            CORE is a conceptual PWR companion for nuclear science. The lesson
             sequence covers reactor components, energy pathways, neutron
             balance, heat transfer and shutdown heat. It has not been mapped to
             a verified current unit assessment specification.

@@ -36,7 +36,7 @@ Karpicke and Blunt report benefits of retrieval practice for learning science te
 - Cumulative multiple-choice checks remain short and diagnostic. They are not a summative assessment or sufficient evidence of transfer.
 - The first lesson opens the 2D circuit diagram to make relationships explicit; the 3D view remains available. Whether this helps the target cohort should be checked.
 - GPU rendering, spatial label collisions, mobile composition, browser zoom and screen-reader behaviour require manual validation. The available browser blocked local previews.
-- The exact relationship to current PHYSM0047 materials needs lecturer confirmation; the unit code alone does not establish curricular alignment.
+- The exact relationship to current unit materials needs lecturer confirmation; curricular alignment has not been established.
 
 ## A practical student try-out
 

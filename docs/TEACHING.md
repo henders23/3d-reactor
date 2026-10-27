@@ -4,7 +4,7 @@
 
 After the investigations, a student should be able to trace energy through separate circuits and calculate efficiency; distinguish fission, moderation and capture and interpret a multiplication factor; use a fuel energy balance to explain power/temperature lag; relate mass flow to heat transport while stating what is fixed; and distinguish decay heat from stored thermal energy while applying a simple half-life model. These outcomes appear before entry.
 
-PHYSM0047 provides the project context supplied by the user. Current unit-level outcomes and assessments have not been verified. This companion addresses selected nuclear-reactor concepts, not the whole nuclear-science curriculum.
+Current unit-level outcomes and assessments have not been verified. This companion addresses selected nuclear-reactor concepts, not the whole nuclear-science curriculum.
 
 ## A 35–45 minute session
 

@@ -1,6 +1,6 @@
 # Adversarial review: equations, orientation and diagrams
 
-27 October 2026 · CORE / PHYSM0047 companion
+27 October 2026 · CORE companion
 
 ## Verdict
 

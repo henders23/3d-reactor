@@ -37,7 +37,7 @@ The equations and coefficients are unchanged. Calculation and display now use th
 ## What I would improve next
 
 1. **Check retention with an unfamiliar case after a delay.** The current next-day prompt is useful but cannot establish retained understanding. A short alternate question set with a comparison to the earlier explanation would add more than another visual effect.
-2. **Map examples and vocabulary to the lecturer's actual unit materials.** The PWR emphasis and conceptual depth need confirmation against the current PHYSM0047 teaching and assessment.
+2. **Map examples and vocabulary to the lecturer's actual unit materials.** The PWR emphasis and conceptual depth need confirmation against the current teaching and assessment.
 3. **Try the app with students and actual devices.** Use a think-aloud task and score the physical reasoning, not button completion. Include learners with limited prior nuclear physics and users navigating by keyboard or screen reader.
 
 These are priorities for subsequent work, not claims that the three implemented changes improve attainment. No student study or visual browser verification was completed in this environment.
