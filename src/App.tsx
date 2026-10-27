@@ -42,6 +42,7 @@ import { misconceptionFeedback, explanationSupport } from "./science";
 import { LearningFocus, GuidedExperiment } from "./LearningUI";
 import Course from "./Course";
 import {
+  deepDiveCleared,
   readCourse,
   saveCourse,
   type CourseProgress,
@@ -931,12 +932,7 @@ export default function App() {
   );
   // A deep-dive or a guided lab run both count as clearing an investigation.
   const cleared = lessons
-    .filter(
-      (l) =>
-        records[l.id]?.completed ||
-        (l.id === "neutrons" && course.chainSolved) ||
-        (l.id === "control" && course.controlSolved),
-    )
+    .filter((l) => records[l.id]?.completed || deepDiveCleared(course, l.id))
     .map((l) => l.id);
   if (!started)
     return (

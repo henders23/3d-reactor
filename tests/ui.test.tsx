@@ -630,3 +630,93 @@ test("course map opens a sealed prediction, an equation lab and the recorded evi
   assert.equal(saved.controlSolved, true);
   assert.equal(saved.sealed.curve, "B");
 });
+test("investigation 01 deep dive: locked prediction, live energy flow, challenge clears it", () => {
+  render(React.createElement(App));
+  fireEvent.click(
+    screen.getAllByRole("button", { name: /Open the puzzle/ })[0],
+  );
+  assert.ok(
+    screen.getByRole("heading", { name: /Where do the other 2,000 MW go/ }),
+  );
+  assert.ok(screen.getByText(/Lock in your answer to see the energy flow/));
+  fireEvent.click(
+    screen.getByRole("button", { name: /destroyed in the turbine/ }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /Lock it in and reveal/ }),
+  );
+  assert.ok(screen.getByText("SURPRISE"));
+  assert.ok(screen.getByText(/Energy can’t be destroyed/));
+  // The Carnot ceiling flags an impossible efficiency.
+  fireEvent.change(screen.getByRole("slider", { name: "Efficiency" }), {
+    target: { value: "50" },
+  });
+  assert.ok(screen.getByText(/IMPOSSIBLE · ABOVE THE CARNOT CEILING/));
+  const answers: [RegExp, string][] = [
+    [/electrical output\?/, "1122"],
+    [/leaves through the condenser/, "2278"],
+    [/Carnot ceiling/, "44.8"],
+  ];
+  answers.forEach(([label, value], i) => {
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Check" })[i]);
+  });
+  assert.ok(screen.getByText("3 of 3 solved"));
+  assert.ok(screen.getByText(/CLUE 01 · IN YOUR NOTEBOOK/));
+  const saved = JSON.parse(localStorage.getItem("core-course-v1") || "{}");
+  assert.equal(saved.solved.energy, true);
+  assert.equal(saved.predictions.energy, 0);
+  fireEvent.click(screen.getByRole("button", { name: "Course map" }));
+  assert.ok(screen.getByText("1 of 5 cleared"));
+});
+
+test("investigations 04 and 05 hide the model evidence until a prediction is locked", () => {
+  localStorage.setItem(
+    "core-course-v1",
+    JSON.stringify({
+      chainSolved: true,
+      controlSolved: true,
+      solved: { energy: true },
+    }),
+  );
+  render(React.createElement(App));
+  assert.ok(screen.getByText("3 of 5 cleared"));
+  fireEvent.click(
+    screen.getAllByRole("button", { name: /Open the puzzle/ })[0],
+  );
+  assert.ok(
+    screen.getByRole("img", { name: /Power hidden until you lock in/ }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /Falls — even though/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Lock it in and reveal/ }),
+  );
+  assert.ok(screen.getByText("YOUR PREDICTION HELD"));
+  assert.ok(
+    screen.getByRole("img", { name: /Total thermal power falls from 100.0%/ }),
+  );
+  fireEvent.change(screen.getByRole("slider", { name: "Mass flow" }), {
+    target: { value: "6000" },
+  });
+  assert.ok(screen.getByText(/WATER AT 15.5 MPA WOULD BOIL/));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Continue to Investigation 05/ }),
+  );
+  assert.ok(
+    screen.getByRole("heading", {
+      name: /how much heat is the core still making/,
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /A few percent/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Lock it in and reveal/ }),
+  );
+  assert.ok(screen.getByRole("table", { name: /RECORDED IN THE LAB MODEL/ }));
+  fireEvent.change(
+    screen.getByRole("slider", { name: "Time since shutdown" }),
+    {
+      target: { value: "300" },
+    },
+  );
+  assert.ok(screen.getByText("DECAY POWER AT t = 300 s"));
+});
