@@ -2400,89 +2400,6 @@ textarea:focus-visible {
 .brand {
   text-align: left;
 }
-.welcome {
-  min-height: 100vh;
-  padding: 32px clamp(20px, 7vw, 112px);
-  background:
-    radial-gradient(ellipse at 100% 0%, #e2ead9, transparent 65%), #f7f8f2;
-}
-.welcome-brand {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  color: #35543d;
-}
-.welcome-brand strong {
-  font-size: 26px;
-  letter-spacing: 3px;
-}
-.welcome-brand span {
-  margin-left: auto;
-  font-size: 13px;
-}
-.welcome-content {
-  max-width: 1040px;
-  margin: 70px auto 28px;
-}
-.welcome h1 {
-  font-family: Manrope, sans-serif;
-  font-size: clamp(32px, 4.3vw, 62px);
-  line-height: 1.15;
-  letter-spacing: -2px;
-  margin: 20px 0 25px;
-  max-width: 1000px;
-}
-.welcome-content > p {
-  max-width: 740px;
-  font-size: 18px;
-  line-height: 1.7;
-  color: #50634b;
-}
-.welcome-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-  margin: 28px 0 16px;
-}
-.welcome-actions button {
-  font-size: 15px;
-  padding: 16px 22px;
-}
-.welcome .welcome-time,
-.welcome .welcome-note {
-  font-size: 13px;
-}
-.pretraining {
-  margin: 45px 0 25px;
-  padding-top: 28px;
-  border-top: 1px solid #cfdbc5;
-}
-.pretraining h2 {
-  font-size: 17px;
-  margin-bottom: 18px;
-}
-.pretraining > div {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
-}
-.pretraining article {
-  border-left: 3px solid #9db789;
-  padding-left: 18px;
-}
-.pretraining article > span {
-  font-size: 12px;
-  color: #587246;
-}
-.pretraining h3 {
-  font-size: 19px;
-  margin: 8px 0;
-}
-.pretraining p {
-  font-size: 15px;
-  line-height: 1.6;
-  color: #50634b;
-}
 .mode-investigate .workspace,
 .mode-check .workspace {
   grid-template-columns: var(--sidebar-col, 210px) minmax(0, 1fr);
@@ -2929,24 +2846,6 @@ textarea:focus-visible {
   }
 }
 @media (max-width: 640px) {
-  .welcome {
-    padding: 24px 20px;
-  }
-  .welcome-brand span {
-    display: none;
-  }
-  .welcome-content {
-    margin-top: 40px;
-  }
-  .welcome h1 {
-    letter-spacing: -1px;
-  }
-  .welcome-content > p {
-    font-size: 16px;
-  }
-  .pretraining > div {
-    grid-template-columns: 1fr;
-  }
   .learning-focus,
   .guided-experiment {
     padding: 18px;
@@ -3415,37 +3314,9 @@ textarea:focus-visible {
 }
 
 /* Equations belong to the explanation step, with one task visible at a time. */
-.welcome-outcomes {
-  margin: 25px 0;
-  padding: 22px;
-  border: 1px solid #c9d7bf;
-  border-radius: 10px;
-  background: #fffef9;
-  max-width: 860px;
-}
-.welcome-outcomes h2 {
-  font-size: 21px;
-  margin-bottom: 12px;
-}
-.welcome-outcomes ol {
-  padding-left: 22px;
-  line-height: 1.65;
-  font-size: 16px;
-}
-.welcome-outcomes li + li {
-  margin-top: 6px;
-}
-.welcome-outcomes details {
-  margin-top: 16px;
-  font-size: 15px;
-}
-.welcome-outcomes summary,
 .equation-lesson summary {
   cursor: pointer;
   padding: 8px 0;
-}
-.welcome-outcomes details p {
-  font-size: 15px;
 }
 .equation-lesson {
   padding: 24px;

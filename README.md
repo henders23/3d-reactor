@@ -34,6 +34,8 @@ The [second student review](docs/STUDENT-REVIEW-2.md) adds three further improve
 
 The [equations and cognitive-load review](docs/REVIEW-COGNITIVE-LOAD.md) restores the supplied checkpoint-based version, adds explicit context and outcomes, and introduces one equation per investigation through meaning, a worked example and ungraded practice. Focused energy and neutron diagrams reduce competing detail; the full equipment layout and 3D exploration remain available.
 
+The curiosity-led course is now the entry point. A course map opens each investigation with a puzzle and shows the equation it will earn. Two investigations have deep-dive screens. The chain lab (02) has an interactive neutron budget, a generation chart and a three-part challenge. Investigation 03 runs in six acts: puzzle, sealed prediction, equation lab, evidence, explanation and a new situation. Its evidence comes from the lab model's own control-rod run. Challenges ask for typed numbers and give feedback on common errors. The guided 3D-lab route and free exploration remain one click away. Course progress is kept in local storage (`core-course-v1`).
+
 ## What is included
 
 - Whole-plant, reactor-core and microscopic schematic views.
@@ -69,6 +71,9 @@ Current assessment requirements were not available for verification during devel
 
 ```text
 src/App.tsx             Application state, controls and learning workflow
+src/Course.tsx          Course map, puzzle, equation lab, evidence and chain lab screens
+src/course.ts           Course content, challenge checking and the recorded model run
+src/course.css          Dark course theme and animations
 src/ReactorScene.tsx    Procedural Three.js geometry, picking and camera controls
 src/Schematic.tsx       Keyboard-accessible plant diagram
 src/FissionDiagram.tsx  Accessible explanation of neutron outcomes
@@ -97,4 +102,4 @@ Automated model tests and DOM-based learner-workflow tests are included. Type ch
 
 ## Dependencies and privacy
 
-React, Three.js, Lucide and bundled DM Sans/Manrope fonts. Font licences remain with their installed packages. Original geometry is generated in code. No analytics, tracking, cloud student-data collection or AI service calls are included. Predictions and reflections stay in local storage until the student exports them.
+React, Three.js, Lucide and bundled DM Sans, Manrope, Space Grotesk, IBM Plex Sans and STIX Two Text fonts. Font licences remain with their installed packages. Original geometry is generated in code. No analytics, tracking, cloud student-data collection or AI service calls are included. Predictions and reflections stay in local storage until the student exports them.

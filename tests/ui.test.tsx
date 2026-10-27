@@ -260,7 +260,11 @@ test("guided control changes remain fixed and stop automatically with captured e
 });
 test("entry starts with orientation and free exploration starts paused", () => {
   render(React.createElement(App));
-  assert.ok(screen.getByRole("heading", { name: /If the reactor shuts down/ }));
+  assert.ok(
+    screen.getByRole("heading", {
+      name: /Only about a third becomes electricity/,
+    }),
+  );
   assert.equal(screen.queryByRole("slider"), null);
   fireEvent.click(screen.getByRole("button", { name: "Explore freely" }));
   assert.ok(screen.getByRole("button", { name: "Run simulation" }));
@@ -577,4 +581,52 @@ test("each equation's worked example leads to actionable feedback and retry", as
     assert.match(screen.getByRole("status").textContent!, meaning);
     view.unmount();
   }
+});
+test("course map opens a sealed prediction, an equation lab and the recorded evidence", () => {
+  const done = { prediction: "", explanation: "x", completed: true };
+  localStorage.setItem(
+    "core-reactor-learning-v1",
+    JSON.stringify({ energy: done, neutrons: done }),
+  );
+  render(React.createElement(App));
+  assert.ok(screen.getByText("2 of 5 cleared"));
+  fireEvent.click(
+    screen.getAllByRole("button", { name: /Open the puzzle/ })[0],
+  );
+  assert.ok(
+    screen.getByRole("heading", { name: /What did the fuel temperature do/ }),
+  );
+  const seal = screen.getByRole("button", { name: /Seal my prediction/ });
+  assert.equal((seal as HTMLButtonElement).disabled, true);
+  fireEvent.click(screen.getByRole("button", { name: /Falls steadily/ }));
+  fireEvent.click(screen.getByRole("button", { name: "Fairly sure" }));
+  fireEvent.click(seal);
+  assert.ok(screen.getByText(/Curve B · fairly sure/));
+  fireEvent.click(screen.getByRole("button", { name: /Build the equation/ }));
+  // The live balance responds to the sliders.
+  fireEvent.change(screen.getByRole("slider", { name: "Heat to coolant" }), {
+    target: { value: "95" },
+  });
+  assert.ok(screen.getByText(/FUEL TEMPERATURE IS STEADY/));
+  fireEvent.change(screen.getByLabelText(/What is dT/), {
+    target: { value: "-0.75" },
+  });
+  fireEvent.click(screen.getAllByRole("button", { name: "Check" })[0]);
+  assert.ok(screen.getByText(/left out decay heat/));
+  fireEvent.click(screen.getByRole("button", { name: /Skip to the evidence/ }));
+  assert.ok(screen.getByText("Your sketch matches the data."));
+  fireEvent.change(
+    screen.getByLabelText(/How fast does the fuel temperature change/),
+    {
+      target: { value: "2" },
+    },
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Check" }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /negative temperature feedback/ }),
+  );
+  assert.ok(screen.getByText(/INVESTIGATION 04 UNLOCKED/));
+  const saved = JSON.parse(localStorage.getItem("core-course-v1") || "{}");
+  assert.equal(saved.controlSolved, true);
+  assert.equal(saved.sealed.curve, "B");
 });

@@ -39,7 +39,14 @@ import FissionDiagram from "./FissionDiagram";
 import TrendChart from "./TrendChart";
 import { ScienceTour, ExplanationHelp } from "./ScienceUI";
 import { misconceptionFeedback, explanationSupport } from "./science";
-import { Welcome, LearningFocus, GuidedExperiment } from "./LearningUI";
+import { LearningFocus, GuidedExperiment } from "./LearningUI";
+import Course from "./Course";
+import {
+  readCourse,
+  saveCourse,
+  type CourseProgress,
+  type CourseScreen,
+} from "./course";
 import { learning, guidedControls, advanceGuided } from "./learning";
 import { parts, lessons, sources, type PartID } from "./content";
 import {
@@ -127,6 +134,15 @@ function Modal({
 }
 export default function App() {
   const [started, setStarted] = useState(false);
+  const [courseScreen, setCourseScreen] = useState<CourseScreen>("map");
+  const [course, setCourse] = useState<CourseProgress>(readCourse);
+  const updateCourse = useCallback(
+    (update: (p: CourseProgress) => CourseProgress) => setCourse(update),
+    [],
+  );
+  useEffect(() => {
+    saveCourse(course);
+  }, [course]);
   const [revising, setRevising] = useState(false);
   const [reviewEvidence, setReviewEvidence] = useState(false);
   const [guidedStarted, setGuidedStarted] = useState(false);
@@ -913,15 +929,29 @@ export default function App() {
       )}
     </aside>
   );
+  // A deep-dive or a guided lab run both count as clearing an investigation.
+  const cleared = lessons
+    .filter(
+      (l) =>
+        records[l.id]?.completed ||
+        (l.id === "neutrons" && course.chainSolved) ||
+        (l.id === "control" && course.controlSolved),
+    )
+    .map((l) => l.id);
   if (!started)
     return (
-      <Welcome
-        completed={count}
+      <Course
+        screen={courseScreen}
+        go={setCourseScreen}
+        progress={course}
+        setProgress={updateCourse}
+        cleared={cleared}
+        onLesson={startLesson}
         onLearn={() =>
           startLesson(
             Math.max(
               0,
-              lessons.findIndex((l) => !records[l.id]?.completed),
+              lessons.findIndex((l) => !cleared.includes(l.id)),
             ),
           )
         }
@@ -945,6 +975,7 @@ export default function App() {
           onClick={() => {
             setRunning(false);
             setStarted(false);
+            setCourseScreen("map");
           }}
           aria-label="Learning home"
         >

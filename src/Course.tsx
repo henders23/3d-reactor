@@ -1,0 +1,2355 @@
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Atom,
+  BookOpen,
+  Lock,
+  Star,
+} from "lucide-react";
+import { lessons } from "./content";
+import {
+  chainChallenge,
+  chainState,
+  chart,
+  confidenceLevels,
+  controlRun,
+  curveOptions,
+  deepDive,
+  explanationBlocks,
+  explanationIdeas,
+  feedbackOptions,
+  fuelPath,
+  heatChallenge,
+  heatHints,
+  heatRate,
+  judge,
+  kEff,
+  mysteries,
+  neutronsPerFission,
+  openQuestions,
+  powerPath,
+  pumpPart,
+  runAt,
+  signed,
+  verdicts,
+  type CourseProgress,
+  type CourseScreen,
+  type Curve,
+  type NumericPart,
+  type Verdict,
+} from "./course";
+
+type Go = (screen: CourseScreen) => void;
+type SetProgress = (update: (p: CourseProgress) => CourseProgress) => void;
+export type CourseProps = {
+  screen: CourseScreen;
+  go: Go;
+  progress: CourseProgress;
+  setProgress: SetProgress;
+  cleared: string[];
+  onLearn: () => void;
+  onExplore: () => void;
+  onLesson: (index: number) => void;
+};
+
+const tones = {
+  text: "#E8F1EE",
+  text2: "#C9D8D4",
+  amber: "#FFB648",
+  amber2: "#FFD48A",
+  blue: "#5CD6FF",
+  blue2: "#A8E9FF",
+} as const;
+
+/* ---------- Typesetting helpers ---------- */
+/** Renders “P_f”, “dT_f/dt”, “k_eff” style tokens with real subscripts. */
+export function withSubs(text: string): ReactNode {
+  return text
+    .split(/(_[a-z→]+)/)
+    .map((part, i) =>
+      part.startsWith("_") ? <sub key={i}>{part.slice(1)}</sub> : part,
+    );
+}
+function Sym({
+  b,
+  s,
+  tone,
+}: {
+  b: ReactNode;
+  s?: ReactNode;
+  tone?: keyof typeof tones;
+}) {
+  return (
+    <span className="c-sym" style={tone ? { color: tones[tone] } : undefined}>
+      {b}
+      {s !== undefined && <sub>{s}</sub>}
+    </span>
+  );
+}
+function Frac({ top, bottom }: { top: ReactNode; bottom: ReactNode }) {
+  return (
+    <span className="c-frac">
+      <span>{top}</span>
+      <span>{bottom}</span>
+    </span>
+  );
+}
+const Op = ({ children }: { children: ReactNode }) => (
+  <span className="c-op">{children}</span>
+);
+const laws: Record<
+  string,
+  { label: string; eq: ReactNode; legend: [string, keyof typeof tones][] }
+> = {
+  energy: {
+    label: "eta equals P sub e over P sub th",
+    eq: (
+      <>
+        <Sym b="η" tone="text2" />
+        <Op>=</Op>
+        <Frac
+          top={<Sym b="P" s="e" tone="amber" />}
+          bottom={<Sym b="P" s="th" tone="blue" />}
+        />
+      </>
+    ),
+    legend: [
+      ["efficiency", "text2"],
+      ["electrical power out", "amber"],
+      ["thermal power in", "blue"],
+    ],
+  },
+  neutrons: {
+    label: "k eff equals N sub g plus 1 over N sub g",
+    eq: (
+      <>
+        <Sym b="k" s="eff" tone="blue" />
+        <Op>=</Op>
+        <Frac top={<Sym b="N" s="g+1" />} bottom={<Sym b="N" s="g" />} />
+      </>
+    ),
+    legend: [
+      ["multiplication factor", "blue"],
+      ["next generation ÷ this generation", "text2"],
+    ],
+  },
+  control: {
+    label:
+      "C sub f times d T sub f over d t equals P sub f plus P sub d minus Q dot from fuel to coolant",
+    eq: (
+      <>
+        <Sym b="C" s="f" tone="text2" />
+        <Frac
+          top={
+            <>
+              dT<sub>f</sub>
+            </>
+          }
+          bottom="dt"
+        />
+        <Op>=</Op>
+        <Sym b="P" s="f" tone="amber" />
+        <Op>+</Op>
+        <Sym b="P" s="d" tone="amber2" />
+        <Op>−</Op>
+        <Sym b="Q̇" s="f→c" tone="blue" />
+      </>
+    ),
+    legend: [
+      ["stored energy changing", "text2"],
+      ["made by fission", "amber"],
+      ["made by decay", "amber2"],
+      ["carried away", "blue"],
+    ],
+  },
+  cooling: {
+    label: "Q dot equals m dot c sub p delta T",
+    eq: (
+      <>
+        <Sym b="Q̇" tone="blue" />
+        <Op>=</Op>
+        <Sym b="ṁ" tone="blue2" />
+        <Sym b="c" s="p" />
+        <Sym b="ΔT" tone="amber" />
+      </>
+    ),
+    legend: [
+      ["heat carried per second", "blue"],
+      ["mass flow", "blue2"],
+      ["temperature rise", "amber"],
+    ],
+  },
+  shutdown: {
+    label:
+      "P sub d of t equals P sub d zero times 2 to the minus t over T half",
+    eq: (
+      <>
+        <Sym b="P" s="d" tone="amber2" />
+        <Op>=</Op>
+        <Sym b="P" s="d,0" tone="amber2" />
+        <Op>·</Op>
+        <span className="c-sym">
+          2<sup>−t/T½</sup>
+        </span>
+      </>
+    ),
+    legend: [
+      ["decay power", "amber2"],
+      ["halves every half-life", "text2"],
+    ],
+  },
+};
+function Law({ id, size }: { id: string; size: "hero" | "card" }) {
+  return (
+    <div
+      className={`c-eq c-eq--${size}`}
+      role="img"
+      aria-label={laws[id].label}
+    >
+      {laws[id].eq}
+    </div>
+  );
+}
+
+/* ---------- Shared chrome ---------- */
+function useOnce<T>(make: () => T) {
+  const ref = useRef<T | null>(null);
+  if (ref.current === null) ref.current = make();
+  return ref.current;
+}
+function Brand() {
+  return (
+    <div className="c-brand">
+      <Atom size={32} strokeWidth={1.5} aria-hidden="true" />
+      <span>
+        <strong>CORE</strong>
+        <small>Nuclear Science</small>
+      </span>
+    </div>
+  );
+}
+const acts: [string, CourseScreen][] = [
+  ["Puzzle", "puzzle"],
+  ["Predict", "puzzle"],
+  ["Equation", "equation"],
+  ["Evidence", "evidence"],
+  ["Explain", "evidence"],
+  ["New situation", "evidence"],
+];
+function InnerHeader({
+  go,
+  back,
+  now,
+  label,
+}: {
+  go: Go;
+  back: [string, CourseScreen];
+  now?: number;
+  label?: string;
+}) {
+  return (
+    <header className="c-header">
+      <button className="c-back" onClick={() => go(back[1])}>
+        <ArrowLeft size={18} aria-hidden="true" />
+        {back[0]}
+      </button>
+      {now ? (
+        <nav aria-label="Acts">
+          <ol className="c-acts">
+            {acts.map(([name, target], i) => (
+              <li key={name}>
+                <button
+                  className={i + 1 < now ? "done" : i + 1 === now ? "now" : ""}
+                  aria-current={i + 1 === now ? "step" : undefined}
+                  onClick={() => go(target)}
+                >
+                  {i + 1} {name}
+                </button>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      ) : (
+        <span className="c-eyebrow c-eyebrow--blue">{label}</span>
+      )}
+    </header>
+  );
+}
+function NumericCard({
+  part,
+  tag,
+  value,
+  result,
+  onInput,
+  onCheck,
+  tone = "amber",
+}: {
+  part: NumericPart;
+  tag: string;
+  value: string;
+  result?: Verdict;
+  onInput: (v: string) => void;
+  onCheck: () => void;
+  tone?: "amber" | "blue";
+}) {
+  const id = `c-q-${tag}-${part.id}`;
+  return (
+    <div
+      className={`c-part ${result ? (result.ok ? "is-ok" : "is-retry") : ""}`}
+    >
+      <label htmlFor={id}>
+        <b className={`c-tag c-tag--${tone}`}>{part.id}</b>{" "}
+        {withSubs(part.question)}
+      </label>
+      <div className="c-answer">
+        <input
+          id={id}
+          type="text"
+          inputMode="decimal"
+          autoComplete="off"
+          placeholder="number"
+          value={value}
+          onChange={(e) => onInput(e.target.value)}
+          onKeyDown={(e) => e.key === "Enter" && onCheck()}
+        />
+        {part.unit && <span className="c-unit">{part.unit}</span>}
+        <button className={`c-check c-check--${tone}`} onClick={onCheck}>
+          Check
+        </button>
+      </div>
+      <p className="c-feedback" aria-live="polite">
+        {result ? withSubs(result.message) : ""}
+      </p>
+    </div>
+  );
+}
+function useChallenge(parts: NumericPart[]) {
+  const [answers, setAnswers] = useState<Record<string, string>>({});
+  const [results, setResults] = useState<Record<string, Verdict>>({});
+  const solved = parts.filter((p) => results[p.id]?.ok).length;
+  return {
+    solved,
+    all: solved === parts.length,
+    card: (p: NumericPart, tag: string, tone?: "amber" | "blue") => (
+      <NumericCard
+        key={p.id}
+        part={p}
+        tag={tag}
+        tone={tone}
+        value={answers[p.id] ?? ""}
+        result={results[p.id]}
+        onInput={(v) => setAnswers((a) => ({ ...a, [p.id]: v }))}
+        onCheck={() =>
+          setResults((r) => ({ ...r, [p.id]: judge(p, answers[p.id] ?? "") }))
+        }
+      />
+    ),
+  };
+}
+
+/* ---------- Course map ---------- */
+function CoreVisual() {
+  return (
+    <svg
+      viewBox="0 0 520 470"
+      width="100%"
+      role="img"
+      aria-label="Animated cross-section of a reactor core: control rods slide down between glowing fuel rods while neutrons scatter outward through the water"
+    >
+      <defs>
+        <radialGradient id="c-cher" cx="50%" cy="52%" r="50%">
+          <stop offset="0%" stopColor="#5CD6FF" stopOpacity="0.55" />
+          <stop offset="60%" stopColor="#1C6E8A" stopOpacity="0.18" />
+          <stop offset="100%" stopColor="#0D1918" stopOpacity="0" />
+        </radialGradient>
+        <clipPath id="c-core">
+          <circle cx="260" cy="245" r="176" />
+        </clipPath>
+      </defs>
+      <circle
+        cx="260"
+        cy="245"
+        r="200"
+        fill="none"
+        stroke="#24403D"
+        strokeWidth="2"
+      />
+      <circle
+        cx="260"
+        cy="245"
+        r="190"
+        fill="none"
+        stroke="#36605A"
+        strokeWidth="8"
+      />
+      <circle
+        className="c-a-glow"
+        cx="260"
+        cy="245"
+        r="176"
+        fill="url(#c-cher)"
+      />
+      <g clipPath="url(#c-core)">
+        <path
+          className="c-a-flow"
+          d="M74 420 V70"
+          stroke="#5CD6FF"
+          strokeWidth="2"
+          opacity=".5"
+        />
+        <path
+          className="c-a-flow"
+          d="M446 420 V70"
+          stroke="#5CD6FF"
+          strokeWidth="2"
+          opacity=".5"
+        />
+        <g fill="#FFB648">
+          {[
+            [146, 130, 230, true, 0],
+            [190, 110, 270, false, 0],
+            [234, 100, 290, true, 0.4],
+            [278, 100, 290, false, 0],
+            [322, 110, 270, true, 0.7],
+            [366, 130, 230, false, 0],
+            [102, 160, 170, false, 0],
+            [410, 160, 170, false, 0],
+          ].map(([x, y, h, hot, delay], i) => (
+            <rect
+              key={i}
+              className={hot ? "c-a-hot" : undefined}
+              x={x as number}
+              y={y as number}
+              width="22"
+              height={h as number}
+              rx="11"
+              opacity={hot ? undefined : 0.7}
+              style={delay ? { animationDelay: `${delay}s` } : undefined}
+            />
+          ))}
+        </g>
+        <g className="c-a-rod">
+          {[
+            [169, 90],
+            [257, 80],
+            [345, 90],
+          ].map(([x, y]) => (
+            <rect
+              key={x}
+              x={x}
+              y={y}
+              width="18"
+              height="230"
+              rx="3"
+              fill="#2B3B3A"
+              stroke="#7F9893"
+              strokeWidth="1.5"
+            />
+          ))}
+        </g>
+        <g fill="#A8E9FF">
+          <circle className="c-a-n1" cx="245" cy="260" r="4.5" />
+          <circle className="c-a-n2" cx="289" cy="230" r="4.5" />
+          <circle className="c-a-n3" cx="245" cy="210" r="4.5" />
+          <circle className="c-a-n4" cx="333" cy="270" r="4.5" />
+          <circle
+            className="c-a-n1"
+            cx="201"
+            cy="300"
+            r="4"
+            style={{ animationDelay: ".65s" }}
+          />
+          <circle
+            className="c-a-n3"
+            cx="377"
+            cy="230"
+            r="4"
+            style={{ animationDelay: ".15s" }}
+          />
+        </g>
+      </g>
+      <g fontFamily="Space Grotesk, sans-serif" fontSize="13" fill="#C9D8D4">
+        <path d="M396 140 L452 92 H500" stroke="#7F9893" fill="none" />
+        <text x="440" y="84">
+          control rod
+        </text>
+        <path d="M160 330 L96 420 H30" stroke="#7F9893" fill="none" />
+        <text x="22" y="440">
+          fuel rod
+        </text>
+        <path d="M430 360 L470 420 H505" stroke="#7F9893" fill="none" />
+        <text x="420" y="440">
+          water
+        </text>
+      </g>
+    </svg>
+  );
+}
+function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
+  const run = useOnce(() => controlRun());
+  const first = runAt(run, 1);
+  const currentIndex = lessons.findIndex((l) => !cleared.includes(l.id));
+  const current = currentIndex === -1 ? null : lessons[currentIndex];
+  const open = (i: number) => {
+    const deep = deepDive[lessons[i].id];
+    return deep ? go(deep) : onLesson(i);
+  };
+  const clues = lessons.filter((l) => cleared.includes(l.id));
+  return (
+    <>
+      <header className="c-header c-header--line">
+        <Brand />
+        <nav aria-label="Progress" className="c-header-tools">
+          <div className="c-progress">
+            <span className="c-segs" aria-hidden="true">
+              {lessons.map((l, i) => (
+                <span
+                  key={l.id}
+                  className={
+                    cleared.includes(l.id)
+                      ? "done"
+                      : i === currentIndex
+                        ? "now"
+                        : ""
+                  }
+                />
+              ))}
+            </span>
+            <span>{cleared.length} of 5 cleared</span>
+          </div>
+          <a className="c-notebook-link" href="#notebook">
+            <BookOpen size={18} aria-hidden="true" />
+            Lab notebook
+            <span className="c-count">{clues.length}</span>
+          </a>
+        </nav>
+      </header>
+
+      <section className="c-hero">
+        <div className="c-stack c-stack--lg">
+          {current ? (
+            <>
+              <span className="c-eyebrow c-live">
+                <span className="c-dot" />
+                INVESTIGATION 0{currentIndex + 1} ·{" "}
+                {cleared.length ? "UP NEXT" : "START HERE"}
+              </span>
+              <h1 className="c-h1" tabIndex={-1}>
+                {mysteries[current.id].headline}
+              </h1>
+              <p className="c-lead">{mysteries[current.id].intro}</p>
+              <div className="c-law">
+                <span className="c-eyebrow c-eyebrow--muted">
+                  THE LAW YOU’LL EARN
+                </span>
+                <Law id={current.id} size="hero" />
+                <div className="c-chips">
+                  {laws[current.id].legend.map(([text, tone]) => (
+                    <span key={text} className={`c-chip c-chip--${tone}`}>
+                      {text}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            </>
+          ) : (
+            <>
+              <span className="c-eyebrow">ALL FIVE INVESTIGATIONS CLEARED</span>
+              <h1 className="c-h1" tabIndex={-1}>
+                Every mystery solved. Now try to break your own explanations.
+              </h1>
+              <p className="c-lead">
+                Replay any investigation, or open the full 3D laboratory and
+                design an experiment none of the investigations asked for.
+              </p>
+            </>
+          )}
+          <div className="c-actions">
+            {current && deepDive[current.id] ? (
+              <button
+                className="c-btn c-btn--primary"
+                onClick={() => open(currentIndex)}
+              >
+                Open the puzzle <ArrowRight size={18} aria-hidden="true" />
+              </button>
+            ) : (
+              <button className="c-btn c-btn--primary" onClick={onLearn}>
+                {cleared.length
+                  ? "Continue learning"
+                  : "Start with the essentials"}
+                <ArrowRight size={18} aria-hidden="true" />
+              </button>
+            )}
+            <button className="c-btn c-btn--ghost" onClick={onExplore}>
+              Explore freely
+            </button>
+          </div>
+          <p className="c-meta">
+            Five short investigations · allow 35–45 minutes including equation
+            practice · go at your own pace
+            {cleared.length ? ` · ${cleared.length}/5 completed` : ""}
+          </p>
+        </div>
+        <div className="c-stack">
+          <div className="c-visual">
+            <CoreVisual />
+          </div>
+          <div className="c-spark-row">
+            <div className="c-spark">
+              <span>Fission power, rods in</span>
+              <svg viewBox="0 0 200 64" width="100%" aria-hidden="true">
+                <path
+                  className="c-a-draw"
+                  d="M0 10 H40 C46 10 48 34 56 38 C80 44 140 47 200 49"
+                  fill="none"
+                  stroke="#E8F1EE"
+                  strokeWidth="2.5"
+                />
+              </svg>
+              <strong>
+                −{(100 - first.power).toFixed(0)}% in the first second
+              </strong>
+            </div>
+            <div className="c-spark">
+              <span>Fuel temperature, same moment</span>
+              <svg viewBox="0 0 200 64" width="100%" aria-hidden="true">
+                <path
+                  className="c-a-draw"
+                  d="M0 10 H40 C90 12 150 26 200 40"
+                  fill="none"
+                  stroke="#FFB648"
+                  strokeWidth="2.5"
+                  strokeDasharray="6 5"
+                />
+              </svg>
+              <strong>
+                −{(600 - first.fuel).toFixed(1)} °C in the first second
+              </strong>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="c-section" aria-labelledby="c-route-title">
+        <div className="c-section-head">
+          <div className="c-stack c-stack--sm">
+            <h2 id="c-route-title" className="c-h2">
+              Your route through the reactor
+            </h2>
+            <p className="c-sub">
+              Every investigation opens with a puzzle and ends with an equation
+              you can use on something new.
+            </p>
+          </div>
+          <span className="c-sub">Follow the coolant →</span>
+        </div>
+        <svg
+          viewBox="0 0 1200 12"
+          width="100%"
+          height="12"
+          preserveAspectRatio="none"
+          aria-hidden="true"
+        >
+          <path
+            className="c-a-flow"
+            d="M0 6 H1200"
+            stroke="#5CD6FF"
+            strokeWidth="3"
+            opacity=".7"
+          />
+        </svg>
+        <ol className="c-route">
+          {lessons.map((l, i) => {
+            const status = cleared.includes(l.id)
+              ? "cleared"
+              : i === currentIndex
+                ? "current"
+                : "locked";
+            const deep = deepDive[l.id];
+            return (
+              <li key={l.id} className={`c-station c-station--${status}`}>
+                <div className="c-station-top">
+                  <span className="c-station-num">0{i + 1}</span>
+                  {status === "locked" ? (
+                    <Lock size={18} aria-label="Locked" />
+                  ) : (
+                    <span className="c-station-status">
+                      {status === "cleared" ? "CLEARED" : "UP NEXT"}
+                    </span>
+                  )}
+                </div>
+                <h3>{mysteries[l.id].card}</h3>
+                <div
+                  className={
+                    status === "locked" ? "c-station-eq c-blur" : "c-station-eq"
+                  }
+                  aria-hidden={status === "locked" ? true : undefined}
+                >
+                  <Law id={l.id} size="card" />
+                </div>
+                {status === "cleared" && (
+                  <p>Clue earned: {mysteries[l.id].clue}</p>
+                )}
+                {status === "locked" && (
+                  <p>
+                    Unlocks after 0{i}. {mysteries[l.id].teaser}
+                  </p>
+                )}
+                {status === "current" && (
+                  <button
+                    className="c-btn c-btn--primary c-btn--small"
+                    onClick={() => open(i)}
+                  >
+                    {deep ? "Open the puzzle" : "Start"}
+                  </button>
+                )}
+                {status === "cleared" && (
+                  <button className="c-link" onClick={() => open(i)}>
+                    {deep === "chain"
+                      ? "Replay the chain lab"
+                      : deep
+                        ? "Replay the puzzle"
+                        : "Replay in the 3D lab"}
+                  </button>
+                )}
+                {deep && status !== "locked" && (
+                  <button className="c-link" onClick={() => onLesson(i)}>
+                    Run it in the 3D lab
+                  </button>
+                )}
+              </li>
+            );
+          })}
+        </ol>
+      </section>
+
+      <section
+        className="c-section c-outcomes"
+        aria-labelledby="outcomes-title"
+      >
+        <h2 id="outcomes-title" className="c-h2">
+          By the end, you should be able to…
+        </h2>
+        <ol>
+          <li>
+            Trace energy through separate water circuits and calculate
+            thermal-to-electrical efficiency.
+          </li>
+          <li>
+            Distinguish fission, moderation and capture; interpret a neutron
+            multiplication factor.
+          </li>
+          <li>
+            Use an energy balance to explain why temperature lags behind a power
+            change.
+          </li>
+          <li>
+            Relate coolant flow to heat transport, stating what is held fixed.
+          </li>
+          <li>
+            Distinguish decay heat from stored thermal energy and apply a simple
+            half-life model.
+          </li>
+        </ol>
+        <details>
+          <summary>What should I know first?</summary>
+          <p>
+            Bring basic ratios, percentages and algebra. A derivative here means
+            “rate of change”; each equation has a worked example. No prior
+            reactor engineering is needed.
+          </p>
+          <p>
+            Energy is an amount (joules). Power is energy per second (watts).
+            Temperature describes thermal state (°C or K), not the amount of
+            heat stored. 1 MW = 1 million J/s.
+          </p>
+        </details>
+      </section>
+
+      <section className="c-section" aria-labelledby="c-q-title">
+        <h2 id="c-q-title" className="c-h2">
+          Questions you can’t answer yet
+        </h2>
+        <div className="c-questions">
+          {openQuestions.map((q) => (
+            <div key={q.text} className={`c-question c-question--${q.tone}`}>
+              <span>{q.text}</span>
+              <small>{q.where}</small>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      <section id="notebook" className="c-section" aria-labelledby="c-nb-title">
+        <h2 id="c-nb-title" className="c-h2 c-h2--sm">
+          Lab notebook · {clues.length} {clues.length === 1 ? "clue" : "clues"}
+        </h2>
+        <div className="c-clues">
+          {clues.map((l) => (
+            <div key={l.id} className="c-clue">
+              <span>CLUE 0{lessons.indexOf(l) + 1}</span>
+              <p>{mysteries[l.id].clue}</p>
+            </div>
+          ))}
+          {current && (
+            <div className="c-clue c-clue--hidden">
+              <span>CLUE 0{currentIndex + 1} · HIDDEN</span>
+              <p>
+                Somewhere inside Investigation 0{currentIndex + 1}. You’ll know
+                it when the evidence surprises you.
+              </p>
+            </div>
+          )}
+        </div>
+        <p className="c-note">
+          This is a simplified learning model. Its colours, particles and timing
+          help explain ideas; they are not measurements of a real plant.
+        </p>
+      </section>
+    </>
+  );
+}
+
+/* ---------- Investigation 03 · Acts 1–2 ---------- */
+function ChartFrame({
+  label,
+  axis,
+  children,
+}: {
+  label: string;
+  axis: [string, string, string];
+  children: ReactNode;
+}) {
+  return (
+    <svg viewBox="0 0 640 230" width="100%" role="img" aria-label={label}>
+      <path d="M40 30 H630 M40 105 H630 M40 180 H630" stroke="#1F3532" />
+      <g fontFamily="Space Grotesk, sans-serif" fontSize="12" fill="#9DB3AE">
+        <text x="0" y="34">
+          {axis[0]}
+        </text>
+        <text x="0" y="109">
+          {axis[1]}
+        </text>
+        <text x="0" y="184">
+          {axis[2]}
+        </text>
+        <text x="54" y="222">
+          0 s
+        </text>
+        <text x="324" y="222">
+          10 s
+        </text>
+        <text x="598" y="222">
+          20 s
+        </text>
+      </g>
+      <path
+        d="M60 14 V196"
+        stroke="#FFB648"
+        strokeDasharray="4 4"
+        opacity=".7"
+      />
+      {children}
+    </svg>
+  );
+}
+function PuzzleScreen({ go, progress, setProgress }: CourseProps) {
+  const run = useOnce(() => controlRun());
+  const fuel = fuelPath(run);
+  const sealed = progress.sealed;
+  const [choice, setChoice] = useState<Curve | null>(sealed?.curve ?? null);
+  const [conf, setConf] = useState<number | null>(sealed?.confidence ?? null);
+  const [reason, setReason] = useState(sealed?.reason ?? "");
+  const pathOf = (c: Curve) =>
+    curveOptions.find((o) => o.id === c)?.path ?? fuel;
+  const first = runAt(run, 1);
+  return (
+    <>
+      <InnerHeader go={go} back={["Course map", "map"]} now={2} />
+      <section className="c-intro">
+        <span className="c-eyebrow">INVESTIGATION 03 · THE PUZZLE</span>
+        <h1 className="c-h1" tabIndex={-1}>
+          We pushed the rods 15 points deeper. Fission power fell{" "}
+          {(100 - first.power).toFixed(0)}% in one second. What did the fuel
+          temperature do?
+        </h1>
+        <p className="c-lead">
+          This is the real trace from the lab model. We’ve hidden the
+          temperature. Sketch it before you see it — a wrong prediction you can
+          explain beats a lucky guess.
+        </p>
+      </section>
+      <section className="c-grid2">
+        <div className="c-panel c-stack">
+          <div className="c-runlabel">
+            <span>RUN 03-A · RODS 50% → 65% · 20 MODEL SECONDS</span>
+            <span className="c-live">
+              <span className="c-dot c-dot--blue" /> recorded
+            </span>
+          </div>
+          <div className="c-stack c-stack--xs">
+            <span className="c-chart-title">Total thermal power</span>
+            <ChartFrame
+              label={`Power stays at 100% until the rods move, drops to ${first.power.toFixed(1)}% within one second, then declines slowly to ${run[run.length - 1].power.toFixed(1)}% at 20 seconds`}
+              axis={["100%", "90%", "80%"]}
+            >
+              <path
+                className="c-a-draw-long"
+                d={powerPath(run)}
+                fill="none"
+                stroke="#E8F1EE"
+                strokeWidth="3"
+              />
+            </ChartFrame>
+          </div>
+          <div className="c-stack c-stack--xs">
+            <span className="c-chart-title">
+              Fuel temperature <span className="c-amber">· your sketch</span>
+            </span>
+            <ChartFrame
+              label={
+                choice
+                  ? `Your predicted fuel temperature: ${curveOptions.find((o) => o.id === choice)?.label}`
+                  : "Fuel temperature hidden until you predict"
+              }
+              axis={["600°C", "585°C", "570°C"]}
+            >
+              {choice ? (
+                <path
+                  key={choice}
+                  className="c-a-draw-long"
+                  d={pathOf(choice)}
+                  fill="none"
+                  stroke="#FFB648"
+                  strokeWidth="3"
+                  strokeDasharray="9 6"
+                />
+              ) : (
+                <>
+                  <path d="M40 30 H60" stroke="#FFB648" strokeWidth="3" />
+                  <text
+                    className="c-a-q"
+                    x="300"
+                    y="140"
+                    fontFamily="Space Grotesk, sans-serif"
+                    fontSize="96"
+                    fontWeight="700"
+                    fill="#FFB648"
+                  >
+                    ?
+                  </text>
+                </>
+              )}
+            </ChartFrame>
+          </div>
+        </div>
+
+        <div className="c-stack c-stack--lg">
+          {!sealed ? (
+            <>
+              <fieldset className="c-fieldset">
+                <legend>1 · Pick the shape of the temperature curve</legend>
+                <div className="c-options">
+                  {curveOptions.map((o) => (
+                    <button
+                      key={o.id}
+                      className={`c-option ${choice === o.id ? "on" : ""}`}
+                      aria-pressed={choice === o.id}
+                      onClick={() => setChoice(o.id)}
+                    >
+                      <strong>{o.id}</strong>
+                      <svg
+                        viewBox="0 0 640 200"
+                        width="100%"
+                        height="56"
+                        preserveAspectRatio="none"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d={pathOf(o.id)}
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="10"
+                        />
+                      </svg>
+                      <span>{o.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <fieldset className="c-fieldset">
+                <legend>2 · How sure are you?</legend>
+                <div className="c-confidence">
+                  {confidenceLevels.map((label, i) => (
+                    <button
+                      key={label}
+                      className={conf === i ? "on" : ""}
+                      aria-pressed={conf === i}
+                      onClick={() => setConf(i)}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </fieldset>
+              <div className="c-stack c-stack--sm">
+                <label htmlFor="c-why" className="c-legend">
+                  3 · Because…
+                </label>
+                <textarea
+                  id="c-why"
+                  className="c-textarea"
+                  rows={3}
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="When fission power falls, the fuel… because the energy already inside it…"
+                />
+              </div>
+              <button
+                className="c-btn c-btn--primary c-btn--wide"
+                disabled={!(choice && conf !== null)}
+                onClick={() =>
+                  choice &&
+                  conf !== null &&
+                  setProgress((p) => ({
+                    ...p,
+                    sealed: { curve: choice, confidence: conf, reason },
+                  }))
+                }
+              >
+                <Lock size={18} aria-hidden="true" /> Seal my prediction
+              </button>
+            </>
+          ) : (
+            <div className="c-sealed" role="status">
+              <span className="c-eyebrow">PREDICTION SEALED</span>
+              <strong>
+                Curve {sealed.curve} ·{" "}
+                {confidenceLevels[sealed.confidence].toLowerCase()} (
+                {sealed.confidence + 1}/5)
+              </strong>
+              <p>
+                It stays locked until Act 4, where it goes head-to-head with the
+                recorded data. First, you need a tool that can tell you how fast
+                the temperature should change.
+              </p>
+              <div className="c-actions">
+                <button
+                  className="c-btn c-btn--primary"
+                  onClick={() => go("equation")}
+                >
+                  Act 3 · Build the equation
+                </button>
+                {!progress.controlSolved && (
+                  <button
+                    className="c-btn c-btn--ghost"
+                    onClick={() => setProgress((p) => ({ ...p, sealed: null }))}
+                  >
+                    Change my mind
+                  </button>
+                )}
+              </div>
+            </div>
+          )}
+          <div className="c-tips">
+            <div className="c-tip c-tip--blue">
+              <span>THINK ABOUT</span>
+              <p>
+                Switch off a kettle. Is the water cold one second later? What
+                would have to be true for it to be?
+              </p>
+            </div>
+            <div className="c-tip">
+              <span>FROM YOUR NOTEBOOK</span>
+              <p>
+                Power is a rate: 1 MW means 1 MJ every second. Temperature is
+                not a rate.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
+/* ---------- Investigation 03 · Act 3 ---------- */
+const terms = {
+  C: {
+    name: "C_f · FUEL HEAT CAPACITY",
+    tone: "text2",
+    unit: "J/K (here MJ/K)",
+    meaning:
+      "The energy needed to warm the whole fuel by one kelvin. It sets how sluggish the temperature is.",
+    trap: "It isn’t specific heat per kilogram. A bigger C_f doesn’t change which way the fuel goes — only how fast.",
+  },
+  T: {
+    name: "dT_f/dt · RATE OF TEMPERATURE CHANGE",
+    tone: "text",
+    unit: "K/s",
+    meaning:
+      "How fast the fuel temperature is changing right now: the slope of the temperature graph.",
+    trap: "It’s a slope, not a temperature. Fuel at 600 °C can have dT/dt = 0, and the slope can be negative while the fuel is still very hot.",
+  },
+  Pf: {
+    name: "P_f · FISSION POWER",
+    tone: "amber",
+    unit: "W (here MW)",
+    meaning:
+      "Energy released by fission each second. The control rods act on this term, and it responds within seconds.",
+    trap: "Cutting P_f does not cut the temperature. It changes the slope, not the value.",
+  },
+  Pd: {
+    name: "P_d · DECAY HEAT",
+    tone: "amber2",
+    unit: "W (here MW)",
+    meaning:
+      "Energy from radioactive decay of fission products. It keeps coming after fission is suppressed.",
+    trap: "Rods can’t switch it off. Forget it, and every answer about shutdown is wrong.",
+  },
+  Q: {
+    name: "Q̇_f→c · HEAT TO COOLANT",
+    tone: "blue",
+    unit: "W (here MW)",
+    meaning:
+      "Energy crossing from fuel into the water each second. The dot means it is a rate.",
+    trap: "It isn’t fixed. It depends on how much hotter the fuel is than the water, so it falls as the fuel cools. Hold that thought.",
+  },
+} as const;
+type TermID = keyof typeof terms;
+function EquationScreen({ go }: CourseProps) {
+  const [term, setTerm] = useState<TermID>("T");
+  const [gen, setGen] = useState(90);
+  const [decay, setDecay] = useState(5);
+  const [removal, setRemoval] = useState(105);
+  const [cap, setCap] = useState(20);
+  const [hints, setHints] = useState(0);
+  const challenge = useChallenge(heatChallenge);
+  const rate = heatRate(gen, decay, removal, cap);
+  const dir = Math.abs(rate) < 0.005 ? "steady" : rate > 0 ? "up" : "down";
+  const total = gen + decay;
+  const dots = (flow: number) => {
+    // Twice as fast as the original design: 130 / flow seconds per crossing.
+    const dur = Math.max(0.3, Math.min(3, 130 / Math.max(flow, 1)));
+    return Array.from({ length: 5 }, (_, i) => ({
+      animationDuration: `${dur.toFixed(2)}s`,
+      animationDelay: `${(-(dur * i) / 5).toFixed(2)}s`,
+    }));
+  };
+  const t = terms[term];
+  const termButton = (
+    id: TermID,
+    content: ReactNode,
+    label: string,
+    tone: keyof typeof tones,
+  ) => (
+    <button
+      className={`c-term ${term === id ? "on" : ""}`}
+      style={{ color: tones[tone] }}
+      aria-pressed={term === id}
+      aria-label={label}
+      onClick={() => setTerm(id)}
+    >
+      {content}
+    </button>
+  );
+  const slider = (
+    label: ReactNode,
+    tone: keyof typeof tones,
+    value: number,
+    set: (n: number) => void,
+    min: number,
+    max: number,
+    unit: string,
+    name: string,
+  ) => (
+    <label className="c-range">
+      <span>
+        <span style={{ color: tones[tone] }}>{label}</span>
+        <b>
+          {value} {unit}
+        </b>
+      </span>
+      <input
+        type="range"
+        aria-label={name}
+        min={min}
+        max={max}
+        step={1}
+        value={value}
+        onChange={(e) => set(+e.target.value)}
+      />
+    </label>
+  );
+  return (
+    <>
+      <InnerHeader
+        go={go}
+        back={["Your sealed prediction", "puzzle"]}
+        now={3}
+      />
+      <section className="c-intro c-intro--center">
+        <span className="c-eyebrow">ACT 3 · THE EQUATION LAB</span>
+        <h1 className="c-h1 c-h1--md" tabIndex={-1}>
+          Temperature doesn’t follow power. It follows the gap between energy in
+          and energy out.
+        </h1>
+        <p className="c-sub">
+          Tap any part of the equation to see what it means — and the trap
+          students fall into.
+        </p>
+        <div className="c-bigeq">
+          {termButton(
+            "C",
+            <Sym b="C" s="f" />,
+            "C sub f, fuel heat capacity",
+            "text2",
+          )}
+          {termButton(
+            "T",
+            <Frac
+              top={
+                <>
+                  dT<sub>f</sub>
+                </>
+              }
+              bottom="dt"
+            />,
+            "d T sub f over d t, rate of temperature change",
+            "text",
+          )}
+          <Op>=</Op>
+          {termButton(
+            "Pf",
+            <Sym b="P" s="f" />,
+            "P sub f, fission power",
+            "amber",
+          )}
+          <Op>+</Op>
+          {termButton(
+            "Pd",
+            <Sym b="P" s="d" />,
+            "P sub d, decay heat",
+            "amber2",
+          )}
+          <Op>−</Op>
+          {termButton(
+            "Q",
+            <Sym b="Q̇" s="f→c" />,
+            "Q dot, heat to coolant",
+            "blue",
+          )}
+        </div>
+        <div className="c-termgrid" aria-live="polite">
+          <div className="c-termcard">
+            <span className="c-eyebrow" style={{ color: tones[t.tone] }}>
+              {withSubs(t.name)}
+            </span>
+            <p>{t.meaning}</p>
+            <small>Unit · {t.unit}</small>
+          </div>
+          <div className="c-termcard c-termcard--trap">
+            <span className="c-eyebrow">THE TRAP</span>
+            <p>{withSubs(t.trap)}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="c-section" aria-labelledby="c-bal-title">
+        <div className="c-stack c-stack--sm">
+          <h2 id="c-bal-title" className="c-h2">
+            Play with the balance
+          </h2>
+          <p className="c-sub">
+            The fuel is a reservoir of thermal energy. Change what flows in and
+            out, and watch which way it moves.
+          </p>
+        </div>
+        <div className="c-grid2">
+          <div className="c-panel c-panel--tight">
+            <svg
+              viewBox="0 0 640 430"
+              width="100%"
+              role="img"
+              aria-label={`Energy reservoir: ${total} MW flowing in, ${removal} MW flowing out; fuel temperature ${dir === "up" ? "rising" : dir === "down" ? "falling" : "steady"}`}
+            >
+              <defs>
+                <clipPath id="c-tank">
+                  <rect x="225" y="70" width="190" height="300" rx="22" />
+                </clipPath>
+              </defs>
+              <rect
+                x="20"
+                y="96"
+                width="210"
+                height="28"
+                rx="14"
+                fill="#1F1A10"
+                stroke="#5A4A2A"
+              />
+              <g fill="#FFB648">
+                {dots(total).map((s, i) => (
+                  <circle
+                    key={i}
+                    className="c-a-pipe"
+                    cx="30"
+                    cy="110"
+                    r="7"
+                    style={s}
+                  />
+                ))}
+              </g>
+              <text
+                x="24"
+                y="80"
+                fontFamily="STIX Two Text, serif"
+                fontStyle="italic"
+                fontSize="24"
+                fill="#FFB648"
+              >
+                P
+                <tspan fontSize="14" dy="5">
+                  f
+                </tspan>
+                <tspan dy="-5"> + P</tspan>
+                <tspan fontSize="14" dy="5">
+                  d
+                </tspan>
+              </text>
+              <text
+                x="24"
+                y="156"
+                fontFamily="Space Grotesk, sans-serif"
+                fontSize="16"
+                fill="#FFD48A"
+              >
+                {total} MW in
+              </text>
+              <rect
+                x="410"
+                y="316"
+                width="210"
+                height="28"
+                rx="14"
+                fill="#0F2630"
+                stroke="#1C6E8A"
+              />
+              <g fill="#5CD6FF">
+                {dots(removal).map((s, i) => (
+                  <circle
+                    key={i}
+                    className="c-a-pipe"
+                    cx="420"
+                    cy="330"
+                    r="7"
+                    style={s}
+                  />
+                ))}
+              </g>
+              <text
+                x="430"
+                y="300"
+                fontFamily="STIX Two Text, serif"
+                fontStyle="italic"
+                fontSize="24"
+                fill="#5CD6FF"
+              >
+                Q̇
+                <tspan fontSize="14" dy="5">
+                  f→c
+                </tspan>
+              </text>
+              <text
+                x="430"
+                y="378"
+                fontFamily="Space Grotesk, sans-serif"
+                fontSize="16"
+                fill="#A8E9FF"
+              >
+                {removal} MW out
+              </text>
+              <rect
+                x="225"
+                y="70"
+                width="190"
+                height="300"
+                rx="22"
+                fill="#0A1312"
+                stroke="#36605A"
+                strokeWidth="3"
+              />
+              <g clipPath="url(#c-tank)">
+                <g className={`c-a-lvl-${dir}`}>
+                  <rect
+                    x="225"
+                    y="190"
+                    width="190"
+                    height="400"
+                    fill="#FFB648"
+                    opacity=".85"
+                  />
+                  <rect x="225" y="190" width="190" height="6" fill="#FFD48A" />
+                </g>
+              </g>
+              <text
+                x="320"
+                y="56"
+                textAnchor="middle"
+                fontFamily="Space Grotesk, sans-serif"
+                fontSize="15"
+                fill="#C9D8D4"
+              >
+                fuel · stored thermal energy
+              </text>
+              <g className={`c-a-ar-${dir}`}>
+                <text
+                  x="320"
+                  y="190"
+                  textAnchor="middle"
+                  fontFamily="Space Grotesk, sans-serif"
+                  fontSize="56"
+                  fontWeight="700"
+                  fill="#0A1312"
+                >
+                  {dir === "up" ? "↑" : dir === "down" ? "↓" : "="}
+                </text>
+              </g>
+              <text
+                x="320"
+                y="410"
+                textAnchor="middle"
+                fontFamily="Space Grotesk, sans-serif"
+                fontSize="15"
+                fill="#9DB3AE"
+              >
+                a bigger C
+                <tspan fontSize="11" dy="4">
+                  f
+                </tspan>
+                <tspan dy="-4"> makes the level move more slowly</tspan>
+              </text>
+            </svg>
+          </div>
+          <div className="c-stack">
+            <div className={`c-readout c-readout--${dir}`} role="status">
+              <span className="c-eyebrow c-eyebrow--muted">
+                FUEL TEMPERATURE IS{" "}
+                {dir === "up"
+                  ? "RISING"
+                  : dir === "down"
+                    ? "FALLING"
+                    : "STEADY"}
+              </span>
+              <div className="c-readout-main">
+                <span className="c-eqtext">
+                  dT<sub>f</sub>/dt =
+                </span>
+                <strong>{signed(rate)}</strong>
+                <span>K/s</span>
+              </div>
+              <span className="c-eqtext c-eqtext--sm">
+                = ({gen} + {decay} − {removal}) MW ÷ {cap} MJ/K
+              </span>
+            </div>
+            <div className="c-ranges">
+              {slider(
+                <>
+                  Fission power P<sub>f</sub>
+                </>,
+                "amber",
+                gen,
+                setGen,
+                40,
+                140,
+                "MW",
+                "Fission power",
+              )}
+              {slider(
+                <>
+                  Decay heat P<sub>d</sub>
+                </>,
+                "amber2",
+                decay,
+                setDecay,
+                0,
+                20,
+                "MW",
+                "Decay heat",
+              )}
+              {slider(
+                <>To coolant Q̇</>,
+                "blue",
+                removal,
+                setRemoval,
+                40,
+                140,
+                "MW",
+                "Heat to coolant",
+              )}
+              {slider(
+                <>
+                  Heat capacity C<sub>f</sub>
+                </>,
+                "text2",
+                cap,
+                setCap,
+                5,
+                40,
+                "MJ/K",
+                "Fuel heat capacity",
+              )}
+            </div>
+            <div className="c-regimes">
+              {[
+                ["P > Q̇", "warms", "up"],
+                ["P = Q̇", "holds steady", "steady"],
+                ["P < Q̇", "cools", "down"],
+              ].map(([rule, label, d]) => (
+                <div key={d} className={`c-regime ${dir === d ? "on" : ""}`}>
+                  <span className="c-eqtext">{rule}</span>
+                  <small>{label}</small>
+                </div>
+              ))}
+            </div>
+            <p className="c-sub">
+              Try it: drag{" "}
+              <span className="c-amber">
+                P<sub>f</sub>
+              </span>{" "}
+              down sharply. Now double C<sub>f</sub>. What happens to how fast
+              the fuel cools — and does the direction change?
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="c-section" aria-labelledby="c-we-title">
+        <h2 id="c-we-title" className="c-h2">
+          Worked example
+        </h2>
+        <ol className="c-ladder">
+          <li>
+            <span>1 · GIVEN</span>
+            <p>
+              Generation 120 MW. Transfer to coolant 100 MW. Fuel heat capacity
+              20 MJ/K.
+            </p>
+          </li>
+          <li>
+            <span>2 · REARRANGE</span>
+            <p className="c-eqtext c-eqtext--lg">dT/dt = (P − Q̇) / C</p>
+          </li>
+          <li>
+            <span>3 · SUBSTITUTE</span>
+            <p className="c-eqtext c-eqtext--lg c-upright">
+              (120 − 100) / 20 = <span className="c-amber">+1 K/s</span>
+            </p>
+          </li>
+          <li>
+            <span>4 · INTERPRET</span>
+            <p>
+              The fuel warms by 1 kelvin each second right now. That is a slope,
+              not a temperature: MW ÷ MJ/K leaves K/s.
+            </p>
+          </li>
+        </ol>
+      </section>
+
+      <section className="c-challenge" aria-labelledby="c-ch-title">
+        <div className="c-section-head">
+          <div className="c-stack c-stack--xs">
+            <span className="c-eyebrow">
+              CHALLENGE · THREE STEPS, NO MULTIPLE CHOICE
+            </span>
+            <h2 id="c-ch-title" className="c-h2 c-h2--sm">
+              Predict the first seconds after the rods go in
+            </h2>
+          </div>
+          <span className="c-score">{challenge.solved} of 3 solved</span>
+        </div>
+        <p className="c-brief">
+          At steady state a core makes <b className="c-amber">100 MW</b> of
+          fission power plus <b className="c-amber2">5 MW</b> of decay heat, and{" "}
+          <b className="c-blue">105 MW</b> flows to the coolant. The rods drop
+          fission power to <b className="c-amber">90 MW</b> almost at once. For
+          the next few seconds, transfer to the coolant stays near 105 MW.{" "}
+          <b>
+            C<sub>f</sub> = 20 MJ/K.
+          </b>
+        </p>
+        <div className="c-parts">
+          {heatChallenge.map((p) => challenge.card(p, "heat"))}
+        </div>
+        <div className="c-hints">
+          <button
+            className="c-btn c-btn--ghost c-btn--small"
+            disabled={hints >= heatHints.length}
+            onClick={() => setHints((h) => Math.min(heatHints.length, h + 1))}
+          >
+            {hints >= heatHints.length
+              ? "All hints shown"
+              : `Show hint ${hints + 1} of 3`}
+          </button>
+          {heatHints.slice(0, hints).map((h) => (
+            <span key={h} className="c-hint">
+              {h}
+            </span>
+          ))}
+        </div>
+        {challenge.all && (
+          <div className="c-next">
+            <p>
+              Part c is the key. As the fuel cools, Q̇ shrinks toward 95 MW, so
+              the cooling must eventually slow and level off. How soon? The
+              recorded run will tell you.
+            </p>
+            <button
+              className="c-btn c-btn--primary"
+              onClick={() => go("evidence")}
+            >
+              Act 4 · Unseal the data
+            </button>
+          </div>
+        )}
+        {!challenge.all && (
+          <button className="c-link" onClick={() => go("evidence")}>
+            Skip to the evidence
+          </button>
+        )}
+      </section>
+    </>
+  );
+}
+
+/* ---------- Investigation 03 · Acts 4–6 ---------- */
+function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
+  const run = useOnce(() => controlRun());
+  const [pick, setPick] = useState<Curve | null>(
+    progress.sealed?.curve ?? null,
+  );
+  const [pump, setPump] = useState("");
+  const [pumpResult, setPumpResult] = useState<Verdict | undefined>();
+  const [why, setWhy] = useState<number | null>(null);
+  const curve = progress.sealed?.curve ?? pick;
+  const v = curve ? verdicts[curve] : null;
+  const at = (t: number) => runAt(run, t);
+  const [p0, p1, p10, p20] = [at(0), at(1), at(10), at(20)];
+  const ideas = explanationIdeas(progress.explanation);
+  const transferDone =
+    !!pumpResult?.ok && why !== null && feedbackOptions[why].ok;
+  useEffect(() => {
+    if (transferDone && !progress.controlSolved)
+      setProgress((p) => ({ ...p, controlSolved: true }));
+  }, [transferDone, progress.controlSolved, setProgress]);
+  const sketch = curve
+    ? (curveOptions.find((o) => o.id === curve)?.path ?? fuelPath(run))
+    : null;
+  const badges = [
+    {
+      name: "Calibrated",
+      how: "sealed the matching curve",
+      on: progress.sealed?.curve === "B",
+    },
+    {
+      name: "Fluent",
+      how: "all 4 ideas in your words",
+      on: ideas.every((i) => i.ok),
+    },
+    {
+      name: "Transfer",
+      how: "solved the pump problem",
+      on: transferDone || progress.controlSolved,
+    },
+  ];
+  const fmt = (n: number, d = 1) => n.toFixed(d);
+  return (
+    <>
+      <InnerHeader go={go} back={["Equation lab", "equation"]} now={4} />
+      <section
+        className="c-section c-section--first"
+        aria-labelledby="c-ev-title"
+      >
+        <span className="c-eyebrow">ACT 4 · UNSEAL THE DATA</span>
+        <h1 id="c-ev-title" className="c-h1 c-h1--md" tabIndex={-1}>
+          Your sketch against the recorded run
+        </h1>
+        {!progress.sealed && (
+          <div className="c-picker">
+            <span className="c-sub">
+              You didn’t seal a prediction. Which curve would you have drawn?
+            </span>
+            {curveOptions.map((o) => (
+              <button
+                key={o.id}
+                className={pick === o.id ? "on" : ""}
+                aria-pressed={pick === o.id}
+                onClick={() => setPick(o.id)}
+                aria-label={`Curve ${o.id}: ${o.label}`}
+              >
+                {o.id}
+              </button>
+            ))}
+          </div>
+        )}
+        <div className="c-grid2">
+          <div className="c-panel c-stack c-stack--sm">
+            <div className="c-legend-row">
+              <span>
+                <svg width="28" height="6" aria-hidden="true">
+                  <path d="M0 3H28" stroke="#FFB648" strokeWidth="3" />
+                </svg>
+                Recorded fuel temperature
+              </span>
+              {sketch && (
+                <span>
+                  <svg width="28" height="6" aria-hidden="true">
+                    <path
+                      d="M0 3H28"
+                      stroke="#E8F1EE"
+                      strokeWidth="3"
+                      strokeDasharray="6 4"
+                    />
+                  </svg>
+                  Your sketch ({curve})
+                </span>
+              )}
+            </div>
+            <ChartFrame
+              label={`Recorded fuel temperature falls steadily from ${fmt(p0.fuel)} to ${fmt(p20.fuel)} degrees Celsius over 20 seconds, with no sudden drop.${curve ? ` Your sketch, curve ${curve}, is dashed.` : ""}`}
+              axis={["600°C", "585°C", "570°C"]}
+            >
+              {sketch && (
+                <path
+                  d={sketch}
+                  fill="none"
+                  stroke="#E8F1EE"
+                  strokeWidth="2.5"
+                  strokeDasharray="8 6"
+                  opacity=".8"
+                />
+              )}
+              <path
+                className="c-a-draw-ev"
+                d={fuelPath(run)}
+                fill="none"
+                stroke="#FFB648"
+                strokeWidth="3.5"
+              />
+              <circle
+                cx={chart.x(p20.t)}
+                cy={chart.fuelY(p20.fuel)}
+                r="6"
+                fill="#FFB648"
+              />
+              <text
+                x="520"
+                y={chart.fuelY(p20.fuel) + 28}
+                fontFamily="Space Grotesk, sans-serif"
+                fontSize="13"
+                fill="#FFB648"
+              >
+                {fmt(p20.fuel)} °C
+              </text>
+            </ChartFrame>
+          </div>
+          <div className="c-stack">
+            {v ? (
+              <div
+                className={`c-verdict ${v.ok ? "is-ok" : "is-retry"}`}
+                role="status"
+              >
+                <span className="c-eyebrow">{v.tag}</span>
+                <strong>{v.title}</strong>
+                <p>{v.body}</p>
+              </div>
+            ) : (
+              <div className="c-verdict">
+                <span className="c-eyebrow c-eyebrow--muted">
+                  NO PREDICTION YET
+                </span>
+                <p>Choose a curve above to compare it with the data.</p>
+              </div>
+            )}
+            <table className="c-table">
+              <caption>RUN 03-A · RECORDED IN THE LAB MODEL</caption>
+              <thead>
+                <tr>
+                  <th scope="col">Quantity</th>
+                  <th scope="col">0 s</th>
+                  <th scope="col">1 s</th>
+                  <th scope="col">20 s</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <th scope="row">Total thermal power</th>
+                  <td>{fmt(p0.power)}%</td>
+                  <td className="c-strong">{fmt(p1.power)}%</td>
+                  <td>{fmt(p20.power)}%</td>
+                </tr>
+                <tr>
+                  <th scope="row">Fuel temperature</th>
+                  <td>{fmt(p0.fuel)} °C</td>
+                  <td className="c-strong c-amber">{fmt(p1.fuel)} °C</td>
+                  <td>{fmt(p20.fuel)} °C</td>
+                </tr>
+                <tr>
+                  <th scope="row">Decay heat</th>
+                  <td>{fmt(p0.decay, 2)}%</td>
+                  <td>{fmt(p1.decay, 2)}%</td>
+                  <td>{fmt(p20.decay, 2)}%</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div className="c-grid2 c-grid2--narrow">
+          <div className="c-tip c-tip--blue c-tip--big">
+            <span>CHECK IT WITH YOUR EQUATION</span>
+            <p className="c-eqtext c-eqtext--md c-upright">
+              In the first second, power fell <b>{fmt(p0.power - p1.power)}</b>{" "}
+              points but the fuel fell only <b>{fmt(p0.fuel - p1.fuel)} °C</b>.
+              Between 10 s and 20 s, power fell just{" "}
+              {fmt(p10.power - p20.power)} points — yet the fuel fell{" "}
+              <b>{fmt(p10.fuel - p20.fuel)} °C</b>.
+            </p>
+            <p>
+              Which term in{" "}
+              <i className="c-eqtext">
+                C<sub>f</sub> dT<sub>f</sub>/dt = P − Q̇
+              </i>{" "}
+              explains why the fuel keeps falling after power has almost
+              settled?
+            </p>
+          </div>
+          <div className="c-clue c-clue--earned">
+            <span>CLUE 03 · UNLOCKED</span>
+            <p className="c-clue-big">{mysteries.control.clue}</p>
+          </div>
+        </div>
+      </section>
+
+      <section className="c-section" aria-labelledby="c-exp-title">
+        <span className="c-eyebrow">ACT 5 · EXPLAIN IT LIKE A PHYSICIST</span>
+        <h2 id="c-exp-title" className="c-h2">
+          Why did the temperature lag behind the power?
+        </h2>
+        <div className="c-grid2 c-grid2--narrow">
+          <div className="c-stack c-stack--sm">
+            <div className="c-blocks">
+              <span className="c-sub">Add a building block:</span>
+              {explanationBlocks.map((b) => (
+                <button
+                  key={b.text}
+                  style={{ color: tones[b.tone], borderColor: tones[b.tone] }}
+                  onClick={() =>
+                    setProgress((p) => ({
+                      ...p,
+                      explanation:
+                        (p.explanation
+                          ? p.explanation.replace(/\s*$/, " ")
+                          : "") + b.phrase,
+                    }))
+                  }
+                >
+                  + {withSubs(b.text)}
+                </button>
+              ))}
+            </div>
+            <label htmlFor="c-exp" className="c-sub">
+              Your explanation
+            </label>
+            <textarea
+              id="c-exp"
+              className="c-textarea"
+              rows={6}
+              value={progress.explanation}
+              onChange={(e) =>
+                setProgress((p) => ({ ...p, explanation: e.target.value }))
+              }
+              placeholder="When the rods went in, fission power fell quickly. The fuel temperature…"
+            />
+          </div>
+          <div className="c-panel c-stack c-stack--sm">
+            <div className="c-section-head">
+              <span className="c-eyebrow c-eyebrow--muted">
+                IDEAS A STRONG ANSWER USES
+              </span>
+              <span className="c-score c-amber">
+                {ideas.filter((i) => i.ok).length}/4
+              </span>
+            </div>
+            <ul className="c-rubric">
+              {ideas.map((i) => (
+                <li key={i.label} className={i.ok ? "ok" : ""}>
+                  <svg
+                    width="22"
+                    height="22"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke={i.ok ? "#5CD6FF" : "#5A6B67"}
+                    strokeWidth="2.2"
+                    role="img"
+                    aria-label={i.ok ? "present" : "not yet"}
+                  >
+                    <circle cx="12" cy="12" r="10" />
+                    {i.ok && <path d="M7 12.5l3.2 3.2L17 9" />}
+                  </svg>
+                  {i.label}
+                </li>
+              ))}
+            </ul>
+            <small className="c-sub">
+              This only spots the ideas. Whether they’re connected correctly is
+              your call — reread it as a sceptic would.
+            </small>
+          </div>
+        </div>
+      </section>
+
+      <section className="c-challenge" aria-labelledby="c-tr-title">
+        <span className="c-eyebrow">ACT 6 · A SITUATION YOU HAVEN’T SEEN</span>
+        <h2 id="c-tr-title" className="c-h2 c-h2--sm">
+          Nobody touches the rods. A coolant pump slows down instead.
+        </h2>
+        <p className="c-brief">
+          A core is steady at{" "}
+          <b className="c-amber">
+            P<sub>f</sub> = 100 MW
+          </b>{" "}
+          and{" "}
+          <b className="c-amber2">
+            P<sub>d</sub> = 6 MW
+          </b>
+          . The pump slows and heat transfer to the coolant drops to{" "}
+          <b className="c-blue">Q̇ = 70 MW</b>.{" "}
+          <b>
+            C<sub>f</sub> = 18 MJ/K.
+          </b>
+        </p>
+        <div className="c-parts">
+          <NumericCard
+            part={{ ...pumpPart, id: "1" }}
+            tag="pump"
+            value={pump}
+            result={pumpResult}
+            onInput={setPump}
+            onCheck={() => setPumpResult(judge(pumpPart, pump))}
+          />
+          <fieldset
+            className={`c-part ${why === null ? "" : feedbackOptions[why].ok ? "is-ok" : "is-retry"}`}
+          >
+            <legend>
+              <b className="c-tag c-tag--amber">2</b> A few seconds later,
+              fission power starts to fall — though nobody moved the rods. Why?
+            </legend>
+            {feedbackOptions.map((o, i) => (
+              <button
+                key={o.text}
+                className={`c-choice ${why === i ? "on" : ""}`}
+                aria-pressed={why === i}
+                onClick={() => setWhy(i)}
+              >
+                {o.text}
+              </button>
+            ))}
+            <p className="c-feedback" aria-live="polite">
+              {why === null ? "" : feedbackOptions[why].feedback}
+            </p>
+          </fieldset>
+        </div>
+      </section>
+
+      <section className="c-grid2 c-grid2--narrow c-section">
+        <div className="c-panel c-stack">
+          <span className="c-eyebrow c-eyebrow--muted">
+            INVESTIGATION 03 · WHAT YOU EARNED
+          </span>
+          <div className="c-badges">
+            {badges.map((b) => (
+              <div key={b.name} className={`c-badge ${b.on ? "on" : ""}`}>
+                <Star size={32} strokeWidth={1.6} aria-hidden="true" />
+                <strong>{b.name}</strong>
+                <small>{b.on ? b.how : `Locked · ${b.how}`}</small>
+              </div>
+            ))}
+          </div>
+        </div>
+        <button
+          className="c-nextcard"
+          onClick={() => go("map")}
+          disabled={!progress.controlSolved}
+        >
+          <span className="c-eyebrow">
+            {progress.controlSolved
+              ? "NEXT MYSTERY · INVESTIGATION 04 UNLOCKED"
+              : "SOLVE ACT 6 TO UNLOCK INVESTIGATION 04"}
+          </span>
+          <strong>
+            You just watched it happen: the fuel got hotter and the power fell.
+            How can less flow carry the same heat?
+          </strong>
+          <span
+            className={progress.controlSolved ? "" : "c-blur"}
+            aria-hidden={progress.controlSolved ? undefined : true}
+          >
+            <Law id="cooling" size="card" />
+          </span>
+          {progress.controlSolved && <small>Back to the course map →</small>}
+        </button>
+      </section>
+    </>
+  );
+}
+
+/* ---------- Investigation 02 · chain lab ---------- */
+function ChainScreen({ go, progress, setProgress }: CourseProps) {
+  const [leak, setLeak] = useState(5);
+  const [capture, setCapture] = useState(60);
+  const challenge = useChallenge(chainChallenge);
+  useEffect(() => {
+    if (challenge.all && !progress.chainSolved)
+      setProgress((p) => ({ ...p, chainSolved: true }));
+  }, [challenge.all, progress.chainSolved, setProgress]);
+  const nu = neutronsPerFission;
+  const k = kEff(nu, leak, capture);
+  const state = chainState(k);
+  const color =
+    state === "sub" ? tones.blue : state === "crit" ? tones.text : tones.amber;
+  const N = useMemo(
+    () => Array.from({ length: 9 }, (_, g) => 1000 * Math.pow(k, g)),
+    [k],
+  );
+  const max = Math.max(1400, ...N);
+  const leaked = leak;
+  const captured = (100 - leak) * (capture / 100);
+  const fission = 100 - leaked - captured;
+  return (
+    <>
+      <InnerHeader
+        go={go}
+        back={["Course map", "map"]}
+        label="INVESTIGATION 02 · CHAIN LAB"
+      />
+      <section className="c-hero c-hero--tight">
+        <div className="c-stack c-stack--lg">
+          <h1 className="c-h1" tabIndex={-1}>
+            {mysteries.neutrons.headline}
+          </h1>
+          <p className="c-lead">{mysteries.neutrons.intro}</p>
+          <div className="c-law">
+            <div
+              className="c-eq c-eq--hero"
+              role="img"
+              aria-label="k eff equals N sub g plus 1 over N sub g, equals nu times one minus L times one minus C"
+            >
+              <Sym b="k" s="eff" tone="blue" />
+              <Op>=</Op>
+              <Frac top={<Sym b="N" s="g+1" />} bottom={<Sym b="N" s="g" />} />
+              <Op>=</Op>
+              <Sym b="ν" tone="amber" />
+              <span className="c-upright">
+                (1 − <i>L</i>)(1 − <i style={{ color: tones.blue2 }}>C</i>)
+              </span>
+            </div>
+            <p className="c-sub">
+              Right-hand side: a simplified neutron life cycle. ν = neutrons per
+              fission, L = fraction that leaks out, C = fraction of the rest
+              captured without fission (rods, water, other nuclei).
+            </p>
+          </div>
+        </div>
+        <div className="c-visual">
+          <svg
+            viewBox="0 0 520 380"
+            width="100%"
+            role="img"
+            aria-label="Animation: a neutron strikes a uranium-235 nucleus, which wobbles and splits into two fragments while three new neutrons fly out"
+          >
+            <circle
+              className="c-a-flash"
+              cx="260"
+              cy="190"
+              r="90"
+              fill="#FFB648"
+              opacity="0"
+            />
+            <circle className="c-a-in" cx="260" cy="190" r="9" fill="#A8E9FF" />
+            <g className="c-a-nuc">
+              <g className="c-a-wob">
+                <circle
+                  cx="260"
+                  cy="190"
+                  r="46"
+                  fill="#2A2111"
+                  stroke="#FFB648"
+                  strokeWidth="3"
+                />
+                <text
+                  x="260"
+                  y="198"
+                  textAnchor="middle"
+                  fontFamily="Space Grotesk, sans-serif"
+                  fontSize="20"
+                  fontWeight="600"
+                  fill="#FFB648"
+                >
+                  U-235
+                </text>
+              </g>
+            </g>
+            <circle
+              className="c-a-fragA"
+              cx="260"
+              cy="190"
+              r="30"
+              fill="#2A2111"
+              stroke="#FFB648"
+              strokeWidth="3"
+            />
+            <circle
+              className="c-a-fragB"
+              cx="260"
+              cy="190"
+              r="26"
+              fill="#2A2111"
+              stroke="#FFD48A"
+              strokeWidth="3"
+            />
+            <circle className="c-a-o1" cx="260" cy="190" r="8" fill="#A8E9FF" />
+            <circle className="c-a-o2" cx="260" cy="190" r="8" fill="#A8E9FF" />
+            <circle className="c-a-o3" cx="260" cy="190" r="8" fill="#A8E9FF" />
+            <text
+              x="24"
+              y="356"
+              fontFamily="Space Grotesk, sans-serif"
+              fontSize="14"
+              fill="#9DB3AE"
+            >
+              1 neutron in → 2 fragments + energy + 2–3 neutrons out
+            </text>
+          </svg>
+        </div>
+      </section>
+
+      <section className="c-section" aria-labelledby="c-budget-title">
+        <h2 id="c-budget-title" className="c-h2">
+          Balance the budget
+        </h2>
+        <div className="c-grid2">
+          <div className="c-panel c-stack c-stack--lg">
+            <div className="c-ranges">
+              <label className="c-range c-range--blue">
+                <span>
+                  <span>Leakage L</span>
+                  <b>{leak}%</b>
+                </span>
+                <input
+                  type="range"
+                  aria-label="Leakage"
+                  min={0}
+                  max={12}
+                  step={0.5}
+                  value={leak}
+                  onChange={(e) => setLeak(+e.target.value)}
+                />
+              </label>
+              <label className="c-range c-range--blue">
+                <span>
+                  <span style={{ color: tones.blue2 }}>Capture C</span>
+                  <b>{capture}%</b>
+                </span>
+                <input
+                  type="range"
+                  aria-label="Capture"
+                  min={40}
+                  max={70}
+                  step={0.5}
+                  value={capture}
+                  onChange={(e) => setCapture(+e.target.value)}
+                />
+              </label>
+            </div>
+            <div className="c-stack c-stack--sm">
+              <span className="c-chart-title">
+                Follow 100 neutrons born in one generation
+              </span>
+              <div className="c-budget" aria-hidden="true">
+                <span
+                  style={{ width: `${leaked}%` }}
+                  className="c-budget-leak"
+                />
+                <span
+                  style={{ width: `${captured}%` }}
+                  className="c-budget-cap"
+                >
+                  {Math.round(captured)}
+                </span>
+                <span style={{ width: `${fission}%` }} className="c-budget-fis">
+                  {Math.round(fission)}
+                </span>
+              </div>
+              <p className="c-budget-key">
+                <span>■ {Math.round(leaked)} leak</span>
+                <span className="c-blue">
+                  ■ {Math.round(captured)} captured
+                </span>
+                <span className="c-amber">
+                  ■ {Math.round(fission)} cause fission → × {nu} ={" "}
+                  {Math.round(fission * nu)} new neutrons
+                </span>
+              </p>
+            </div>
+            <div className="c-stack c-stack--sm">
+              <span className="c-chart-title">
+                Neutrons per generation, starting from 1,000
+              </span>
+              <div
+                className="c-bars"
+                role="img"
+                aria-label={`Neutron count by generation: ${N.map((n) => Math.round(n)).join(", ")}`}
+              >
+                {N.map((n, g) => (
+                  <div key={g}>
+                    <small>
+                      {n >= 9999 ? `${Math.round(n / 1000)}k` : Math.round(n)}
+                    </small>
+                    <span
+                      style={{
+                        height: Math.max(3, Math.round((n / max) * 170)),
+                        background: color,
+                      }}
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="c-axis">
+                <span>g = 0</span>
+                <span>g = 8</span>
+              </div>
+            </div>
+          </div>
+          <div className="c-stack">
+            <div className={`c-kstate c-kstate--${state}`} role="status">
+              <span className="c-eyebrow" style={{ color }}>
+                {state === "sub"
+                  ? "SUBCRITICAL · THE CHAIN SHRINKS"
+                  : state === "crit"
+                    ? "CRITICAL · SELF-SUSTAINING"
+                    : "SUPERCRITICAL · THE CHAIN GROWS"}
+              </span>
+              <div className="c-readout-main">
+                <span className="c-eqtext">
+                  k<sub>eff</sub> =
+                </span>
+                <strong style={{ color }}>{k.toFixed(3)}</strong>
+              </div>
+              <span className="c-eqtext c-eqtext--sm">
+                = {nu} × {(1 - leak / 100).toFixed(3)} ×{" "}
+                {(1 - capture / 100).toFixed(3)}
+              </span>
+              <p>
+                {state === "sub"
+                  ? "Each generation is smaller than the last. Without a change, the fission rate dies away."
+                  : state === "crit"
+                    ? "Each generation replaces itself. This is normal, steady operation — not an emergency."
+                    : "Each generation is bigger. Power rises until something — rods, or temperature feedback — brings k back down."}
+              </p>
+            </div>
+            <div className="c-tip c-tip--blue">
+              <span>TRY TO HIT EXACTLY 1.000</span>
+              <p>
+                Notice how tiny a change in C flips the chain from dying to
+                growing. That knife-edge is what the control rods ride.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section className="c-challenge" aria-labelledby="c-cc-title">
+        <div className="c-section-head">
+          <div className="c-stack c-stack--xs">
+            <span className="c-eyebrow c-eyebrow--blue">
+              CHALLENGE · A DIFFERENT CORE
+            </span>
+            <h2 id="c-cc-title" className="c-h2 c-h2--sm">
+              The sliders won’t help you here
+            </h2>
+          </div>
+          <span className="c-score">{challenge.solved} of 3 solved</span>
+        </div>
+        <p className="c-brief">
+          In this core each fission releases <b className="c-amber">ν = 2.50</b>{" "}
+          neutrons. <b>4%</b> leak out. Of the rest,{" "}
+          <b className="c-blue2">58%</b> are captured without causing fission.
+        </p>
+        <div className="c-parts">
+          {chainChallenge.map((p) => challenge.card(p, "chain", "blue"))}
+        </div>
+      </section>
+
+      <section className="c-grid2 c-grid2--narrow c-section">
+        <div className="c-tip c-tip--amber c-tip--big">
+          <span>MIND-BENDER</span>
+          <p className="c-clue-big">
+            In a water-cooled reactor, one neutron generation can last about a
+            ten-thousandth of a second. At k = 1.008, how many neutrons would
+            1,000 become after one second?
+          </p>
+          <p className="c-eqtext c-eqtext--lg c-amber2">
+            1000 × 1.008<sup>10 000</sup> ≈ ?
+          </p>
+          <p>
+            Work it out — it’s a number with more than 30 digits. Real reactors
+            don’t do this. Something about roughly 0.65% of the neutrons changes
+            everything.
+          </p>
+        </div>
+        <div className="c-clue c-clue--earned">
+          <span>
+            {progress.chainSolved
+              ? "CLUE 02 · IN YOUR NOTEBOOK"
+              : "CLUE 02 · SOLVE THE CHALLENGE TO KEEP IT"}
+          </span>
+          <p className="c-clue-big">
+            “Critical” means k = 1: steady and self-sustaining. It is the normal
+            operating state, not an emergency.
+          </p>
+          <button className="c-link" onClick={() => go("puzzle")}>
+            Continue to Investigation 03 →
+          </button>
+        </div>
+      </section>
+    </>
+  );
+}
+
+const screens: Record<CourseScreen, (p: CourseProps) => ReactNode> = {
+  map: MapScreen,
+  puzzle: PuzzleScreen,
+  equation: EquationScreen,
+  evidence: EvidenceScreen,
+  chain: ChainScreen,
+};
+export default function Course(props: CourseProps) {
+  const root = useRef<HTMLDivElement>(null);
+  const first = useRef(true);
+  useEffect(() => {
+    if (first.current) {
+      first.current = false;
+      return;
+    }
+    // Move focus (and the viewport) to the new screen's heading.
+    root.current?.querySelector<HTMLElement>("h1")?.focus();
+  }, [props.screen]);
+  const Screen = screens[props.screen];
+  return (
+    <div className="course" ref={root}>
+      <main className="c-wrap" key={props.screen}>
+        <Screen {...props} />
+      </main>
+    </div>
+  );
+}
