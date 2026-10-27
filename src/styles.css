@@ -184,12 +184,6 @@ button {
 .sidebar-top {
   padding: 0 13px 30px;
 }
-.eyebrow {
-  font-size: 9px;
-  letter-spacing: 1.7px;
-  font-weight: 600;
-  color: #7a867b;
-}
 .sidebar h2 {
   font-size: 21px;
   letter-spacing: -0.9px;
@@ -205,7 +199,7 @@ button {
   align-items: center;
   justify-content: space-between;
   font-size: 9px;
-  letter-spacing: 1.4px;
+  font-weight: 600;
   padding: 0 13px;
   margin: 4px 0 12px;
   color: #7c887c;
@@ -308,14 +302,6 @@ button {
   justify-content: space-between;
   gap: 10px;
   margin-bottom: 25px;
-}
-.lab-intro .eyebrow {
-  font-size: 8px;
-  letter-spacing: 1.7px;
-}
-.lab-intro .eyebrow span {
-  color: #a7b0a0;
-  margin: 0 9px;
 }
 .lab-intro h1 {
   font-size: 27px;
@@ -479,11 +465,6 @@ button {
   left: 19px;
   pointer-events: none;
   max-width: 80%;
-}
-.scene-caption .eyebrow {
-  font-size: 8px;
-  letter-spacing: 1.6px;
-  color: #81917b;
 }
 .scene-caption p {
   font-size: 8px;
@@ -740,11 +721,6 @@ button {
   align-items: center;
   margin-bottom: 10px;
 }
-.small-heading {
-  font-size: 7px;
-  letter-spacing: 1.3px;
-  color: #819077;
-}
 .segmented.small {
   padding: 2px;
 }
@@ -852,9 +828,6 @@ button {
   align-items: center;
   justify-content: space-between;
 }
-.part-category .eyebrow {
-  font-size: 8px;
-}
 .part-badge {
   font-size: 9px;
   background: #e8ede1;
@@ -912,10 +885,8 @@ button {
   border-radius: 6px;
   margin: 24px 0;
 }
-.connection-card .eyebrow {
-  font-size: 7px;
-  letter-spacing: 1px;
-  color: #91a07f;
+.connection-card h3 {
+  margin: 0;
 }
 .connection-card p {
   font-size: 10px;
@@ -1089,9 +1060,6 @@ button {
 .stage-indicator span.done {
   border-color: #6e8b59;
   color: #60804c;
-}
-.inspector-top > .eyebrow + h2 {
-  margin-top: 13px;
 }
 .choices {
   display: flex;
@@ -1805,10 +1773,6 @@ textarea::placeholder {
   .lab-intro {
     margin-bottom: 20px;
   }
-  .lab-intro .eyebrow {
-    font-size: 7px;
-    letter-spacing: 1px;
-  }
   .lab-intro h1 {
     font-size: 24px;
     max-width: 310px;
@@ -1867,10 +1831,6 @@ textarea::placeholder {
   .scene-caption {
     left: 13px;
     top: 16px;
-  }
-  .scene-caption .eyebrow {
-    font-size: 7px;
-    letter-spacing: 1px;
   }
   .scene-caption p {
     font-size: 7px;
@@ -2054,9 +2014,6 @@ textarea::placeholder {
   .connection-card p {
     font-size: 12px;
   }
-  .connection-card .eyebrow {
-    font-size: 8px;
-  }
   .secondary-button,
   .primary-button {
     font-size: 12px;
@@ -2081,9 +2038,6 @@ textarea::placeholder {
   }
   .stage-indicator span {
     font-size: 9px;
-  }
-  .inspector-top > .eyebrow + h2 {
-    max-width: none;
   }
   .choices button {
     font-size: 12px;
@@ -2158,12 +2112,8 @@ textarea::placeholder {
     transition: none !important;
   }
 }
-/* Readability pass: maintain contrast and usable type at every breakpoint. */
-.eyebrow,
 .section-label,
-.small-heading,
-.metrics > div > span,
-.scene-caption .eyebrow {
+.metrics > div > span {
   color: #65745d;
 }
 .sidebar-top p,
@@ -2701,12 +2651,9 @@ textarea:focus-visible {
   border-color: #66834e;
   color: #293e29;
 }
-.eyebrow,
 .section-label,
-.small-heading,
 .lab-footer,
 .lab-footer button,
-.scene-caption .eyebrow,
 .scene-caption p,
 .scene-footnote {
   font-size: 11px;
@@ -3688,5 +3635,45 @@ textarea:focus-visible {
   }
   .sidebar:is(:hover, :focus-within) > .sidebar-rail {
     opacity: 0;
+  }
+}
+
+/* Laptop screens (wide but short): keep the header, readings and the whole 3D view on one screen. */
+@media (min-width: 1024px) and (max-height: 900px) {
+  .app-header {
+    height: 58px;
+  }
+  .workspace {
+    min-height: calc(100vh - 58px);
+  }
+  .main-content {
+    padding: 16px 24px 16px;
+  }
+  .lab-intro {
+    margin-bottom: 10px;
+    align-items: center;
+  }
+  .lab-intro h1 {
+    font-size: 22px;
+    margin: 0 0 2px;
+  }
+  .metrics {
+    padding: 8px 0;
+  }
+  .metrics strong {
+    font-size: 24px;
+    margin: 2px 0 1px;
+  }
+  .scene-area {
+    height: clamp(300px, calc(100vh - 384px), 540px);
+  }
+  .experiment-panel {
+    padding-top: 12px;
+  }
+  .inspector-top {
+    padding: 18px 22px 14px;
+  }
+  .sidebar-top {
+    padding-bottom: 16px;
   }
 }

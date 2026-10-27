@@ -34,7 +34,7 @@ The [second student review](docs/STUDENT-REVIEW-2.md) adds three further improve
 
 The [equations and cognitive-load review](docs/REVIEW-COGNITIVE-LOAD.md) restores the supplied checkpoint-based version, adds explicit context and outcomes, and introduces one equation per investigation through meaning, a worked example and ungraded practice. Focused energy and neutron diagrams reduce competing detail; the full equipment layout and 3D exploration remain available.
 
-The curiosity-led course is now the entry point. A course map opens each investigation with a puzzle and shows the equation it will earn. Two investigations have deep-dive screens. The chain lab (02) has an interactive neutron budget, a generation chart and a three-part challenge. Investigation 03 runs in six acts: puzzle, sealed prediction, equation lab, evidence, explanation and a new situation. Its evidence comes from the lab model's own control-rod run. Challenges ask for typed numbers and give feedback on common errors. The guided 3D-lab route and free exploration remain one click away. Course progress is kept in local storage (`core-course-v1`).
+The curiosity-led course is now the entry point. A course map opens each investigation with a puzzle and shows the equation it will earn. Every investigation has a deep-dive screen. 01 traces energy through a live energy-flow diagram and asks for a Carnot ceiling. The chain lab (02) has an interactive neutron budget, a generation chart and a three-part challenge. 04 cuts pump flow in the lab model and reveals a hotter core making less power, beside an interactive coolant channel. 05 drops every rod and shows the heat that remains, then puts two decay populations side by side. Investigation 03 runs in six acts: puzzle, sealed prediction, equation lab, evidence, explanation and a new situation. Its evidence comes from the lab model's own control-rod run. Challenges ask for typed numbers and give feedback on common errors. The guided 3D-lab route and free exploration remain one click away. Course progress is kept in local storage (`core-course-v1`).
 
 ## What is included
 
@@ -72,6 +72,8 @@ Current assessment requirements were not available for verification during devel
 ```text
 src/App.tsx             Application state, controls and learning workflow
 src/Course.tsx          Course map, puzzle, equation lab, evidence and chain lab screens
+src/DeepDives.tsx       Deep dives for investigations 01, 04 and 05
+src/CourseKit.tsx       Shared course typesetting, headers, charts and challenge cards
 src/course.ts           Course content, challenge checking and the recorded model run
 src/course.css          Dark course theme and animations
 src/ReactorScene.tsx    Procedural Three.js geometry, picking and camera controls

@@ -68,3 +68,40 @@ test("neutron budget classifies the chain and explanations are scanned for ideas
   );
   assert.equal(explanationIdeas("it got colder").filter((i) => i.ok).length, 0);
 });
+
+test("deep-dive challenges for 01, 04 and 05 agree with their equations", async () => {
+  const c = await import("../src/course");
+  const [ea, eb, ec] = c.energyChallenge;
+  const pe = 0.33 * 3400;
+  assert.equal(c.judge(ea, String(pe)).ok, true);
+  assert.equal(c.judge(eb, String(3400 - pe)).ok, true);
+  assert.equal(c.judge(ec, String(c.carnot(285, 35) * 100)).ok, true);
+  assert.match(c.judge(ec, "87.7").message, /°C/);
+  const [ca, cb, cc] = c.coolingChallenge;
+  assert.equal(c.judge(ca, String(c.coolantRise(3000, 18000))).ok, true);
+  assert.equal(c.judge(cb, String(c.coolantRise(3000, 12000))).ok, true);
+  assert.equal(c.judge(cc, String((12000 * 5500 * 30.3) / 1e6)).ok, true);
+  assert.match(c.judge(cb, "20.2").message, /each kilogram/);
+  const [sa, sb, sc] = c.shutdownChallenge;
+  assert.equal(c.judge(sa, String(c.decayPower(8, 20, 50))).ok, true);
+  const total = c.decayPopulations.reduce(
+    (sum, p) => sum + c.decayPower(p.p0, p.halfLife, 100),
+    0,
+  );
+  assert.equal(c.judge(sb, String(total)).ok, true);
+  assert.equal(c.judge(sc, String(3 * 200)).ok, true);
+  assert.match(c.judge(sa, "1.5").message, /straight line/);
+});
+
+test("model runs behind the 04 and 05 puzzles show the advertised behaviour", async () => {
+  const { modelRun, runAt } = await import("../src/course");
+  const cooling = modelRun("cooling", 20);
+  const [c0, c20] = [runAt(cooling, 0), runAt(cooling, 20)];
+  assert.ok(c20.fuel > c0.fuel + 10, "fuel heats up when flow is cut");
+  assert.ok(c20.power < c0.power - 5, "while thermal power falls");
+  const shutdown = modelRun("shutdown", 30);
+  const [s1, s30] = [runAt(shutdown, 1), runAt(shutdown, 30)];
+  assert.ok(s1.power < 30, "most power is gone within a second");
+  assert.ok(s30.power > 1 && s30.power < 10, "a few percent remains at 30 s");
+  assert.ok(s30.decay > 2, "decay heat is a large share of what remains");
+});

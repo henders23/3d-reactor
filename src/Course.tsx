@@ -1,12 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Atom,
-  BookOpen,
-  Lock,
-  Star,
-} from "lucide-react";
+import { ArrowRight, BookOpen, Lock, Star } from "lucide-react";
 import { lessons } from "./content";
 import {
   chainChallenge,
@@ -33,320 +26,28 @@ import {
   runAt,
   signed,
   verdicts,
-  type CourseProgress,
   type CourseScreen,
   type Curve,
-  type NumericPart,
   type Verdict,
 } from "./course";
-
-type Go = (screen: CourseScreen) => void;
-type SetProgress = (update: (p: CourseProgress) => CourseProgress) => void;
-export type CourseProps = {
-  screen: CourseScreen;
-  go: Go;
-  progress: CourseProgress;
-  setProgress: SetProgress;
-  cleared: string[];
-  onLearn: () => void;
-  onExplore: () => void;
-  onLesson: (index: number) => void;
-};
-
-const tones = {
-  text: "#E8F1EE",
-  text2: "#C9D8D4",
-  amber: "#FFB648",
-  amber2: "#FFD48A",
-  blue: "#5CD6FF",
-  blue2: "#A8E9FF",
-} as const;
-
-/* ---------- Typesetting helpers ---------- */
-/** Renders “P_f”, “dT_f/dt”, “k_eff” style tokens with real subscripts. */
-export function withSubs(text: string): ReactNode {
-  return text
-    .split(/(_[a-z→]+)/)
-    .map((part, i) =>
-      part.startsWith("_") ? <sub key={i}>{part.slice(1)}</sub> : part,
-    );
-}
-function Sym({
-  b,
-  s,
-  tone,
-}: {
-  b: ReactNode;
-  s?: ReactNode;
-  tone?: keyof typeof tones;
-}) {
-  return (
-    <span className="c-sym" style={tone ? { color: tones[tone] } : undefined}>
-      {b}
-      {s !== undefined && <sub>{s}</sub>}
-    </span>
-  );
-}
-function Frac({ top, bottom }: { top: ReactNode; bottom: ReactNode }) {
-  return (
-    <span className="c-frac">
-      <span>{top}</span>
-      <span>{bottom}</span>
-    </span>
-  );
-}
-const Op = ({ children }: { children: ReactNode }) => (
-  <span className="c-op">{children}</span>
-);
-const laws: Record<
-  string,
-  { label: string; eq: ReactNode; legend: [string, keyof typeof tones][] }
-> = {
-  energy: {
-    label: "eta equals P sub e over P sub th",
-    eq: (
-      <>
-        <Sym b="η" tone="text2" />
-        <Op>=</Op>
-        <Frac
-          top={<Sym b="P" s="e" tone="amber" />}
-          bottom={<Sym b="P" s="th" tone="blue" />}
-        />
-      </>
-    ),
-    legend: [
-      ["efficiency", "text2"],
-      ["electrical power out", "amber"],
-      ["thermal power in", "blue"],
-    ],
-  },
-  neutrons: {
-    label: "k eff equals N sub g plus 1 over N sub g",
-    eq: (
-      <>
-        <Sym b="k" s="eff" tone="blue" />
-        <Op>=</Op>
-        <Frac top={<Sym b="N" s="g+1" />} bottom={<Sym b="N" s="g" />} />
-      </>
-    ),
-    legend: [
-      ["multiplication factor", "blue"],
-      ["next generation ÷ this generation", "text2"],
-    ],
-  },
-  control: {
-    label:
-      "C sub f times d T sub f over d t equals P sub f plus P sub d minus Q dot from fuel to coolant",
-    eq: (
-      <>
-        <Sym b="C" s="f" tone="text2" />
-        <Frac
-          top={
-            <>
-              dT<sub>f</sub>
-            </>
-          }
-          bottom="dt"
-        />
-        <Op>=</Op>
-        <Sym b="P" s="f" tone="amber" />
-        <Op>+</Op>
-        <Sym b="P" s="d" tone="amber2" />
-        <Op>−</Op>
-        <Sym b="Q̇" s="f→c" tone="blue" />
-      </>
-    ),
-    legend: [
-      ["stored energy changing", "text2"],
-      ["made by fission", "amber"],
-      ["made by decay", "amber2"],
-      ["carried away", "blue"],
-    ],
-  },
-  cooling: {
-    label: "Q dot equals m dot c sub p delta T",
-    eq: (
-      <>
-        <Sym b="Q̇" tone="blue" />
-        <Op>=</Op>
-        <Sym b="ṁ" tone="blue2" />
-        <Sym b="c" s="p" />
-        <Sym b="ΔT" tone="amber" />
-      </>
-    ),
-    legend: [
-      ["heat carried per second", "blue"],
-      ["mass flow", "blue2"],
-      ["temperature rise", "amber"],
-    ],
-  },
-  shutdown: {
-    label:
-      "P sub d of t equals P sub d zero times 2 to the minus t over T half",
-    eq: (
-      <>
-        <Sym b="P" s="d" tone="amber2" />
-        <Op>=</Op>
-        <Sym b="P" s="d,0" tone="amber2" />
-        <Op>·</Op>
-        <span className="c-sym">
-          2<sup>−t/T½</sup>
-        </span>
-      </>
-    ),
-    legend: [
-      ["decay power", "amber2"],
-      ["halves every half-life", "text2"],
-    ],
-  },
-};
-function Law({ id, size }: { id: string; size: "hero" | "card" }) {
-  return (
-    <div
-      className={`c-eq c-eq--${size}`}
-      role="img"
-      aria-label={laws[id].label}
-    >
-      {laws[id].eq}
-    </div>
-  );
-}
-
-/* ---------- Shared chrome ---------- */
-function useOnce<T>(make: () => T) {
-  const ref = useRef<T | null>(null);
-  if (ref.current === null) ref.current = make();
-  return ref.current;
-}
-function Brand() {
-  return (
-    <div className="c-brand">
-      <Atom size={32} strokeWidth={1.5} aria-hidden="true" />
-      <span>
-        <strong>CORE</strong>
-        <small>Nuclear Science</small>
-      </span>
-    </div>
-  );
-}
-const acts: [string, CourseScreen][] = [
-  ["Puzzle", "puzzle"],
-  ["Predict", "puzzle"],
-  ["Equation", "equation"],
-  ["Evidence", "evidence"],
-  ["Explain", "evidence"],
-  ["New situation", "evidence"],
-];
-function InnerHeader({
-  go,
-  back,
-  now,
-  label,
-}: {
-  go: Go;
-  back: [string, CourseScreen];
-  now?: number;
-  label?: string;
-}) {
-  return (
-    <header className="c-header">
-      <button className="c-back" onClick={() => go(back[1])}>
-        <ArrowLeft size={18} aria-hidden="true" />
-        {back[0]}
-      </button>
-      {now ? (
-        <nav aria-label="Acts">
-          <ol className="c-acts">
-            {acts.map(([name, target], i) => (
-              <li key={name}>
-                <button
-                  className={i + 1 < now ? "done" : i + 1 === now ? "now" : ""}
-                  aria-current={i + 1 === now ? "step" : undefined}
-                  onClick={() => go(target)}
-                >
-                  {i + 1} {name}
-                </button>
-              </li>
-            ))}
-          </ol>
-        </nav>
-      ) : (
-        <span className="c-eyebrow c-eyebrow--blue">{label}</span>
-      )}
-    </header>
-  );
-}
-function NumericCard({
-  part,
-  tag,
-  value,
-  result,
-  onInput,
-  onCheck,
-  tone = "amber",
-}: {
-  part: NumericPart;
-  tag: string;
-  value: string;
-  result?: Verdict;
-  onInput: (v: string) => void;
-  onCheck: () => void;
-  tone?: "amber" | "blue";
-}) {
-  const id = `c-q-${tag}-${part.id}`;
-  return (
-    <div
-      className={`c-part ${result ? (result.ok ? "is-ok" : "is-retry") : ""}`}
-    >
-      <label htmlFor={id}>
-        <b className={`c-tag c-tag--${tone}`}>{part.id}</b>{" "}
-        {withSubs(part.question)}
-      </label>
-      <div className="c-answer">
-        <input
-          id={id}
-          type="text"
-          inputMode="decimal"
-          autoComplete="off"
-          placeholder="number"
-          value={value}
-          onChange={(e) => onInput(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onCheck()}
-        />
-        {part.unit && <span className="c-unit">{part.unit}</span>}
-        <button className={`c-check c-check--${tone}`} onClick={onCheck}>
-          Check
-        </button>
-      </div>
-      <p className="c-feedback" aria-live="polite">
-        {result ? withSubs(result.message) : ""}
-      </p>
-    </div>
-  );
-}
-function useChallenge(parts: NumericPart[]) {
-  const [answers, setAnswers] = useState<Record<string, string>>({});
-  const [results, setResults] = useState<Record<string, Verdict>>({});
-  const solved = parts.filter((p) => results[p.id]?.ok).length;
-  return {
-    solved,
-    all: solved === parts.length,
-    card: (p: NumericPart, tag: string, tone?: "amber" | "blue") => (
-      <NumericCard
-        key={p.id}
-        part={p}
-        tag={tag}
-        tone={tone}
-        value={answers[p.id] ?? ""}
-        result={results[p.id]}
-        onInput={(v) => setAnswers((a) => ({ ...a, [p.id]: v }))}
-        onCheck={() =>
-          setResults((r) => ({ ...r, [p.id]: judge(p, answers[p.id] ?? "") }))
-        }
-      />
-    ),
-  };
-}
+import {
+  Brand,
+  ChartFrame,
+  Frac,
+  InnerHeader,
+  Law,
+  NumericCard,
+  Op,
+  Sym,
+  laws,
+  tones,
+  useChallenge,
+  useOnce,
+  withSubs,
+  type CourseProps,
+} from "./CourseKit";
+import { deepDiveScreens } from "./DeepDives";
+export type { CourseProps } from "./CourseKit";
 
 /* ---------- Course map ---------- */
 function CoreVisual() {
@@ -491,10 +192,7 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
   const first = runAt(run, 1);
   const currentIndex = lessons.findIndex((l) => !cleared.includes(l.id));
   const current = currentIndex === -1 ? null : lessons[currentIndex];
-  const open = (i: number) => {
-    const deep = deepDive[lessons[i].id];
-    return deep ? go(deep) : onLesson(i);
-  };
+  const open = (i: number) => go(deepDive[lessons[i].id]);
   const clues = lessons.filter((l) => cleared.includes(l.id));
   return (
     <>
@@ -520,7 +218,7 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
           </div>
           <a className="c-notebook-link" href="#notebook">
             <BookOpen size={18} aria-hidden="true" />
-            Lab notebook
+            Notebook
             <span className="c-count">{clues.length}</span>
           </a>
         </nav>
@@ -530,19 +228,11 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
         <div className="c-stack c-stack--lg">
           {current ? (
             <>
-              <span className="c-eyebrow c-live">
-                <span className="c-dot" />
-                INVESTIGATION 0{currentIndex + 1} ·{" "}
-                {cleared.length ? "UP NEXT" : "START HERE"}
-              </span>
               <h1 className="c-h1" tabIndex={-1}>
                 {mysteries[current.id].headline}
               </h1>
               <p className="c-lead">{mysteries[current.id].intro}</p>
               <div className="c-law">
-                <span className="c-eyebrow c-eyebrow--muted">
-                  THE LAW YOU’LL EARN
-                </span>
                 <Law id={current.id} size="hero" />
                 <div className="c-chips">
                   {laws[current.id].legend.map(([text, tone]) => (
@@ -555,32 +245,30 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
             </>
           ) : (
             <>
-              <span className="c-eyebrow">ALL FIVE INVESTIGATIONS CLEARED</span>
               <h1 className="c-h1" tabIndex={-1}>
-                Every mystery solved. Now try to break your own explanations.
+                All five solved.
               </h1>
               <p className="c-lead">
-                Replay any investigation, or open the full 3D laboratory and
-                design an experiment none of the investigations asked for.
+                Replay any investigation, or design your own experiment in the
+                3D lab.
               </p>
             </>
           )}
           <div className="c-actions">
-            {current && deepDive[current.id] ? (
+            {current && (
               <button
                 className="c-btn c-btn--primary"
                 onClick={() => open(currentIndex)}
               >
                 Open the puzzle <ArrowRight size={18} aria-hidden="true" />
               </button>
-            ) : (
-              <button className="c-btn c-btn--primary" onClick={onLearn}>
-                {cleared.length
-                  ? "Continue learning"
-                  : "Start with the essentials"}
-                <ArrowRight size={18} aria-hidden="true" />
-              </button>
             )}
+            {/* The guided route through the 3D lab stays available alongside the deep dives. */}
+            <button className="c-btn c-btn--ghost" onClick={onLearn}>
+              {cleared.length
+                ? "Continue learning"
+                : "Start with the essentials"}
+            </button>
             <button className="c-btn c-btn--ghost" onClick={onExplore}>
               Explore freely
             </button>
@@ -635,14 +323,12 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
         <div className="c-section-head">
           <div className="c-stack c-stack--sm">
             <h2 id="c-route-title" className="c-h2">
-              Your route through the reactor
+              Your route
             </h2>
             <p className="c-sub">
-              Every investigation opens with a puzzle and ends with an equation
-              you can use on something new.
+              Each one opens with a puzzle and ends with an equation.
             </p>
           </div>
-          <span className="c-sub">Follow the coolant →</span>
         </div>
         <svg
           viewBox="0 0 1200 12"
@@ -666,18 +352,17 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
               : i === currentIndex
                 ? "current"
                 : "locked";
-            const deep = deepDive[l.id];
             return (
               <li key={l.id} className={`c-station c-station--${status}`}>
                 <div className="c-station-top">
                   <span className="c-station-num">0{i + 1}</span>
-                  {status === "locked" ? (
-                    <Lock size={18} aria-label="Locked" />
-                  ) : (
-                    <span className="c-station-status">
-                      {status === "cleared" ? "CLEARED" : "UP NEXT"}
-                    </span>
-                  )}
+                  <span className="c-station-status">
+                    {status === "cleared"
+                      ? "Cleared"
+                      : status === "current"
+                        ? "Up next"
+                        : "Later"}
+                  </span>
                 </div>
                 <h3>{mysteries[l.id].card}</h3>
                 <div
@@ -691,29 +376,28 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
                 {status === "cleared" && (
                   <p>Clue earned: {mysteries[l.id].clue}</p>
                 )}
-                {status === "locked" && (
-                  <p>
-                    Unlocks after 0{i}. {mysteries[l.id].teaser}
-                  </p>
-                )}
+                {status === "locked" && <p>{mysteries[l.id].teaser}</p>}
                 {status === "current" && (
                   <button
                     className="c-btn c-btn--primary c-btn--small"
                     onClick={() => open(i)}
                   >
-                    {deep ? "Open the puzzle" : "Start"}
+                    Open the puzzle
                   </button>
                 )}
                 {status === "cleared" && (
                   <button className="c-link" onClick={() => open(i)}>
-                    {deep === "chain"
+                    {l.id === "neutrons"
                       ? "Replay the chain lab"
-                      : deep
-                        ? "Replay the puzzle"
-                        : "Replay in the 3D lab"}
+                      : "Replay the puzzle"}
                   </button>
                 )}
-                {deep && status !== "locked" && (
+                {status === "locked" && (
+                  <button className="c-link" onClick={() => open(i)}>
+                    Jump ahead
+                  </button>
+                )}
+                {status !== "locked" && (
                   <button className="c-link" onClick={() => onLesson(i)}>
                     Run it in the 3D lab
                   </button>
@@ -729,7 +413,7 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
         aria-labelledby="outcomes-title"
       >
         <h2 id="outcomes-title" className="c-h2">
-          By the end, you should be able to…
+          Learning outcomes
         </h2>
         <ol>
           <li>
@@ -769,7 +453,7 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
 
       <section className="c-section" aria-labelledby="c-q-title">
         <h2 id="c-q-title" className="c-h2">
-          Questions you can’t answer yet
+          Can you answer these?
         </h2>
         <div className="c-questions">
           {openQuestions.map((q) => (
@@ -783,22 +467,19 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
 
       <section id="notebook" className="c-section" aria-labelledby="c-nb-title">
         <h2 id="c-nb-title" className="c-h2 c-h2--sm">
-          Lab notebook · {clues.length} {clues.length === 1 ? "clue" : "clues"}
+          Notebook
         </h2>
         <div className="c-clues">
           {clues.map((l) => (
             <div key={l.id} className="c-clue">
-              <span>CLUE 0{lessons.indexOf(l) + 1}</span>
+              <h3>Clue 0{lessons.indexOf(l) + 1}</h3>
               <p>{mysteries[l.id].clue}</p>
             </div>
           ))}
           {current && (
             <div className="c-clue c-clue--hidden">
-              <span>CLUE 0{currentIndex + 1} · HIDDEN</span>
-              <p>
-                Somewhere inside Investigation 0{currentIndex + 1}. You’ll know
-                it when the evidence surprises you.
-              </p>
+              <h3>Clue 0{currentIndex + 1}</h3>
+              <p>Found in Investigation 0{currentIndex + 1}.</p>
             </div>
           )}
         </div>
@@ -812,48 +493,6 @@ function MapScreen({ cleared, go, onLearn, onExplore, onLesson }: CourseProps) {
 }
 
 /* ---------- Investigation 03 · Acts 1–2 ---------- */
-function ChartFrame({
-  label,
-  axis,
-  children,
-}: {
-  label: string;
-  axis: [string, string, string];
-  children: ReactNode;
-}) {
-  return (
-    <svg viewBox="0 0 640 230" width="100%" role="img" aria-label={label}>
-      <path d="M40 30 H630 M40 105 H630 M40 180 H630" stroke="#1F3532" />
-      <g fontFamily="Space Grotesk, sans-serif" fontSize="12" fill="#9DB3AE">
-        <text x="0" y="34">
-          {axis[0]}
-        </text>
-        <text x="0" y="109">
-          {axis[1]}
-        </text>
-        <text x="0" y="184">
-          {axis[2]}
-        </text>
-        <text x="54" y="222">
-          0 s
-        </text>
-        <text x="324" y="222">
-          10 s
-        </text>
-        <text x="598" y="222">
-          20 s
-        </text>
-      </g>
-      <path
-        d="M60 14 V196"
-        stroke="#FFB648"
-        strokeDasharray="4 4"
-        opacity=".7"
-      />
-      {children}
-    </svg>
-  );
-}
 function PuzzleScreen({ go, progress, setProgress }: CourseProps) {
   const run = useOnce(() => controlRun());
   const fuel = fuelPath(run);
@@ -868,22 +507,20 @@ function PuzzleScreen({ go, progress, setProgress }: CourseProps) {
     <>
       <InnerHeader go={go} back={["Course map", "map"]} now={2} />
       <section className="c-intro">
-        <span className="c-eyebrow">INVESTIGATION 03 · THE PUZZLE</span>
         <h1 className="c-h1" tabIndex={-1}>
-          We pushed the rods 15 points deeper. Fission power fell{" "}
-          {(100 - first.power).toFixed(0)}% in one second. What did the fuel
-          temperature do?
+          Rods in: power falls {(100 - first.power).toFixed(0)}% in a second.
+          And the fuel?
         </h1>
         <p className="c-lead">
-          This is the real trace from the lab model. We’ve hidden the
-          temperature. Sketch it before you see it — a wrong prediction you can
-          explain beats a lucky guess.
+          This is the lab model’s real trace, with the temperature hidden.
+          Sketch it first: a wrong prediction you can explain beats a lucky
+          guess.
         </p>
       </section>
       <section className="c-grid2">
         <div className="c-panel c-stack">
           <div className="c-runlabel">
-            <span>RUN 03-A · RODS 50% → 65% · 20 MODEL SECONDS</span>
+            <span>Lab model run: rods 50% → 65% over 20 s</span>
             <span className="c-live">
               <span className="c-dot c-dot--blue" /> recorded
             </span>
@@ -949,7 +586,7 @@ function PuzzleScreen({ go, progress, setProgress }: CourseProps) {
           {!sealed ? (
             <>
               <fieldset className="c-fieldset">
-                <legend>1 · Pick the shape of the temperature curve</legend>
+                <legend>1 · Pick a curve</legend>
                 <div className="c-options">
                   {curveOptions.map((o) => (
                     <button
@@ -1023,23 +660,20 @@ function PuzzleScreen({ go, progress, setProgress }: CourseProps) {
             </>
           ) : (
             <div className="c-sealed" role="status">
-              <span className="c-eyebrow">PREDICTION SEALED</span>
               <strong>
-                Curve {sealed.curve} ·{" "}
-                {confidenceLevels[sealed.confidence].toLowerCase()} (
-                {sealed.confidence + 1}/5)
+                Sealed: curve {sealed.curve},{" "}
+                {confidenceLevels[sealed.confidence].toLowerCase()}
               </strong>
               <p>
-                It stays locked until Act 4, where it goes head-to-head with the
-                recorded data. First, you need a tool that can tell you how fast
-                the temperature should change.
+                It stays locked until you compare it with the recorded data.
+                First, the equation that sets how fast the temperature changes.
               </p>
               <div className="c-actions">
                 <button
                   className="c-btn c-btn--primary"
                   onClick={() => go("equation")}
                 >
-                  Act 3 · Build the equation
+                  Next: the equation
                 </button>
                 {!progress.controlSolved && (
                   <button
@@ -1054,14 +688,12 @@ function PuzzleScreen({ go, progress, setProgress }: CourseProps) {
           )}
           <div className="c-tips">
             <div className="c-tip c-tip--blue">
-              <span>THINK ABOUT</span>
               <p>
                 Switch off a kettle. Is the water cold one second later? What
                 would have to be true for it to be?
               </p>
             </div>
             <div className="c-tip">
-              <span>FROM YOUR NOTEBOOK</span>
               <p>
                 Power is a rate: 1 MW means 1 MJ every second. Temperature is
                 not a rate.
@@ -1077,7 +709,7 @@ function PuzzleScreen({ go, progress, setProgress }: CourseProps) {
 /* ---------- Investigation 03 · Act 3 ---------- */
 const terms = {
   C: {
-    name: "C_f · FUEL HEAT CAPACITY",
+    name: "C_f · Fuel heat capacity",
     tone: "text2",
     unit: "J/K (here MJ/K)",
     meaning:
@@ -1085,7 +717,7 @@ const terms = {
     trap: "It isn’t specific heat per kilogram. A bigger C_f doesn’t change which way the fuel goes — only how fast.",
   },
   T: {
-    name: "dT_f/dt · RATE OF TEMPERATURE CHANGE",
+    name: "dT_f/dt · Rate of temperature change",
     tone: "text",
     unit: "K/s",
     meaning:
@@ -1093,7 +725,7 @@ const terms = {
     trap: "It’s a slope, not a temperature. Fuel at 600 °C can have dT/dt = 0, and the slope can be negative while the fuel is still very hot.",
   },
   Pf: {
-    name: "P_f · FISSION POWER",
+    name: "P_f · Fission power",
     tone: "amber",
     unit: "W (here MW)",
     meaning:
@@ -1101,7 +733,7 @@ const terms = {
     trap: "Cutting P_f does not cut the temperature. It changes the slope, not the value.",
   },
   Pd: {
-    name: "P_d · DECAY HEAT",
+    name: "P_d · Decay heat",
     tone: "amber2",
     unit: "W (here MW)",
     meaning:
@@ -1109,7 +741,7 @@ const terms = {
     trap: "Rods can’t switch it off. Forget it, and every answer about shutdown is wrong.",
   },
   Q: {
-    name: "Q̇_f→c · HEAT TO COOLANT",
+    name: "Q̇_f→c · Heat to coolant",
     tone: "blue",
     unit: "W (here MW)",
     meaning:
@@ -1190,14 +822,11 @@ function EquationScreen({ go }: CourseProps) {
         now={3}
       />
       <section className="c-intro c-intro--center">
-        <span className="c-eyebrow">ACT 3 · THE EQUATION LAB</span>
         <h1 className="c-h1 c-h1--md" tabIndex={-1}>
-          Temperature doesn’t follow power. It follows the gap between energy in
-          and energy out.
+          Energy in minus energy out
         </h1>
         <p className="c-sub">
-          Tap any part of the equation to see what it means — and the trap
-          students fall into.
+          Tap a term to see what it means, and a common trap.
         </p>
         <div className="c-bigeq">
           {termButton(
@@ -1243,14 +872,12 @@ function EquationScreen({ go }: CourseProps) {
         </div>
         <div className="c-termgrid" aria-live="polite">
           <div className="c-termcard">
-            <span className="c-eyebrow" style={{ color: tones[t.tone] }}>
-              {withSubs(t.name)}
-            </span>
+            <h3 style={{ color: tones[t.tone] }}>{withSubs(t.name)}</h3>
             <p>{t.meaning}</p>
             <small>Unit · {t.unit}</small>
           </div>
           <div className="c-termcard c-termcard--trap">
-            <span className="c-eyebrow">THE TRAP</span>
+            <h3>The trap</h3>
             <p>{withSubs(t.trap)}</p>
           </div>
         </div>
@@ -1433,13 +1060,13 @@ function EquationScreen({ go }: CourseProps) {
           </div>
           <div className="c-stack">
             <div className={`c-readout c-readout--${dir}`} role="status">
-              <span className="c-eyebrow c-eyebrow--muted">
-                FUEL TEMPERATURE IS{" "}
+              <span className="c-label">
+                Fuel temperature is{" "}
                 {dir === "up"
-                  ? "RISING"
+                  ? "rising"
                   : dir === "down"
-                    ? "FALLING"
-                    : "STEADY"}
+                    ? "falling"
+                    : "steady"}
               </span>
               <div className="c-readout-main">
                 <span className="c-eqtext">
@@ -1559,11 +1186,8 @@ function EquationScreen({ go }: CourseProps) {
       <section className="c-challenge" aria-labelledby="c-ch-title">
         <div className="c-section-head">
           <div className="c-stack c-stack--xs">
-            <span className="c-eyebrow">
-              CHALLENGE · THREE STEPS, NO MULTIPLE CHOICE
-            </span>
             <h2 id="c-ch-title" className="c-h2 c-h2--sm">
-              Predict the first seconds after the rods go in
+              After the rods drop
             </h2>
           </div>
           <span className="c-score">{challenge.solved} of 3 solved</span>
@@ -1670,9 +1294,8 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
         className="c-section c-section--first"
         aria-labelledby="c-ev-title"
       >
-        <span className="c-eyebrow">ACT 4 · UNSEAL THE DATA</span>
         <h1 id="c-ev-title" className="c-h1 c-h1--md" tabIndex={-1}>
-          Your sketch against the recorded run
+          Sketch vs data
         </h1>
         {!progress.sealed && (
           <div className="c-picker">
@@ -1759,20 +1382,16 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
                 className={`c-verdict ${v.ok ? "is-ok" : "is-retry"}`}
                 role="status"
               >
-                <span className="c-eyebrow">{v.tag}</span>
                 <strong>{v.title}</strong>
                 <p>{v.body}</p>
               </div>
             ) : (
               <div className="c-verdict">
-                <span className="c-eyebrow c-eyebrow--muted">
-                  NO PREDICTION YET
-                </span>
                 <p>Choose a curve above to compare it with the data.</p>
               </div>
             )}
             <table className="c-table">
-              <caption>RUN 03-A · RECORDED IN THE LAB MODEL</caption>
+              <caption>Recorded in the lab model</caption>
               <thead>
                 <tr>
                   <th scope="col">Quantity</th>
@@ -1806,7 +1425,6 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
         </div>
         <div className="c-grid2 c-grid2--narrow">
           <div className="c-tip c-tip--blue c-tip--big">
-            <span>CHECK IT WITH YOUR EQUATION</span>
             <p className="c-eqtext c-eqtext--md c-upright">
               In the first second, power fell <b>{fmt(p0.power - p1.power)}</b>{" "}
               points but the fuel fell only <b>{fmt(p0.fuel - p1.fuel)} °C</b>.
@@ -1816,7 +1434,7 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
             </p>
             <p>
               Which term in{" "}
-              <i className="c-eqtext">
+              <i className="c-eqtext c-eqtext--inline">
                 C<sub>f</sub> dT<sub>f</sub>/dt = P − Q̇
               </i>{" "}
               explains why the fuel keeps falling after power has almost
@@ -1824,16 +1442,15 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
             </p>
           </div>
           <div className="c-clue c-clue--earned">
-            <span>CLUE 03 · UNLOCKED</span>
+            <h3>Clue 03</h3>
             <p className="c-clue-big">{mysteries.control.clue}</p>
           </div>
         </div>
       </section>
 
       <section className="c-section" aria-labelledby="c-exp-title">
-        <span className="c-eyebrow">ACT 5 · EXPLAIN IT LIKE A PHYSICIST</span>
         <h2 id="c-exp-title" className="c-h2">
-          Why did the temperature lag behind the power?
+          Why the lag?
         </h2>
         <div className="c-grid2 c-grid2--narrow">
           <div className="c-stack c-stack--sm">
@@ -1873,9 +1490,7 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
           </div>
           <div className="c-panel c-stack c-stack--sm">
             <div className="c-section-head">
-              <span className="c-eyebrow c-eyebrow--muted">
-                IDEAS A STRONG ANSWER USES
-              </span>
+              <h3>Ideas a strong answer uses</h3>
               <span className="c-score c-amber">
                 {ideas.filter((i) => i.ok).length}/4
               </span>
@@ -1909,9 +1524,8 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
       </section>
 
       <section className="c-challenge" aria-labelledby="c-tr-title">
-        <span className="c-eyebrow">ACT 6 · A SITUATION YOU HAVEN’T SEEN</span>
         <h2 id="c-tr-title" className="c-h2 c-h2--sm">
-          Nobody touches the rods. A coolant pump slows down instead.
+          A pump slows down
         </h2>
         <p className="c-brief">
           A core is steady at{" "}
@@ -1963,40 +1577,21 @@ function EvidenceScreen({ go, progress, setProgress }: CourseProps) {
 
       <section className="c-grid2 c-grid2--narrow c-section">
         <div className="c-panel c-stack">
-          <span className="c-eyebrow c-eyebrow--muted">
-            INVESTIGATION 03 · WHAT YOU EARNED
-          </span>
+          <h3>Badges</h3>
           <div className="c-badges">
             {badges.map((b) => (
               <div key={b.name} className={`c-badge ${b.on ? "on" : ""}`}>
                 <Star size={32} strokeWidth={1.6} aria-hidden="true" />
                 <strong>{b.name}</strong>
-                <small>{b.on ? b.how : `Locked · ${b.how}`}</small>
+                <small>{b.how}</small>
               </div>
             ))}
           </div>
         </div>
-        <button
-          className="c-nextcard"
-          onClick={() => go("map")}
-          disabled={!progress.controlSolved}
-        >
-          <span className="c-eyebrow">
-            {progress.controlSolved
-              ? "NEXT MYSTERY · INVESTIGATION 04 UNLOCKED"
-              : "SOLVE ACT 6 TO UNLOCK INVESTIGATION 04"}
-          </span>
-          <strong>
-            You just watched it happen: the fuel got hotter and the power fell.
-            How can less flow carry the same heat?
-          </strong>
-          <span
-            className={progress.controlSolved ? "" : "c-blur"}
-            aria-hidden={progress.controlSolved ? undefined : true}
-          >
-            <Law id="cooling" size="card" />
-          </span>
-          {progress.controlSolved && <small>Back to the course map →</small>}
+        <button className="c-nextcard" onClick={() => go("cooling")}>
+          <strong>Next: can less flow carry the same heat?</strong>
+          <Law id="cooling" size="card" />
+          <small>Open Investigation 04 →</small>
         </button>
       </section>
     </>
@@ -2027,11 +1622,7 @@ function ChainScreen({ go, progress, setProgress }: CourseProps) {
   const fission = 100 - leaked - captured;
   return (
     <>
-      <InnerHeader
-        go={go}
-        back={["Course map", "map"]}
-        label="INVESTIGATION 02 · CHAIN LAB"
-      />
+      <InnerHeader go={go} back={["Course map", "map"]} />
       <section className="c-hero c-hero--tight">
         <div className="c-stack c-stack--lg">
           <h1 className="c-h1" tabIndex={-1}>
@@ -2232,12 +1823,12 @@ function ChainScreen({ go, progress, setProgress }: CourseProps) {
           </div>
           <div className="c-stack">
             <div className={`c-kstate c-kstate--${state}`} role="status">
-              <span className="c-eyebrow" style={{ color }}>
+              <span className="c-label" style={{ color }}>
                 {state === "sub"
-                  ? "SUBCRITICAL · THE CHAIN SHRINKS"
+                  ? "Subcritical: the chain shrinks"
                   : state === "crit"
-                    ? "CRITICAL · SELF-SUSTAINING"
-                    : "SUPERCRITICAL · THE CHAIN GROWS"}
+                    ? "Critical: self-sustaining"
+                    : "Supercritical: the chain grows"}
               </span>
               <div className="c-readout-main">
                 <span className="c-eqtext">
@@ -2258,10 +1849,10 @@ function ChainScreen({ go, progress, setProgress }: CourseProps) {
               </p>
             </div>
             <div className="c-tip c-tip--blue">
-              <span>TRY TO HIT EXACTLY 1.000</span>
               <p>
-                Notice how tiny a change in C flips the chain from dying to
-                growing. That knife-edge is what the control rods ride.
+                Try to hit exactly 1.000. A tiny change in C flips the chain
+                from dying to growing: that knife-edge is what the control rods
+                ride.
               </p>
             </div>
           </div>
@@ -2271,11 +1862,8 @@ function ChainScreen({ go, progress, setProgress }: CourseProps) {
       <section className="c-challenge" aria-labelledby="c-cc-title">
         <div className="c-section-head">
           <div className="c-stack c-stack--xs">
-            <span className="c-eyebrow c-eyebrow--blue">
-              CHALLENGE · A DIFFERENT CORE
-            </span>
             <h2 id="c-cc-title" className="c-h2 c-h2--sm">
-              The sliders won’t help you here
+              A different core
             </h2>
           </div>
           <span className="c-score">{challenge.solved} of 3 solved</span>
@@ -2292,7 +1880,6 @@ function ChainScreen({ go, progress, setProgress }: CourseProps) {
 
       <section className="c-grid2 c-grid2--narrow c-section">
         <div className="c-tip c-tip--amber c-tip--big">
-          <span>MIND-BENDER</span>
           <p className="c-clue-big">
             In a water-cooled reactor, one neutron generation can last about a
             ten-thousandth of a second. At k = 1.008, how many neutrons would
@@ -2308,11 +1895,7 @@ function ChainScreen({ go, progress, setProgress }: CourseProps) {
           </p>
         </div>
         <div className="c-clue c-clue--earned">
-          <span>
-            {progress.chainSolved
-              ? "CLUE 02 · IN YOUR NOTEBOOK"
-              : "CLUE 02 · SOLVE THE CHALLENGE TO KEEP IT"}
-          </span>
+          <h3>Clue 02</h3>
           <p className="c-clue-big">
             “Critical” means k = 1: steady and self-sustaining. It is the normal
             operating state, not an emergency.
@@ -2332,6 +1915,7 @@ const screens: Record<CourseScreen, (p: CourseProps) => ReactNode> = {
   equation: EquationScreen,
   evidence: EvidenceScreen,
   chain: ChainScreen,
+  ...deepDiveScreens,
 };
 export default function Course(props: CourseProps) {
   const root = useRef<HTMLDivElement>(null);
@@ -2341,8 +1925,11 @@ export default function Course(props: CourseProps) {
       first.current = false;
       return;
     }
-    // Move focus (and the viewport) to the new screen's heading.
-    root.current?.querySelector<HTMLElement>("h1")?.focus();
+    // Start each screen at the top, with focus on its heading.
+    document.documentElement.scrollTop = 0;
+    root.current
+      ?.querySelector<HTMLElement>("h1")
+      ?.focus({ preventScroll: true });
   }, [props.screen]);
   const Screen = screens[props.screen];
   return (

@@ -262,7 +262,7 @@ test("entry starts with orientation and free exploration starts paused", () => {
   render(React.createElement(App));
   assert.ok(
     screen.getByRole("heading", {
-      name: /Only about a third becomes electricity/,
+      name: /Where’s the rest/,
     }),
   );
   assert.equal(screen.queryByRole("slider"), null);
@@ -454,7 +454,7 @@ test("neutron diagram selection matches its science annotation", () => {
 test("orientation states outcomes before entry and equations support explanation without leaking into the check", () => {
   render(React.createElement(App));
   const outcomes = screen.getByRole("region", {
-    name: "By the end, you should be able to…",
+    name: "Learning outcomes",
   });
   assert.equal(within(outcomes).getAllByRole("listitem").length, 5);
   assert.ok(screen.getByText(/basic ratios, percentages and algebra/));
@@ -593,21 +593,19 @@ test("course map opens a sealed prediction, an equation lab and the recorded evi
   fireEvent.click(
     screen.getAllByRole("button", { name: /Open the puzzle/ })[0],
   );
-  assert.ok(
-    screen.getByRole("heading", { name: /What did the fuel temperature do/ }),
-  );
+  assert.ok(screen.getByRole("heading", { name: /And the fuel/ }));
   const seal = screen.getByRole("button", { name: /Seal my prediction/ });
   assert.equal((seal as HTMLButtonElement).disabled, true);
   fireEvent.click(screen.getByRole("button", { name: /Falls steadily/ }));
   fireEvent.click(screen.getByRole("button", { name: "Fairly sure" }));
   fireEvent.click(seal);
-  assert.ok(screen.getByText(/Curve B · fairly sure/));
-  fireEvent.click(screen.getByRole("button", { name: /Build the equation/ }));
+  assert.ok(screen.getByText(/Sealed: curve B, fairly sure/));
+  fireEvent.click(screen.getByRole("button", { name: /Next: the equation/ }));
   // The live balance responds to the sliders.
   fireEvent.change(screen.getByRole("slider", { name: "Heat to coolant" }), {
     target: { value: "95" },
   });
-  assert.ok(screen.getByText(/FUEL TEMPERATURE IS STEADY/));
+  assert.ok(screen.getByText(/Fuel temperature is steady/));
   fireEvent.change(screen.getByLabelText(/What is dT/), {
     target: { value: "-0.75" },
   });
@@ -625,8 +623,104 @@ test("course map opens a sealed prediction, an equation lab and the recorded evi
   fireEvent.click(
     screen.getByRole("button", { name: /negative temperature feedback/ }),
   );
-  assert.ok(screen.getByText(/INVESTIGATION 04 UNLOCKED/));
+  assert.ok(screen.getByText(/Next: can less flow carry the same heat/));
   const saved = JSON.parse(localStorage.getItem("core-course-v1") || "{}");
   assert.equal(saved.controlSolved, true);
   assert.equal(saved.sealed.curve, "B");
+});
+test("investigation 01 deep dive: locked prediction, live energy flow, challenge clears it", () => {
+  render(React.createElement(App));
+  fireEvent.click(
+    screen.getAllByRole("button", { name: /Open the puzzle/ })[0],
+  );
+  assert.ok(
+    screen.getByRole("heading", { name: /Where do the other 2,000 go/ }),
+  );
+  assert.ok(screen.getByText(/Lock in your answer to see the energy flow/));
+  fireEvent.click(
+    screen.getByRole("button", { name: /destroyed in the turbine/ }),
+  );
+  fireEvent.click(
+    screen.getByRole("button", { name: /Lock it in and reveal/ }),
+  );
+  assert.ok(screen.getByText("Not what happened."));
+  assert.ok(screen.getByText(/Energy can’t be destroyed/));
+  // The Carnot ceiling flags an impossible efficiency.
+  fireEvent.change(screen.getByRole("slider", { name: "Efficiency" }), {
+    target: { value: "50" },
+  });
+  assert.ok(screen.getByText(/Impossible: above the Carnot ceiling/));
+  const answers: [RegExp, string][] = [
+    [/electrical output\?/, "1122"],
+    [/leaves through the condenser/, "2278"],
+    [/Carnot ceiling/, "44.8"],
+  ];
+  answers.forEach(([label, value], i) => {
+    fireEvent.change(screen.getByLabelText(label), { target: { value } });
+    fireEvent.click(screen.getAllByRole("button", { name: "Check" })[i]);
+  });
+  assert.ok(screen.getByText("3 of 3 solved"));
+  assert.ok(screen.getByRole("heading", { name: "Clue 01" }));
+  const saved = JSON.parse(localStorage.getItem("core-course-v1") || "{}");
+  assert.equal(saved.solved.energy, true);
+  assert.equal(saved.predictions.energy, 0);
+  fireEvent.click(screen.getByRole("button", { name: "Course map" }));
+  assert.ok(screen.getByText("1 of 5 cleared"));
+});
+
+test("investigations 04 and 05 hide the model evidence until a prediction is locked", () => {
+  localStorage.setItem(
+    "core-course-v1",
+    JSON.stringify({
+      chainSolved: true,
+      controlSolved: true,
+      solved: { energy: true },
+    }),
+  );
+  render(React.createElement(App));
+  assert.ok(screen.getByText("3 of 5 cleared"));
+  fireEvent.click(
+    screen.getAllByRole("button", { name: /Open the puzzle/ })[0],
+  );
+  assert.ok(
+    screen.getByRole("img", { name: /Power hidden until you lock in/ }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /Falls — even though/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Lock it in and reveal/ }),
+  );
+  assert.ok(screen.getByText("Your prediction held."));
+  assert.ok(
+    screen.getByRole("img", { name: /Total thermal power falls from 100.0%/ }),
+  );
+  fireEvent.change(screen.getByRole("slider", { name: "Mass flow" }), {
+    target: { value: "6000" },
+  });
+  assert.ok(screen.getByText(/water at 15.5 MPa would boil/));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Continue to Investigation 05/ }),
+  );
+  assert.ok(
+    screen.getByRole("heading", {
+      name: /How much heat is left/,
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: /A few percent/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /Lock it in and reveal/ }),
+  );
+  assert.ok(screen.getByRole("table", { name: /Recorded in the lab model/ }));
+  fireEvent.change(
+    screen.getByRole("slider", { name: "Time since shutdown" }),
+    {
+      target: { value: "300" },
+    },
+  );
+  assert.ok(screen.getByText("Decay power at t = 300 s"));
+});
+test("students can jump ahead to a later investigation without clearing earlier ones", () => {
+  render(React.createElement(App));
+  assert.ok(screen.getByText("0 of 5 cleared"));
+  fireEvent.click(screen.getAllByRole("button", { name: "Jump ahead" })[0]);
+  assert.ok(screen.getByRole("heading", { level: 1, name: /Why no runaway/ }));
 });

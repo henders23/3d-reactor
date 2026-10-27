@@ -16,7 +16,6 @@ export function LearningFocus({
   return (
     <section className="learning-focus" aria-label="Learning focus">
       <div>
-        <span className="eyebrow">YOUR GOAL</span>
         <p>{d.goal}</p>
       </div>
       {showWatch && (
@@ -83,7 +82,6 @@ export function GuidedExperiment({
     <section className="guided-experiment" aria-label="Focused experiment">
       <div className="guided-experiment-heading">
         <div>
-          <span className="eyebrow">CHANGE ONE VARIABLE</span>
           <h2>{d.action}</h2>
           <p>
             {id === "cooling"

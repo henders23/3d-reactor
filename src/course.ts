@@ -2,13 +2,24 @@ import { initialState, step } from "./simulation";
 import { guidedControls } from "./learning";
 
 /** Screens of the curiosity-led course that sits in front of the 3D lab. */
-export type CourseScreen = "map" | "chain" | "puzzle" | "equation" | "evidence";
+export type CourseScreen =
+  | "map"
+  | "energy"
+  | "chain"
+  | "puzzle"
+  | "equation"
+  | "evidence"
+  | "cooling"
+  | "shutdown";
 export type Curve = "A" | "B" | "C" | "D";
 export type CourseProgress = {
   sealed: { curve: Curve; confidence: number; reason: string } | null;
   chainSolved: boolean;
   controlSolved: boolean;
   explanation: string;
+  /** Deep dives for 01, 04 and 05 record completion and the locked-in prediction here. */
+  solved: Record<string, boolean>;
+  predictions: Record<string, number>;
 };
 export const courseKey = "core-course-v1";
 export const emptyCourse = (): CourseProgress => ({
@@ -16,6 +27,8 @@ export const emptyCourse = (): CourseProgress => ({
   chainSolved: false,
   controlSolved: false,
   explanation: "",
+  solved: {},
+  predictions: {},
 });
 export function readCourse(): CourseProgress {
   try {
@@ -35,10 +48,18 @@ export function saveCourse(p: CourseProgress) {
 }
 
 /** Which deep-dive screen, if any, opens each investigation. */
-export const deepDive: Record<string, CourseScreen | undefined> = {
+export const deepDive: Record<string, CourseScreen> = {
+  energy: "energy",
   neutrons: "chain",
   control: "puzzle",
+  cooling: "cooling",
+  shutdown: "shutdown",
 };
+export function deepDiveCleared(p: CourseProgress, id: string) {
+  if (id === "neutrons") return p.chainSolved;
+  if (id === "control") return p.controlSolved;
+  return !!p.solved[id];
+}
 
 export type Mystery = {
   headline: string;
@@ -49,47 +70,42 @@ export type Mystery = {
 };
 export const mysteries: Record<string, Mystery> = {
   energy: {
-    headline:
-      "A reactor makes 3,000 MW of heat. Only about a third becomes electricity. Where does the rest go?",
+    headline: "3,000 MW of heat. 1,000 MW of electricity. Where’s the rest?",
     intro:
-      "Follow the energy from a splitting nucleus to the power socket. Somewhere along the way, most of it leaves the plant — on purpose.",
-    card: "How much heat becomes electricity?",
+      "Follow the energy from a splitting nucleus to the socket. Most of it leaves the plant, on purpose.",
+    card: "Heat to electricity",
     teaser: "Most of a power station’s heat never becomes electricity. Why?",
-    clue: "Heat crosses the steam-generator wall. The water never does.",
+    clue: "About a third of the heat becomes electricity; the rest must leave through the condenser. Heat crosses between circuits — water doesn’t.",
   },
   neutrons: {
-    headline:
-      "Each fission releases about 2.4 neutrons. So why doesn’t every reactor run away?",
+    headline: "Each fission frees about 2.4 neutrons. Why no runaway?",
     intro:
-      "Most neutrons never cause another fission. They leak out, or something swallows them. The whole game is the neutron budget.",
-    card: "Will the chain sustain itself?",
+      "Most neutrons never cause another fission: they leak out, or something absorbs them. It all comes down to the neutron budget.",
+    card: "The chain reaction",
     teaser: "A slowed-down neutron makes fission more likely, not less. How?",
     clue: "Moderated is not absorbed. A slow neutron can still cause fission.",
   },
   control: {
-    headline:
-      "Power drops in one second. The fuel takes its time. Where is the energy hiding?",
+    headline: "Power drops in a second. The fuel doesn’t. Why?",
     intro:
-      "Push the control rods in and fission power falls almost at once — yet the fuel cools as if it hadn’t heard. Something is storing energy. Find it, measure it, then write the law that governs it.",
-    card: "Why does temperature lag behind power?",
+      "Push the rods in and fission power falls at once, yet the fuel cools slowly. Something is storing energy.",
+    card: "The temperature lag",
     teaser: "The rods go in. Why doesn’t the fuel cool straight away?",
     clue: "Temperature tracks stored energy, not power. Its slope is set by generation minus transfer.",
   },
   cooling: {
-    headline:
-      "Slow the pump and the fuel heats up — while the power falls. How can both be true?",
+    headline: "A hotter core, making less power?",
     intro:
-      "Less water flowing means each kilogram has to carry more heat. Then the core starts regulating itself.",
-    card: "Can a hotter core make less power?",
+      "Less flow means each kilogram of water carries more heat. Then the core regulates itself.",
+    card: "Moving the heat",
     teaser: "Slow the pump, and the fuel heats up while power falls.",
     clue: "A temperature rise is not evidence of more fission. Check heat removal too.",
   },
   shutdown: {
-    headline:
-      "Every rod is in. The chain reaction is over. The core still makes megawatts. From what?",
+    headline: "Every rod is in. Why is it still hot?",
     intro:
-      "Shutting a reactor down stops the chain reaction, not the heat. Find out what keeps glowing, and for how long.",
-    card: "Every rod is in. Why is the core still hot?",
+      "Shutdown stops the chain reaction, not the heat. What keeps it going, and for how long?",
+    card: "Heat after shutdown",
     teaser: "A shut-down core still makes megawatts. From what?",
     clue: "Cooling is still needed after a successful shutdown: decay heat and stored heat remain.",
   },
@@ -117,18 +133,23 @@ export const openQuestions = [
 export type RunPoint = {
   t: number;
   power: number;
+  fission: number;
   fuel: number;
   decay: number;
 };
 /** Runs the lab model's own control-rod experiment (rods 50% → 65%). */
-export function controlRun(seconds = 20, dt = 0.5): RunPoint[] {
-  const controls = guidedControls("control");
+export const controlRun = (seconds = 20, dt = 0.5) =>
+  modelRun("control", seconds, dt);
+/** Runs one of the lab model's guided experiments with its fixed setting. */
+export function modelRun(id: string, seconds: number, dt = 0.5): RunPoint[] {
+  const controls = guidedControls(id);
   let s = initialState();
   const out: RunPoint[] = [];
   for (let t = 0; t <= seconds + 1e-9; t += dt) {
     out.push({
       t: s.time,
       power: s.thermal * 100,
+      fission: s.neutrons * 95,
       fuel: s.fuel,
       decay: s.decay.reduce((a, b) => a + b, 0) * 100,
     });
@@ -185,28 +206,24 @@ export const confidenceLevels = [
 ];
 export const verdicts: Record<
   Curve,
-  { tag: string; title: string; body: string; ok: boolean }
+  { title: string; body: string; ok: boolean }
 > = {
   A: {
-    tag: "SURPRISE",
     title: "The fuel didn’t follow the power.",
     body: "Power fell 9 points in one second; the fuel fell less than 1 °C. The fuel holds so much stored energy that one second of deficit barely dents it. Your sketch treated temperature like power — the most common mistake there is.",
     ok: false,
   },
   B: {
-    tag: "MATCH",
     title: "Your sketch matches the data.",
     body: "No sudden drop: the fuel loses stored energy at a rate set by generation minus transfer. Now push further: by 10 s power had almost settled, yet the fuel was still falling more than 1 °C every second. Which part of the balance is still off?",
     ok: true,
   },
   C: {
-    tag: "CLOSE, BUT",
     title: "There was no flat delay.",
     body: "The fuel started cooling at once, just slowly. The moment generation fell below transfer, dT/dt went negative.",
     ok: false,
   },
   D: {
-    tag: "SURPRISE",
     title: "Nothing pushed the temperature up.",
     body: "Generation dropped below transfer, so dT/dt was negative from the first instant. A rise would need P > Q̇.",
     ok: false,
@@ -519,3 +536,312 @@ export const explanationBlocks = [
     phrase: "as the fuel cooled, Q̇ fell too, ",
   },
 ] as const;
+
+/* ---------- Deep dives for investigations 01, 04 and 05 ---------- */
+export type PredictOption = { text: string; ok: boolean; feedback: string };
+
+/** Carnot ceiling for a heat engine between two Celsius temperatures. */
+export const carnot = (hotC: number, coldC: number) =>
+  1 - (coldC + 273.15) / (hotC + 273.15);
+/** Temperature rise of water carrying `heatMW` at `flow` kg/s. */
+export const coolantRise = (heatMW: number, flow: number, cp = 5500) =>
+  (heatMW * 1e6) / (flow * cp);
+/** Decay power of one isolated population after `t` seconds. */
+export const decayPower = (p0: number, halfLife: number, t: number) =>
+  p0 * Math.pow(2, -t / halfLife);
+export const decayPopulations = [
+  { name: "Short-lived", p0: 6, halfLife: 20 },
+  { name: "Long-lived", p0: 2, halfLife: 200 },
+];
+
+export const energyPredict: PredictOption[] = [
+  {
+    text: "They are destroyed in the turbine",
+    ok: false,
+    feedback:
+      "Energy can’t be destroyed. Every second, those 2,000 MJ have to go somewhere.",
+  },
+  {
+    text: "They build up inside the reactor",
+    ok: false,
+    feedback:
+      "If 2,000 MW stayed inside, the core would heat up without limit. At steady state, what comes in must go out.",
+  },
+  {
+    text: "They leave as heat in the condenser’s cooling water",
+    ok: true,
+    feedback:
+      "Right. About two-thirds of the heat leaves the plant on purpose. A steam cycle needs a cold end to work at all.",
+  },
+  {
+    text: "They escape as radiation",
+    ok: false,
+    feedback:
+      "Radiation carries away a tiny fraction. The big outflow is warm water.",
+  },
+];
+export const energyChallenge: NumericPart[] = [
+  {
+    id: "a",
+    question:
+      "A plant takes in 3,400 MW of heat at η = 33%. What is its electrical output?",
+    unit: "MW",
+    rules: [
+      [1122, 2, true, "Right: 0.33 × 3,400 = 1,122 MW of electricity."],
+      [
+        10303,
+        5,
+        false,
+        "You divided by η. Output = η × input, and it must be less than 3,400 MW.",
+      ],
+      [112200, 50, false, "Use η as a fraction (0.33), not as 33."],
+    ],
+    fallback: "Not yet. Rearrange η = P_e / P_th for P_e.",
+  },
+  {
+    id: "b",
+    question:
+      "At steady state, how much heat leaves through the condenser every second?",
+    unit: "MW",
+    rules: [
+      [
+        2278,
+        3,
+        true,
+        "Right: 3,400 − 1,122 = 2,278 MW leaves as heat — about twice the electricity.",
+      ],
+      [
+        1122,
+        2,
+        false,
+        "That’s the electricity. Where does the rest of the 3,400 MW go?",
+      ],
+      [
+        3400,
+        1,
+        false,
+        "That’s everything going in. Some of it left as electricity.",
+      ],
+    ],
+    fallback: "Not yet. Energy in = electricity out + heat rejected.",
+  },
+  {
+    id: "c",
+    question:
+      "Steam enters at 285 °C; the condenser sits at 35 °C. What is the Carnot ceiling η_max, in %?",
+    unit: "%",
+    rules: [
+      [
+        44.8,
+        0.3,
+        true,
+        "Right: 1 − 308 K / 558 K ≈ 44.8%. Real plants reach about 33%: friction, pumping and finite temperature differences use up the gap.",
+      ],
+      [
+        87.7,
+        0.3,
+        false,
+        "You used °C. The Carnot ratio needs absolute temperatures: add 273.",
+      ],
+      [
+        0.448,
+        0.003,
+        false,
+        "Right value as a fraction. The question asks for a percentage.",
+      ],
+      [55.2, 0.3, false, "That’s T_c / T_h. Subtract it from 1."],
+    ],
+    fallback:
+      "Not yet. Convert both temperatures to kelvin, then use η_max = 1 − T_c / T_h.",
+  },
+];
+
+export const coolingPredict: PredictOption[] = [
+  {
+    text: "Rises — hotter fuel makes more fission",
+    ok: false,
+    feedback:
+      "Hotter fuel and water push reactivity down in this core. The power fell.",
+  },
+  {
+    text: "Falls — even though the fuel is hotter",
+    ok: true,
+    feedback:
+      "Right. Heat removal fell, so the fuel warmed. Warmer fuel and water then reduced reactivity, and fission power fell on its own.",
+  },
+  {
+    text: "Stays the same — nobody moved the rods",
+    ok: false,
+    feedback:
+      "Rods aren’t the only thing that changes the neutron balance. Temperature does too.",
+  },
+];
+export const coolingChallenge: NumericPart[] = [
+  {
+    id: "a",
+    question:
+      "A 3,000 MW core is cooled by 18,000 kg/s of water with c_p = 5,500 J/(kg·K). What is the temperature rise across the core?",
+    unit: "K",
+    rules: [
+      [30.3, 0.2, true, "Right: 3×10⁹ W / (18,000 × 5,500) ≈ 30.3 K."],
+      [0.0303, 0.001, false, "Check the power: 3,000 MW is 3,000,000,000 W."],
+      [
+        0.0000303,
+        0.000001,
+        false,
+        "Convert MW to W before dividing: 3,000 MW = 3×10⁹ W.",
+      ],
+    ],
+    fallback: "Not yet. Rearrange to ΔT = Q̇ / (ṁ c_p), with Q̇ in watts.",
+  },
+  {
+    id: "b",
+    question:
+      "The pumps slow to 12,000 kg/s and the heat load stays at 3,000 MW. What is the new temperature rise?",
+    unit: "K",
+    rules: [
+      [
+        45.5,
+        0.3,
+        true,
+        "Right: 3×10⁹ / (12,000 × 5,500) ≈ 45.5 K. Each kilogram now has to carry 50% more heat.",
+      ],
+      [
+        20.2,
+        0.3,
+        false,
+        "Less flow can’t mean a smaller rise: each kilogram carries more heat, not less.",
+      ],
+      [
+        30.3,
+        0.2,
+        false,
+        "The flow changed but the heat load didn’t. Which term has to grow?",
+      ],
+    ],
+    fallback: "Not yet. Heat load fixed, ṁ smaller — so ΔT must be larger.",
+  },
+  {
+    id: "c",
+    question:
+      "Instead, hold the rise at 30.3 K with 12,000 kg/s. How much heat can the water carry, in MW?",
+    unit: "MW",
+    rules: [
+      [
+        2000,
+        6,
+        true,
+        "Right: 12,000 × 5,500 × 30.3 ≈ 2,000 MW. A third less heat removed. That mismatch is why the fuel heated up in the run.",
+      ],
+      [3000, 6, false, "That would need the original 18,000 kg/s."],
+      [
+        4500,
+        10,
+        false,
+        "Less flow at the same rise must carry less heat, not more.",
+      ],
+    ],
+    fallback: "Not yet. Q̇ = ṁ c_p ΔT, then divide watts by 10⁶.",
+  },
+];
+
+export const shutdownPredict: PredictOption[] = [
+  {
+    text: "Almost nothing — under 1% of the starting power",
+    ok: false,
+    feedback:
+      "The chain reaction collapses, but the heat doesn’t. Something keeps producing several percent.",
+  },
+  {
+    text: "A few percent of the starting power",
+    ok: true,
+    feedback:
+      "Right. Fission collapses within a second, but delayed neutrons and decay heat keep a few percent coming.",
+  },
+  {
+    text: "About half — it takes minutes to fall",
+    ok: false,
+    feedback:
+      "The drop is fast at first: most of the power is gone within a second. It’s the last few percent that linger.",
+  },
+];
+export const shutdownChallenge: NumericPart[] = [
+  {
+    id: "a",
+    question:
+      "A population produces 8 MW with a half-life of 20 s. What is its decay power after 50 s?",
+    unit: "MW",
+    rules: [
+      [1.414, 0.01, true, "Right: 8 × 2^(−50/20) = 8 × 2^(−2.5) ≈ 1.41 MW."],
+      [
+        1.5,
+        0.01,
+        false,
+        "Decay isn’t a straight line between half-lives. Use 2^(−2.5).",
+      ],
+      [
+        3.2,
+        0.01,
+        false,
+        "Dividing by the number of half-lives isn’t halving. Halve 2.5 times.",
+      ],
+    ],
+    fallback:
+      "Not yet. Work out t / T½ first, then use P_d = P_d,0 × 2^(−t/T½).",
+  },
+  {
+    id: "b",
+    question:
+      "Two populations: 6 MW with T½ = 20 s, and 2 MW with T½ = 200 s. What is their total decay power after 100 s?",
+    unit: "MW",
+    rules: [
+      [
+        1.6,
+        0.01,
+        true,
+        "Right: 6 × 2^(−5) + 2 × 2^(−0.5) = 0.19 + 1.41 = 1.60 MW. The slow population now supplies almost 90%.",
+      ],
+      [
+        0.1875,
+        0.005,
+        false,
+        "That’s only the short-lived population. The long-lived one is still going strong.",
+      ],
+      [
+        1.414,
+        0.005,
+        false,
+        "That’s only the long-lived population. Add the short-lived one.",
+      ],
+      [
+        0.25,
+        0.005,
+        false,
+        "You can’t merge them into one half-life. Decay each population separately, then add.",
+      ],
+    ],
+    fallback: "Not yet. Decay each population on its own clock, then add them.",
+  },
+  {
+    id: "c",
+    question:
+      "How long until the long-lived population alone is down to 0.25 MW?",
+    unit: "s",
+    rules: [
+      [
+        600,
+        1,
+        true,
+        "Right: 2 → 1 → 0.5 → 0.25 MW is three half-lives, so 3 × 200 s = 600 s.",
+      ],
+      [
+        1600,
+        1,
+        false,
+        "0.25 MW is one-eighth of 2 MW. That’s 3 halvings, not 8.",
+      ],
+      [400, 1, false, "Count again: 2 → 1 → 0.5 → 0.25 is three halvings."],
+    ],
+    fallback: "Not yet. How many times must 2 MW halve to reach 0.25 MW?",
+  },
+];
