@@ -169,7 +169,7 @@ button {
 }
 .workspace {
   display: grid;
-  grid-template-columns: 226px minmax(470px, 1fr) 292px;
+  grid-template-columns: var(--sidebar-col, 226px) minmax(470px, 1fr) 292px;
   max-width: 1920px;
   margin: auto;
   min-height: calc(100vh - 78px);
@@ -1477,7 +1477,7 @@ textarea::placeholder {
 }
 @media (min-width: 1500px) {
   .workspace {
-    grid-template-columns: 244px minmax(650px, 1fr) 320px;
+    grid-template-columns: var(--sidebar-col, 244px) minmax(650px, 1fr) 320px;
   }
   .main-content {
     padding: 33px 38px 20px;
@@ -1539,7 +1539,7 @@ textarea::placeholder {
 }
 @media (max-width: 1190px) {
   .workspace {
-    grid-template-columns: 185px minmax(440px, 1fr) 250px;
+    grid-template-columns: var(--sidebar-col, 185px) minmax(440px, 1fr) 250px;
   }
   .sidebar {
     padding-left: 10px;
@@ -1645,7 +1645,7 @@ textarea::placeholder {
     letter-spacing: 0.5px;
   }
   .workspace {
-    grid-template-columns: 170px minmax(0, 1fr);
+    grid-template-columns: var(--sidebar-col, 170px) minmax(0, 1fr);
   }
   .inspector {
     grid-column: 1/-1;
@@ -2485,7 +2485,7 @@ textarea:focus-visible {
 }
 .mode-investigate .workspace,
 .mode-check .workspace {
-  grid-template-columns: 210px minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-col, 210px) minmax(0, 1fr);
   max-width: 1680px;
 }
 .mode-investigate .main-content {
@@ -3755,5 +3755,67 @@ textarea:focus-visible {
 @media (min-width: 1250px) {
   .mode-investigate.stage-explain .main-content {
     grid-template-columns: minmax(0, 1fr) minmax(290px, 360px);
+  }
+}
+
+/* On pointer devices the lab sidebar collapses to a slim rail and opens over
+   the page on hover or keyboard focus, so it does not compete with the lesson. */
+.sidebar-rail {
+  display: none;
+}
+@media (hover: hover) and (min-width: 851px) {
+  .mode-explore .workspace,
+  .mode-investigate .workspace {
+    --sidebar-col: 52px;
+  }
+  .mode-explore .sidebar,
+  .mode-investigate .sidebar {
+    position: relative;
+    z-index: 30;
+    width: 52px;
+    overflow: hidden;
+    transition:
+      width 0.2s ease,
+      box-shadow 0.2s ease;
+  }
+  .mode-explore .sidebar > :not(.sidebar-rail),
+  .mode-investigate .sidebar > :not(.sidebar-rail) {
+    width: 216px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+  }
+  .mode-explore .sidebar-rail,
+  .mode-investigate .sidebar-rail {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 52px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 14px;
+    padding-top: 28px;
+    color: #65745d;
+    transition: opacity 0.15s ease;
+  }
+  .sidebar-rail span {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 1.7px;
+    text-transform: uppercase;
+  }
+  .mode-explore .sidebar:is(:hover, :focus-within),
+  .mode-investigate .sidebar:is(:hover, :focus-within) {
+    width: 250px;
+    box-shadow: 10px 0 28px rgba(32, 52, 38, 0.14);
+  }
+  .sidebar:is(:hover, :focus-within) > :not(.sidebar-rail) {
+    opacity: 1;
+  }
+  .sidebar:is(:hover, :focus-within) > .sidebar-rail {
+    opacity: 0;
   }
 }

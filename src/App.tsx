@@ -21,6 +21,7 @@ import {
   Info,
   Layers,
   Maximize2,
+  Menu,
   Minus,
   Pause,
   Play,
@@ -989,6 +990,10 @@ export default function App() {
       </header>
       <div className="workspace">
         <aside className="sidebar">
+          <div className="sidebar-rail" aria-hidden="true">
+            <Menu size={18} />
+            <span>Virtual lab</span>
+          </div>
           <div className="sidebar-top">
             <span className="eyebrow">THE VIRTUAL LAB</span>
             <h2>Inside a reactor.</h2>
