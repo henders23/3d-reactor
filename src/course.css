@@ -354,7 +354,7 @@
 }
 .c-segs span.now {
   background: var(--c-amber);
-  animation: c-blink 0.8s ease-in-out infinite;
+  animation: c-blink 0.34s ease-in-out infinite;
 }
 .c-notebook-link {
   display: flex;
@@ -392,7 +392,7 @@
   height: 8px;
   border-radius: 4px;
   background: var(--c-amber);
-  animation: c-blink 0.8s ease-in-out infinite;
+  animation: c-blink 0.34s ease-in-out infinite;
 }
 .c-dot--blue {
   background: var(--c-blue);
@@ -609,7 +609,7 @@
 .c-station--current {
   background: var(--c-warm);
   border: 2px solid var(--c-amber);
-  animation: c-ring 1.2s ease-in-out infinite;
+  animation: c-ring 0.34s ease-in-out infinite;
 }
 .c-station--current .c-station-num,
 .c-station--current .c-station-status {
@@ -760,7 +760,7 @@
   border-radius: 20px;
   border: 1px dashed var(--c-amber);
   background: #12140f;
-  animation: c-shine 1.2s ease-in-out infinite;
+  animation: c-shine 0.34s ease-in-out infinite;
 }
 .c-clue-big,
 .c-clue .c-clue-big {
@@ -878,7 +878,7 @@
   border-radius: 24px;
   background: var(--c-warm);
   border: 2px solid var(--c-amber);
-  animation: c-pop 0.25s ease-out both;
+  animation: c-pop 0.05s ease-out both;
 }
 .c-sealed strong {
   font-family: var(--c-display);
@@ -1255,7 +1255,7 @@
   background: #102a33;
   font-size: 14px;
   color: var(--c-blue2);
-  animation: c-pop 0.25s ease-out both;
+  animation: c-pop 0.05s ease-out both;
 }
 .c-next {
   display: flex;
@@ -1267,7 +1267,7 @@
   border-radius: 18px;
   background: var(--c-warm);
   border: 1px solid var(--c-amber);
-  animation: c-pop 0.25s ease-out both;
+  animation: c-pop 0.05s ease-out both;
 }
 .c-next p {
   font-size: 17px;
@@ -1317,7 +1317,7 @@
   padding: 24px;
   border-radius: 20px;
   border: 2px solid var(--c-line2);
-  animation: c-pop 0.25s ease-out both;
+  animation: c-pop 0.05s ease-out both;
 }
 .c-verdict strong {
   font-family: var(--c-display);
@@ -1436,7 +1436,7 @@
   color: var(--c-amber);
   background: var(--c-warm);
   border-color: var(--c-amber);
-  animation: c-pop 0.25s ease-out both;
+  animation: c-pop 0.05s ease-out both;
 }
 .c-nextcard {
   display: flex;
@@ -1799,12 +1799,12 @@
   }
 }
 .c-a-spin {
-  animation: c-spin 0.6s linear infinite;
+  animation: c-spin 0.12s linear infinite;
 }
 .c-a-plume {
   transform-box: fill-box;
   transform-origin: center;
-  animation: c-plume 1.5s ease-out infinite;
+  animation: c-plume 0.3s ease-out infinite;
 }
 .c-a-heatflow {
   animation-name: c-heatflow;
@@ -2161,46 +2161,46 @@
   }
 }
 .c-a-rod {
-  animation: c-rod 3.5s ease-in-out infinite;
+  animation: c-rod 0.7s ease-in-out infinite;
 }
 .c-a-hot {
-  animation: c-hot 1.3s ease-in-out infinite;
+  animation: c-hot 0.34s ease-in-out infinite;
 }
 .c-a-glow {
-  animation: c-glow 2s ease-in-out infinite;
+  animation: c-glow 0.4s ease-in-out infinite;
 }
 .c-a-flow {
   stroke-dasharray: 6 10;
-  animation: c-flow 0.55s linear infinite;
+  animation: c-flow 0.11s linear infinite;
 }
 .c-a-draw {
   stroke-dasharray: 420;
-  animation: c-draw 3.5s ease-out infinite;
+  animation: c-draw 0.7s ease-out infinite;
 }
 .c-a-draw-long {
   stroke-dasharray: 900;
-  animation: c-draw-long 3s ease-out infinite;
+  animation: c-draw-long 0.6s ease-out infinite;
 }
 .c-a-draw-ev {
   stroke-dasharray: 900;
-  animation: c-draw-long 2.5s ease-out infinite;
+  animation: c-draw-long 0.5s ease-out infinite;
 }
 .c-a-q {
   transform-box: fill-box;
   transform-origin: center;
-  animation: c-q 1.2s ease-in-out infinite;
+  animation: c-q 0.34s ease-in-out infinite;
 }
 .c-a-n1 {
-  animation: c-n1 1.1s linear infinite;
+  animation: c-n1 0.22s linear infinite;
 }
 .c-a-n2 {
-  animation: c-n2 1.4s linear infinite 0.25s;
+  animation: c-n2 0.28s linear infinite 0.05s;
 }
 .c-a-n3 {
-  animation: c-n3 1.25s linear infinite 0.55s;
+  animation: c-n3 0.25s linear infinite 0.11s;
 }
 .c-a-n4 {
-  animation: c-n4 1.55s linear infinite 0.4s;
+  animation: c-n4 0.31s linear infinite 0.08s;
 }
 .c-a-pipe {
   animation-name: c-pipe;
@@ -2208,51 +2208,51 @@
   animation-iteration-count: infinite;
 }
 .c-a-lvl-up {
-  animation: c-up 1.2s ease-in-out infinite alternate;
+  animation: c-up 0.24s ease-in-out infinite alternate;
 }
 .c-a-lvl-down {
-  animation: c-down 1.2s ease-in-out infinite alternate;
+  animation: c-down 0.24s ease-in-out infinite alternate;
 }
 .c-a-lvl-steady {
-  animation: c-wave 1.5s ease-in-out infinite;
+  animation: c-wave 0.3s ease-in-out infinite;
 }
 .c-a-ar-up {
-  animation: c-arrow-up 0.7s ease-out infinite;
+  animation: c-arrow-up 0.14s ease-out infinite;
 }
 .c-a-ar-down {
-  animation: c-arrow-down 0.7s ease-out infinite;
+  animation: c-arrow-down 0.14s ease-out infinite;
 }
 .c-a-ar-steady {
   opacity: 0.5;
 }
 .c-a-in {
-  animation: c-in 2s ease-in infinite;
+  animation: c-in 0.4s ease-in infinite;
 }
 .c-a-wob {
   transform-box: fill-box;
   transform-origin: center;
-  animation: c-wob 2s ease-in-out infinite;
+  animation: c-wob 0.4s ease-in-out infinite;
 }
 .c-a-nuc {
-  animation: c-nuc 2s linear infinite;
+  animation: c-nuc 0.4s linear infinite;
 }
 .c-a-fragA {
-  animation: c-fragA 2s ease-out infinite;
+  animation: c-fragA 0.4s ease-out infinite;
 }
 .c-a-fragB {
-  animation: c-fragB 2s ease-out infinite;
+  animation: c-fragB 0.4s ease-out infinite;
 }
 .c-a-o1 {
-  animation: c-o1 2s ease-out infinite;
+  animation: c-o1 0.4s ease-out infinite;
 }
 .c-a-o2 {
-  animation: c-o2 2s ease-out infinite;
+  animation: c-o2 0.4s ease-out infinite;
 }
 .c-a-o3 {
-  animation: c-o3 2s ease-out infinite;
+  animation: c-o3 0.4s ease-out infinite;
 }
 .c-a-flash {
-  animation: c-flash 2s ease-out infinite;
+  animation: c-flash 0.4s ease-out infinite;
 }
 @media (prefers-reduced-motion: reduce) {
   .course *,

@@ -4,6 +4,8 @@ import { OrbitControls } from "three/addons/controls/OrbitControls.js";
 import { parts, type PartID } from "./content";
 import type { State, Controls } from "./simulation";
 export type View = "plant" | "core" | "fission";
+/** Visual motion (flow, neutrons, fission cycle, turbine) runs this many times faster than model time. */
+export const VISUAL_SPEED = 5;
 type Props = {
   view: View;
   selected: PartID;
@@ -802,7 +804,7 @@ export default function ReactorScene(props: Props) {
     const projection = new THREE.Vector3();
     function animate() {
       const p = latest.current,
-        t = p.state.time;
+        t = p.state.time * VISUAL_SPEED;
       rodBank.position.y = (1 - p.controls.rods / 100) * 1.65;
       envelope.visible = p.selected === "containment";
       materials.forEach(({ mat, id }) => {

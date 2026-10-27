@@ -127,7 +127,11 @@ function CoreVisual() {
               height={h as number}
               rx="11"
               opacity={hot ? undefined : 0.7}
-              style={delay ? { animationDelay: `${delay}s` } : undefined}
+              style={
+                delay
+                  ? { animationDelay: `${(delay as number) / 5}s` }
+                  : undefined
+              }
             />
           ))}
         </g>
@@ -160,14 +164,14 @@ function CoreVisual() {
             cx="201"
             cy="300"
             r="4"
-            style={{ animationDelay: ".65s" }}
+            style={{ animationDelay: ".13s" }}
           />
           <circle
             className="c-a-n3"
             cx="377"
             cy="230"
             r="4"
-            style={{ animationDelay: ".15s" }}
+            style={{ animationDelay: ".03s" }}
           />
         </g>
       </g>
@@ -723,8 +727,8 @@ function EquationScreen({ go }: CourseProps) {
   const dir = Math.abs(rate) < 0.005 ? "steady" : rate > 0 ? "up" : "down";
   const total = gen + decay;
   const dots = (flow: number) => {
-    // Twice as fast as the original design: 130 / flow seconds per crossing.
-    const dur = Math.max(0.3, Math.min(3, 130 / Math.max(flow, 1)));
+    // Ten times the original design's speed: 26 / flow seconds per crossing.
+    const dur = Math.max(0.06, Math.min(0.6, 26 / Math.max(flow, 1)));
     return Array.from({ length: 5 }, (_, i) => ({
       animationDuration: `${dur.toFixed(2)}s`,
       animationDelay: `${(-(dur * i) / 5).toFixed(2)}s`,

@@ -1,3 +1,4 @@
+import { HeatBalanceCard } from "./LiveEquations";
 import { useState } from "react";
 import { ArrowRight } from "lucide-react";
 import type { PartID } from "./content";
@@ -208,47 +209,15 @@ export function EvidenceInspector({
       className="evidence-inspector"
       aria-label="Interpret the captured evidence"
     >
-      <div className="snapshot-readings">
-        <span>
-          Fission power <strong>{s.fission.toFixed(1)}%</strong>
-        </span>
-        <span>
-          Decay heat <strong>{s.decay.toFixed(1)}%</strong>
-        </span>
-        <span>
-          Fuel temperature <strong>{s.fuel.toFixed(1)}°C</strong>
-        </span>
-      </div>
-      <details className="heat-balance" open={id === "cooling"}>
-        <summary>Why is the fuel warming or cooling?</summary>
-        <p className="balance-equation">
-          Rate of change of stored energy = generation − transfer to coolant
-        </p>
-        <dl>
-          <div>
-            <dt>Generated in fuel</dt>
-            <dd>{s.power.toFixed(1)}%</dd>
-          </div>
-          <div>
-            <dt>Transferred to coolant</dt>
-            <dd>{s.transfer.toFixed(1)}%</dd>
-          </div>
-          <div>
-            <dt>Net into fuel</dt>
-            <dd>
-              {s.netFuel >= 0 ? "+" : ""}
-              {s.netFuel.toFixed(1)}%
-            </dd>
-          </div>
-        </dl>
-        <p>{describeBalance(s)}</p>
-        <small>
-          All power values use the same reference: the initial total thermal
-          power. “Net into fuel” is a rate of energy accumulation, not an amount
-          of heat or a temperature. It is distinct from heat rejected by the
-          plant.
-        </small>
-      </details>
+      <HeatBalanceCard
+        title={`Fuel heat balance at ${s.time.toFixed(1)} model s`}
+        fission={s.fission / 100}
+        decay={s.decay / 100}
+        toCoolant={s.transfer / 100}
+        fuel={s.fuel}
+        focus
+      />
+      <p className="balance-reading">{describeBalance(s)}</p>
       <button
         className="text-button"
         aria-expanded={showWhy}

@@ -777,3 +777,25 @@ test("investigation says what to do next and highlights that control", () => {
   assert.match(step(), /1 of 4 found/);
   assert.ok(screen.getByText("Unlocks when you’ve found 3 more parts."));
 });
+test("explore shows the model's equations with live values that follow the controls", () => {
+  mount();
+  const live = screen.getByRole("region", { name: "The equations, live" });
+  for (const name of [
+    "Fuel heat balance",
+    "Chain reaction",
+    "Heat carried away",
+    "Decay heat",
+  ])
+    assert.ok(within(live).getByRole("heading", { name }));
+  assert.ok(within(live).getByText("Steady (critical)"));
+  assert.match(live.textContent ?? "", /flow 100%/);
+  fireEvent.change(screen.getByLabelText("Coolant circulation"), {
+    target: { value: "80" },
+  });
+  assert.match(live.textContent ?? "", /flow 80%/);
+  // Inserting rods adds negative reactivity, so the chain starts to shrink.
+  fireEvent.change(screen.getByLabelText("Control-rod insertion"), {
+    target: { value: "65" },
+  });
+  assert.ok(within(live).getByText("Shrinking"));
+});

@@ -1,6 +1,37 @@
 import type { ReactNode } from "react";
-import { Check } from "lucide-react";
+import {
+  ArrowDownToLine,
+  Check,
+  Cylinder,
+  Droplets,
+  Fan,
+  Flame,
+  Gauge,
+  Shield,
+  Snowflake,
+  Waves,
+  Zap,
+  type LucideIcon,
+} from "lucide-react";
 import { parts, type PartID } from "./content";
+
+const partIcons: Record<PartID, LucideIcon> = {
+  fuel: Flame,
+  rods: ArrowDownToLine,
+  water: Droplets,
+  vessel: Cylinder,
+  steam: Waves,
+  pressuriser: Gauge,
+  pump: Fan,
+  turbine: Zap,
+  condenser: Snowflake,
+  containment: Shield,
+};
+/** A recognisable icon for each part, used in the chips and the part panel. */
+export function PartIcon({ id, size }: { id: PartID; size: number }) {
+  const Icon = partIcons[id];
+  return <Icon size={size} strokeWidth={1.6} aria-hidden="true" />;
+}
 
 /** Scroll a lab control into view so a step's instruction and its control are seen together. */
 export function showTarget(id: string) {
@@ -108,7 +139,9 @@ export function PartChips({
           aria-pressed={selected === p.id}
           onClick={() => onSelect(p.id)}
         >
-          <i style={{ background: p.color }} aria-hidden="true" />
+          <i style={{ color: p.color }} aria-hidden="true">
+            <PartIcon id={p.id} size={15} />
+          </i>
           {p.name}
         </button>
       ))}

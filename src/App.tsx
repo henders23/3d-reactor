@@ -8,7 +8,10 @@ import {
 import {
   Atom,
   ArrowDown,
+  ArrowDownToLine,
   ArrowLeft,
+  Fan,
+  Snowflake,
   ClipboardCheck,
   FlaskConical,
   MousePointerClick,
@@ -33,7 +36,7 @@ import {
   Target,
   X,
 } from "lucide-react";
-import ReactorScene, { type View } from "./ReactorScene";
+import ReactorScene, { VISUAL_SPEED, type View } from "./ReactorScene";
 import Schematic from "./Schematic";
 import EquationLesson from "./EquationLesson";
 import type { EquationID } from "./equations";
@@ -42,7 +45,20 @@ import TrendChart from "./TrendChart";
 import { ScienceTour, ExplanationHelp } from "./ScienceUI";
 import { misconceptionFeedback, explanationSupport } from "./science";
 import { LearningFocus, GuidedExperiment } from "./LearningUI";
-import { NextStep, PartChips, StartGuide } from "./LabGuide";
+import { NextStep, PartChips, PartIcon, StartGuide } from "./LabGuide";
+import { LiveEquations } from "./LiveEquations";
+import { Law } from "./CourseKit";
+
+/** Which investigation's equation each part plays a role in. */
+const partLaw: Partial<Record<PartID, string>> = {
+  fuel: "control",
+  rods: "neutrons",
+  water: "cooling",
+  steam: "cooling",
+  pump: "cooling",
+  turbine: "energy",
+  condenser: "energy",
+};
 import Course from "./Course";
 import {
   deepDiveCleared,
@@ -1067,9 +1083,11 @@ export default function App() {
       ) : (
         <>
           <div className="inspector-top">
-            <div className="component-illustration">
-              <Atom size={64} strokeWidth={0.8} />
-              <span style={{ background: part.color }} />
+            <div
+              className="component-illustration"
+              style={{ color: part.color, borderColor: part.color }}
+            >
+              <PartIcon id={part.id} size={44} />
             </div>
             <h2>{part.name}</h2>
             <p className="part-subtitle">{part.subtitle}</p>
@@ -1083,6 +1101,24 @@ export default function App() {
               <h3>How it connects</h3>
               <p>{part.connection}</p>
             </div>
+            {partLaw[part.id] && (
+              <div className="part-law">
+                <h3>The equation behind it</h3>
+                <Law id={partLaw[part.id]!} size="card" />
+                <button
+                  className="text-button"
+                  onClick={() =>
+                    startLesson(
+                      lessons.findIndex((l) => l.id === partLaw[part.id]),
+                    )
+                  }
+                >
+                  Use it in Investigation 0
+                  {lessons.findIndex((l) => l.id === partLaw[part.id]) + 1}{" "}
+                  <ArrowRight size={13} />
+                </button>
+              </div>
+            )}
             <button
               className="secondary-button wide"
               disabled={webglFailed}
@@ -1507,11 +1543,11 @@ export default function App() {
                         <span>
                           {reduced
                             ? "Fission outcomes"
-                            : state.time % 12 < 3
+                            : (state.time * VISUAL_SPEED) % 12 < 3
                               ? "01 · A neutron reaches the fuel"
-                              : state.time % 12 < 5
+                              : (state.time * VISUAL_SPEED) % 12 < 5
                                 ? "02 · The nucleus splits"
-                                : state.time % 12 < 8
+                                : (state.time * VISUAL_SPEED) % 12 < 8
                                   ? "03 · Neutrons are released"
                                   : "04 · Absorption, moderation or further fission"}
                         </span>
@@ -1602,40 +1638,7 @@ export default function App() {
                   </div>
                 </section>
                 {mode !== "investigate" && (
-                  <div className="metrics" aria-label="Current model readings">
-                    <div>
-                      <span>TOTAL THERMAL POWER</span>
-                      <strong>
-                        {(state.thermal * 100).toFixed(1)}
-                        <small>%</small>
-                      </strong>
-                      <small>fission + decay heat; initial = 100%</small>
-                    </div>
-                    <div>
-                      <span>FUEL TEMPERATURE</span>
-                      <strong>
-                        {state.fuel.toFixed(0)}
-                        <small>°C</small>
-                      </strong>
-                      <small>lumped fuel temperature</small>
-                    </div>
-                    <div>
-                      <span>PRIMARY COOLANT</span>
-                      <strong>
-                        {state.coolant.toFixed(0)}
-                        <small>°C</small>
-                      </strong>
-                      <small>representative average</small>
-                    </div>
-                    <div>
-                      <span>ELECTRICAL OUTPUT</span>
-                      <strong>
-                        {(state.electric * 100).toFixed(0)}
-                        <small>%</small>
-                      </strong>
-                      <small>relative output index</small>
-                    </div>
-                  </div>
+                  <LiveEquations state={state} controls={controls} />
                 )}
                 {mode === "investigate" &&
                   (stage !== "explain" || reviewEvidence || revising) &&
@@ -1676,7 +1679,7 @@ export default function App() {
                     </button>
                   )}
                 {mode !== "investigate" && (
-                  <>
+                  <div className="lab-run">
                     <section className="experiment-panel">
                       <div className="experiment-heading">
                         <h2>
@@ -1697,6 +1700,7 @@ export default function App() {
                       >
                         <label>
                           <span>
+                            <ArrowDownToLine size={16} aria-hidden="true" />
                             Control-rod insertion
                             <strong>{controls.rods}%</strong>
                           </span>
@@ -1716,6 +1720,7 @@ export default function App() {
                         </label>
                         <label>
                           <span>
+                            <Fan size={16} aria-hidden="true" />
                             Coolant circulation<strong>{controls.flow}%</strong>
                           </span>
                           <input
@@ -1734,6 +1739,7 @@ export default function App() {
                         </label>
                         <label>
                           <span>
+                            <Snowflake size={16} aria-hidden="true" />
                             Heat removal at sink
                             <strong>{controls.sink}%</strong>
                           </span>
@@ -1813,30 +1819,32 @@ export default function App() {
                         </p>
                       )}
                     </section>
-                    <TrendChart
-                      samples={samples}
-                      baseline={baseline}
-                      event={graphEvent}
-                    />
-                    <div className="chart-actions">
-                      <button className="text-button" onClick={saveBaseline}>
-                        <Plus size={14} />
-                        Save run for comparison
-                      </button>
-                      {baseline.length > 0 && (
-                        <button
-                          className="text-button"
-                          onClick={() => setBaseline([])}
-                        >
-                          Clear comparison
+                    <div className="lab-run-graph">
+                      <TrendChart
+                        samples={samples}
+                        baseline={baseline}
+                        event={graphEvent}
+                      />
+                      <div className="chart-actions">
+                        <button className="text-button" onClick={saveBaseline}>
+                          <Plus size={14} />
+                          Save run for comparison
                         </button>
-                      )}
-                      <button className="text-button" onClick={exportData}>
-                        <Download size={14} />
-                        Export data
-                      </button>
+                        {baseline.length > 0 && (
+                          <button
+                            className="text-button"
+                            onClick={() => setBaseline([])}
+                          >
+                            Clear comparison
+                          </button>
+                        )}
+                        <button className="text-button" onClick={exportData}>
+                          <Download size={14} />
+                          Export data
+                        </button>
+                      </div>
                     </div>
-                  </>
+                  </div>
                 )}
               </div>
               {mode === "investigate" && stage === "explain" && inspectorPanel}

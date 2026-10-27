@@ -5,6 +5,8 @@ import { ArrowRight, Eye, RotateCcw, Play, Pause } from "lucide-react";
 import type { State, Sample } from "./simulation";
 import { learning, guidedEvidence } from "./learning";
 import TrendChart from "./TrendChart";
+import { Law } from "./CourseKit";
+import { HeatBalanceCard } from "./LiveEquations";
 export function LearningFocus({
   id,
   showWatch,
@@ -14,30 +16,34 @@ export function LearningFocus({
 }) {
   const d = learning[id];
   return (
-    <section className="learning-focus" aria-label="Learning focus">
-      <div>
-        <p>{d.goal}</p>
+    <section className="learning-focus mission" aria-label="Learning focus">
+      <div className="mission-law">
+        <span>The equation</span>
+        <Law id={id} size="hero" />
       </div>
-      {showWatch && (
-        <div>
-          <Eye size={20} />
-          <p>
-            <strong>Look here</strong>
-            {d.watch}
-          </p>
-        </div>
-      )}
-      <details>
-        <summary>Key terms for this investigation</summary>
-        <dl>
-          {d.terms.map(([term, meaning]) => (
-            <div key={term}>
-              <dt>{term}</dt>
-              <dd>{meaning}</dd>
-            </div>
-          ))}
-        </dl>
-      </details>
+      <div className="mission-text">
+        <p className="mission-goal">{d.goal}</p>
+        {showWatch && (
+          <div className="mission-watch">
+            <Eye size={20} />
+            <p>
+              <strong>Look here</strong>
+              {d.watch}
+            </p>
+          </div>
+        )}
+        <details>
+          <summary>Key terms for this investigation</summary>
+          <dl>
+            {d.terms.map(([term, meaning]) => (
+              <div key={term}>
+                <dt>{term}</dt>
+                <dd>{meaning}</dd>
+              </div>
+            ))}
+          </dl>
+        </details>
+      </div>
     </section>
   );
 }
@@ -131,11 +137,7 @@ export function GuidedExperiment({
               onInspect={setSelectedIndex}
             />
           )}
-          <p className="power-definition">
-            Total thermal power = fission power + decay heat. It is a rate of
-            heat generation, not temperature or electrical output. All power
-            percentages use the initial total thermal power as 100%.
-          </p>
+
           <div
             className="evidence-readings"
             aria-label="Before and after evidence"
@@ -172,6 +174,21 @@ export function GuidedExperiment({
             inspection={inspected}
             event={{ time: 0, label: d.action! }}
           />
+          {!observed && samples.length > 0 && (
+            <HeatBalanceCard
+              title="Fuel heat balance, live"
+              fission={samples[samples.length - 1].fission / 100}
+              decay={samples[samples.length - 1].decay / 100}
+              toCoolant={samples[samples.length - 1].transfer / 100}
+              fuel={samples[samples.length - 1].fuel}
+              focus
+            />
+          )}
+          <p className="power-definition">
+            Total thermal power = fission power + decay heat: a rate of heat
+            generation, not a temperature. Percentages use the initial total
+            thermal power as 100%.
+          </p>
           {observed && (
             <EvidenceInspector
               key={`inspector-${id}`}

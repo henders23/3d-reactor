@@ -3774,7 +3774,7 @@ textarea:focus-visible {
   position: relative;
   outline: 2px solid var(--lab-amber);
   outline-offset: 2px;
-  animation: lab-pulse 1.2s ease-in-out infinite;
+  animation: lab-pulse 0.34s ease-in-out infinite;
 }
 .app .choices.is-next,
 .app .sliders.is-next,
@@ -4022,7 +4022,7 @@ textarea:focus-visible {
 }
 .app .scene-label.is-next {
   outline: 2px solid var(--lab-amber);
-  animation: lab-pulse 1.2s ease-in-out infinite;
+  animation: lab-pulse 0.34s ease-in-out infinite;
 }
 
 /* Footer holds what used to hide in the sidebar. */
@@ -4055,4 +4055,376 @@ textarea:focus-visible {
   .app .scene-label.is-next {
     animation: none;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   Equations on screen: live equation cards, the mission card and part equations.
+   --------------------------------------------------------------------------- */
+.app {
+  --c-math: "STIX Two Text", "Cambria Math", "Times New Roman", serif;
+  --c-display: "Space Grotesk", Manrope, Arial, sans-serif;
+  --c-body: "IBM Plex Sans", "DM Sans", Arial, sans-serif;
+  --c-text: #e8f1ee;
+  --c-text2: #c9d8d4;
+  --c-muted: #9db3ae;
+  --c-dim: #7f9893;
+  --c-line: #1f3532;
+  --c-line2: #24403d;
+  --c-amber: #ffb648;
+  --c-amber2: #ffd48a;
+  --c-blue: #5cd6ff;
+  --c-blue2: #a8e9ff;
+}
+.live-equations {
+  margin: 18px 0;
+}
+.live-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 6px 16px;
+  margin-bottom: 10px;
+}
+.live-head h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.live-head p {
+  font-size: 13px;
+  color: var(--lab-muted);
+}
+.live-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+.live-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  background: var(--lab-surface);
+  border: 1px solid var(--lab-line);
+}
+.live-card.is-focus {
+  border: 2px solid var(--lab-amber);
+  background: #121d17;
+}
+.live-card header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.live-card h3 {
+  margin: 0;
+  font-family: var(--c-display);
+  font-size: 15px;
+  font-weight: 600;
+}
+.live-status {
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.live-status--up {
+  background: #2a2111;
+  color: var(--lab-amber);
+}
+.live-status--down {
+  background: #0f2630;
+  color: var(--lab-blue);
+}
+.live-status--steady {
+  background: #1a2a28;
+  color: var(--c-text2);
+}
+.live-eq {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  font-family: var(--c-math);
+  font-size: clamp(26px, 2.4vw, 34px);
+  line-height: 1;
+  color: var(--c-text);
+}
+.live-big {
+  font-family: var(--c-display);
+  font-size: 0.85em;
+  font-weight: 600;
+  color: var(--lab-amber);
+}
+.live-sub {
+  font-family: var(--c-display);
+  font-size: 16px;
+  color: var(--c-text2);
+}
+.live-sub strong {
+  color: var(--c-text);
+  font-size: 18px;
+}
+.live-foot {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--lab-muted);
+}
+.live-foot strong {
+  color: var(--c-text);
+}
+.live-bars {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.live-bar {
+  display: block;
+  height: 8px;
+  border-radius: 4px;
+  transition: width 0.1s linear;
+}
+.live-bar--in,
+.live-bar--rise {
+  background: var(--lab-amber);
+}
+.live-bar--out,
+.live-bar--flow {
+  background: var(--lab-blue);
+}
+.live-gauge {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  height: 34px;
+  padding-top: 14px;
+  border-top: 8px solid transparent;
+  background: linear-gradient(90deg, #0f2630 0 50%, #2a2111 50% 100%) top / 100%
+    8px no-repeat;
+}
+.live-gauge small {
+  font-size: 11px;
+  color: var(--lab-muted);
+}
+.live-gauge small:nth-of-type(2) {
+  text-align: center;
+}
+.live-gauge small:nth-of-type(3) {
+  text-align: right;
+}
+.live-gauge-mid {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  width: 2px;
+  height: 12px;
+  background: var(--c-text2);
+}
+.live-gauge-marker {
+  position: absolute;
+  top: -13px;
+  width: 14px;
+  height: 14px;
+  margin-left: -7px;
+  border-radius: 50%;
+  background: var(--lab-text);
+  border: 3px solid var(--lab-bg);
+  transition: left 0.1s linear;
+}
+.live-stack {
+  display: flex;
+  height: 10px;
+  border-radius: 5px;
+  overflow: hidden;
+  background: var(--lab-surface2);
+}
+.live-stack span:nth-child(1) {
+  background: var(--lab-amber);
+}
+.live-stack span:nth-child(2) {
+  background: var(--lab-amber2);
+}
+.live-stack span:nth-child(3) {
+  background: #c9a46a;
+}
+.balance-reading {
+  margin: 10px 0 4px;
+  font-size: 14px;
+  color: var(--c-text2);
+}
+
+/* Explore: controls beside the graph. */
+.lab-run {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.lab-run .experiment-panel {
+  padding: 16px 18px;
+  border-radius: 18px;
+  border: 1px solid var(--lab-line);
+  background: var(--lab-surface);
+}
+.lab-run .sliders {
+  grid-template-columns: minmax(0, 1fr);
+  gap: 14px;
+}
+.lab-run .playback {
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.lab-run .trend {
+  margin-top: 0;
+}
+.app .sliders label > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.app .sliders label > span svg {
+  color: var(--lab-amber);
+}
+.app .sliders label > span strong {
+  margin-left: auto;
+  font-family: var(--c-display);
+  font-size: 18px;
+}
+@media (max-width: 900px) {
+  .lab-run,
+  .live-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Parts: an icon in the part's colour, and the equation it plays a role in. */
+.app .component-illustration {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 84px;
+  height: 84px;
+  border-radius: 50%;
+  border: 2px solid;
+  background: var(--lab-surface2);
+}
+.app .component-illustration span {
+  display: none;
+}
+.part-law {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 18px 0;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid var(--lab-amber);
+  background: #16201a;
+}
+.part-law h3 {
+  margin: 0;
+  color: var(--lab-amber2);
+}
+.part-law .c-eq--card {
+  font-size: 26px;
+}
+.part-chips button i {
+  display: inline-flex;
+  width: auto;
+  height: auto;
+  background: none;
+}
+.part-chips button.selected i {
+  color: var(--lab-bg) !important;
+}
+
+/* Investigate: the mission card puts the investigation's equation first. */
+.app .learning-focus.mission {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.9fr) minmax(0, 1.4fr);
+  gap: 20px;
+  align-items: center;
+  background: var(--lab-surface);
+  border: 1px solid var(--lab-line);
+  border-radius: 18px;
+}
+.mission-law {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: var(--lab-bg);
+  border: 1px solid var(--lab-line2);
+}
+.mission-law > span {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--lab-amber2);
+}
+.mission-law .c-eq--hero {
+  font-size: clamp(28px, 2.6vw, 38px);
+}
+.mission-text {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.mission-goal {
+  font-family: var(--c-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+.mission-watch {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--c-text2);
+}
+.mission-watch p {
+  font-size: 14px;
+  line-height: 1.5;
+}
+.mission-watch strong {
+  display: block;
+  color: var(--c-text);
+}
+@media (max-width: 900px) {
+  .app .learning-focus.mission {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+/* Calmer panels: one surface colour, one border colour. */
+.app .guided-experiment,
+.app .evidence-inspector,
+.app .science-tour {
+  background: var(--lab-surface);
+  border-color: var(--lab-line);
+  border-radius: 18px;
+}
+.app .guided-experiment .live-card {
+  margin: 12px 0;
+}
+.app .power-definition,
+.app .model-time-note {
+  font-size: 12.5px;
+  color: var(--lab-muted);
+}
+.app .learning-focus.mission > div + div {
+  display: flex;
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+.app .learning-focus.mission .mission-goal {
+  margin-top: 0;
+}
+.app .evidence-inspector {
+  padding: 0;
+  border: 0;
+  background: none;
 }
