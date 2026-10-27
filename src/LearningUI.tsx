@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { EvidenceInspector, CheckpointControls } from "./ScienceUI";
 import { checkpoints } from "./science";
-import { Atom, ArrowRight, Eye, RotateCcw, Play, Pause } from "lucide-react";
+import { Atom, ArrowRight } from "lucide-react";
 import type { State, Sample } from "./simulation";
 import { learning, guidedEvidence } from "./learning";
 import TrendChart from "./TrendChart";
+import { Disclosure } from "./ui";
 export function Welcome({
   onLearn,
   onExplore,
@@ -16,89 +17,66 @@ export function Welcome({
 }) {
   return (
     <main className="welcome">
-      <div className="welcome-brand">
-        <Atom size={32} />
+      <header className="welcome-brand">
+        <Atom size={28} strokeWidth={1.6} aria-hidden="true" />
         <strong>CORE</strong>
         <span>PHYSM0047 · Nuclear Science</span>
-      </div>
+      </header>
       <div className="welcome-content">
-        <span className="eyebrow">A QUESTION TO START WITH</span>
-        <h1>
-          If the reactor shuts down,
-          <br />
-          why does it still need cooling?
-        </h1>
-        <p>
-          Explore a pressurised-water reactor and discover how its parts work
-          together. You will make a prediction, change one thing and use the
-          evidence to explain what happened.
+        <p className="eyebrow">A question to start with</p>
+        <h1>If the reactor shuts down, why does it still need cooling?</h1>
+        <p className="welcome-lede">
+          Predict, change one thing, and use the evidence to explain what
+          happened.
         </p>
         <div className="welcome-actions">
-          <button className="primary-button" onClick={onLearn}>
-            {completed ? "Continue learning" : "Start with the essentials"}{" "}
-            <ArrowRight size={18} />
+          <button className="button primary large" onClick={onLearn}>
+            {completed ? "Continue learning" : "Start with the essentials"}
+            <ArrowRight size={18} aria-hidden="true" />
           </button>
-          <button className="secondary-button" onClick={onExplore}>
+          <button className="button secondary large" onClick={onExplore}>
             Explore freely
           </button>
         </div>
-        <p className="welcome-time">
-          Five short investigations · about 25–30 minutes · go at your own pace
-          {completed > 0 ? ` · ${completed}/5 completed` : ""}
+        <p className="welcome-meta">
+          Five short investigations · about 25–30 minutes
+          {completed > 0 ? ` · ${completed} of 5 done` : ""}
         </p>
-        <div className="pretraining">
-          <h2>Three jobs to keep separate</h2>
-          <div>
-            <article>
-              <span>01</span>
-              <h3>Make heat</h3>
-              <p>Fission in the fuel releases energy.</p>
-            </article>
-            <article>
-              <span>02</span>
-              <h3>Move heat</h3>
-              <p>Circulating coolant carries energy away.</p>
-            </article>
-            <article>
-              <span>03</span>
-              <h3>Make electricity</h3>
-              <p>Steam drives a turbine connected to a generator.</p>
-            </article>
-          </div>
-        </div>
-        <p className="welcome-note">
-          This is a simplified learning model. Its colours, particles and timing
-          help explain ideas; they are not measurements of a real plant.
-        </p>
+        <section className="three-jobs" aria-labelledby="jobs-title">
+          <h2 id="jobs-title">Three jobs to keep separate</h2>
+          <ol>
+            <li>
+              <strong>Make heat</strong>
+              <span>Fission in the fuel</span>
+            </li>
+            <li>
+              <strong>Move heat</strong>
+              <span>Circulating coolant</span>
+            </li>
+            <li>
+              <strong>Make electricity</strong>
+              <span>Steam turns a turbine</span>
+            </li>
+          </ol>
+        </section>
+        <Disclosure summary="About this model">
+          <p>
+            A simplified teaching model. Its colours, particles and timing
+            explain ideas; they are not measurements of a real plant.
+          </p>
+        </Disclosure>
       </div>
     </main>
   );
 }
-export function LearningFocus({
-  id,
-  showWatch,
-}: {
-  id: string;
-  showWatch: boolean;
-}) {
+export function LearningFocus({ id }: { id: string }) {
   const d = learning[id];
   return (
     <section className="learning-focus" aria-label="Learning focus">
-      <div>
-        <span className="eyebrow">YOUR GOAL</span>
-        <p>{d.goal}</p>
-      </div>
-      {showWatch && (
-        <div>
-          <Eye size={20} />
-          <p>
-            <strong>Look here</strong>
-            {d.watch}
-          </p>
-        </div>
-      )}
-      <details>
-        <summary>Key terms for this investigation</summary>
+      <Disclosure summary="What to look for">
+        <p>{d.watch}</p>
+      </Disclosure>
+      <Disclosure summary="Key terms">
         <dl>
           {d.terms.map(([term, meaning]) => (
             <div key={term}>
@@ -107,36 +85,22 @@ export function LearningFocus({
             </div>
           ))}
         </dl>
-      </details>
+      </Disclosure>
     </section>
   );
 }
-export function GuidedExperiment({
+/** The recorded run, kept beside the explanation for re-reading. */
+export function RunEvidence({
   id,
   state,
   samples,
-  running,
-  started,
-  observed,
-  onRun,
-  onToggle,
 }: {
   id: string;
   state: State;
   samples: Sample[];
-  running: boolean;
-  started: boolean;
-  observed: boolean;
-  onRun: () => void;
-  onToggle: () => void;
 }) {
   const [selectedIndex, setSelectedIndex] = useState(2);
-  useEffect(() => {
-    if (!observed) setSelectedIndex(2);
-  }, [observed]);
-  const inspected = observed
-    ? checkpoints(samples)[selectedIndex]?.sample
-    : undefined;
+  const inspected = checkpoints(samples)[selectedIndex]?.sample;
   const readings = guidedEvidence(state).map((row) => ({
     ...row,
     now: !inspected
@@ -149,112 +113,58 @@ export function GuidedExperiment({
   }));
   const d = learning[id];
   return (
-    <section className="guided-experiment" aria-label="Focused experiment">
-      <div className="guided-experiment-heading">
-        <div>
-          <span className="eyebrow">CHANGE ONE VARIABLE</span>
-          <h2>{d.action}</h2>
-          <p>
-            {id === "cooling"
-              ? "Rod insertion and external heat removal stay at their starting settings."
-              : "Circulation and external heat removal stay at their starting settings."}
-          </p>
-        </div>
-        <button
-          className="primary-button"
-          onClick={onRun}
-          disabled={started && !observed}
-        >
-          {started ? <RotateCcw size={16} /> : <Play size={16} />}{" "}
-          {observed ? "Repeat this experiment" : d.action}
-        </button>
+    <section className="run-evidence" aria-label="Your run">
+      <CheckpointControls
+        samples={samples}
+        selectedIndex={selectedIndex}
+        onInspect={setSelectedIndex}
+      />
+      <div className="evidence-readings" aria-label="Before and after evidence">
+        {readings
+          .filter((x) => id === "shutdown" || x.label !== "Decay heat")
+          .map((x) => (
+            <article key={x.label}>
+              <h3>{x.label}</h3>
+              <p>
+                <span>
+                  {x.before.toFixed(1)}
+                  {x.unit}
+                </span>
+                <ArrowRight size={15} aria-hidden="true" />
+                <strong>
+                  {x.now.toFixed(1)}
+                  {x.unit}
+                </strong>
+              </p>
+              <small>
+                {x.now - x.before >= 0 ? "+" : ""}
+                {(x.now - x.before).toFixed(1)} {x.deltaUnit}
+              </small>
+            </article>
+          ))}
       </div>
-      {started && (
-        <>
-          <div className="observation-progress">
-            <progress
-              aria-label="Observation progress"
-              max={d.duration}
-              value={Math.min(state.time, d.duration)}
-            />
-            <span>
-              {Math.min(state.time, d.duration).toFixed(0)} / {d.duration} model
-              seconds
-            </span>
-            {!observed && (
-              <button className="secondary-button" onClick={onToggle}>
-                {running ? <Pause size={14} /> : <Play size={14} />}{" "}
-                {running ? "Pause observation" : "Continue observation"}
-              </button>
-            )}
-          </div>
-          <p className="observation-status" role="status">
-            {observed
-              ? "Observation captured. Compare the starting reading with a selected recorded moment."
-              : "Watch the response. It will pause automatically so you can inspect the evidence."}
-          </p>
-          {observed && (
-            <CheckpointControls
-              samples={samples}
-              selectedIndex={selectedIndex}
-              onInspect={setSelectedIndex}
-            />
-          )}
-          <p className="power-definition">
-            Total thermal power = fission power + decay heat. It is a rate of
-            heat generation, not temperature or electrical output. All power
-            percentages use the initial total thermal power as 100%.
-          </p>
-          <div
-            className="evidence-readings"
-            aria-label="Before and after evidence"
-          >
-            {readings
-              .filter((x) => id === "shutdown" || x.label !== "Decay heat")
-              .map((x) => (
-                <article key={x.label}>
-                  <h3>{x.label}</h3>
-                  <p>
-                    <span>
-                      {x.before.toFixed(1)}
-                      {x.unit}
-                    </span>
-                    <ArrowRight size={15} />
-                    <strong>
-                      {x.now.toFixed(1)}
-                      {x.unit}
-                    </strong>
-                  </p>
-                  <small>
-                    {x.now - x.before >= 0 ? "+" : ""}
-                    {(x.now - x.before).toFixed(1)} {x.deltaUnit} from the
-                    starting value
-                  </small>
-                </article>
-              ))}
-          </div>
-          <TrendChart
-            key={`trend-${id}`}
-            samples={samples}
-            baseline={[]}
-            preferredMetric={d.metric}
-            inspection={inspected}
-            event={{ time: 0, label: d.action! }}
-          />
-          {observed && (
-            <EvidenceInspector
-              key={`inspector-${id}`}
-              id={id}
-              samples={samples}
-              selectedIndex={selectedIndex}
-            />
-          )}
-          <p className="model-time-note">
-            The model uses illustrative, slowed physical responses, replayed at
-            3× here. The percentages compare with the starting state.
-          </p>
-        </>
-      )}
+      <TrendChart
+        key={`trend-${id}`}
+        samples={samples}
+        baseline={[]}
+        preferredMetric={d.metric}
+        inspection={inspected}
+        event={{ time: 0, label: d.action! }}
+      />
+      <EvidenceInspector
+        key={`inspector-${id}`}
+        id={id}
+        samples={samples}
+        selectedIndex={selectedIndex}
+      />
+      <Disclosure summary="How to read these numbers">
+        <p>
+          Total thermal power is fission power plus decay heat: a rate of heat
+          generation, not a temperature or electrical output. Every power
+          percentage uses the starting total thermal power as 100%. The model’s
+          responses are illustrative and slowed.
+        </p>
+      </Disclosure>
     </section>
   );
 }

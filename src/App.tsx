@@ -12,7 +12,6 @@ import {
   BookOpen,
   Check,
   CheckCircle2,
-  ChevronRight,
   Download,
   Expand,
   Eye,
@@ -20,13 +19,11 @@ import {
   Home,
   Info,
   Layers,
-  Maximize2,
   Minus,
   Pause,
   Play,
   Plus,
   RotateCcw,
-  SlidersHorizontal,
   Target,
   X,
 } from "lucide-react";
@@ -36,7 +33,8 @@ import FissionDiagram from "./FissionDiagram";
 import TrendChart from "./TrendChart";
 import { ScienceTour, ExplanationHelp } from "./ScienceUI";
 import { misconceptionFeedback, explanationSupport } from "./science";
-import { Welcome, LearningFocus, GuidedExperiment } from "./LearningUI";
+import { Welcome, LearningFocus, RunEvidence } from "./LearningUI";
+import { Disclosure, Confidence } from "./ui";
 import ExperimentBeats from "./ExperimentBeats";
 import { experimentBeats } from "./beats";
 import { learning, guidedControls, advanceGuided } from "./learning";
@@ -413,501 +411,911 @@ export default function App() {
       : pressure <= 5
         ? 180 + ((pressure - 1) / 4) * 84
         : 264 + ((pressure - 5) / 10.5) * 81;
-  const inspectorPanel = (
-    <aside
-      className="inspector"
-      aria-label={
-        mode === "investigate"
-          ? "Guided investigation"
-          : "Component information"
-      }
-    >
-      {mode === "investigate" ? (
-        <>
-          <div className="inspector-top">
-            <span className="eyebrow">
-              INVESTIGATION {String(lessonIndex + 1).padStart(2, "0")}
+  const quantitative = learning[lesson.id].duration > 0;
+  const stageOrder = ["predict", "observe", "explain", "check", "complete"];
+  const stageIndex = stageOrder.indexOf(stage);
+  const correct = answer === learning[lesson.id].transferCorrect;
+  const sceneCaption =
+    flat || webglFailed
+      ? "System schematic · not to scale"
+      : view === "plant"
+        ? "Energy pathway · not to scale"
+        : view === "core"
+          ? "Inside the pressure vessel"
+          : "Particles enlarged · illustrative paths";
+
+  const sceneCard = (
+    <section className="scene-card" aria-label="Reactor visualisation">
+      <div className="scene-toolbar">
+        <div className="segmented" role="group" aria-label="Scale of model">
+          {(["plant", "core", "fission"] as View[]).map((v, i) => (
+            <button
+              key={v}
+              aria-pressed={view === v && !flat}
+              onClick={() => {
+                setFlat(false);
+                switchView(v);
+              }}
+            >
+              {["Whole plant", "Reactor core", "Fission"][i]}
+            </button>
+          ))}
+        </div>
+        <button
+          className="chip-button"
+          aria-pressed={flat}
+          disabled={webglFailed}
+          onClick={() => setFlat((v) => !v)}
+        >
+          <Layers size={15} aria-hidden="true" />
+          {webglFailed ? "2D mode" : flat ? "3D view" : "2D diagram"}
+        </button>
+      </div>
+      <div className="scene-area">
+        {(flat || webglFailed) && view === "fission" ? (
+          <FissionDiagram selected={selected} onSelect={choose} />
+        ) : flat || webglFailed ? (
+          <Schematic
+            selected={selected}
+            onSelect={choose}
+            state={state}
+            controls={controls}
+          />
+        ) : (
+          <ReactorScene
+            view={view}
+            selected={selected}
+            onSelect={choose}
+            state={state}
+            controls={controls}
+            cutaway={cutaway}
+            exploded={exploded}
+            labels={labels}
+            focusParts={
+              mode === "investigate" ? learning[lesson.id].focus : undefined
+            }
+            layer={layer}
+            reduced={reduced}
+            focusTick={focusTick}
+            homeTick={homeTick}
+            zoomTick={zoomTick}
+            onError={() => {
+              setWebglFailed(true);
+              setNotice(
+                "3D is unavailable in this browser. The interactive 2D diagram is ready.",
+              );
+            }}
+          />
+        )}
+        {view === "fission" && !flat && !webglFailed && (
+          <p className="fission-stage">
+            {reduced
+              ? "Fission outcomes"
+              : state.time % 12 < 3
+                ? "1 · A neutron reaches the fuel"
+                : state.time % 12 < 5
+                  ? "2 · The nucleus splits"
+                  : state.time % 12 < 8
+                    ? "3 · Neutrons are released"
+                    : "4 · Absorbed, slowed or another fission"}
+          </p>
+        )}
+        {!flat && !webglFailed && (
+          <div className="camera-tools">
+            <button
+              aria-label="Zoom in"
+              onClick={() => setZoomTick((v) => Math.abs(v) + 1)}
+            >
+              <Plus size={17} aria-hidden="true" />
+            </button>
+            <button
+              aria-label="Zoom out"
+              onClick={() => setZoomTick((v) => -Math.abs(v) - 1)}
+            >
+              <Minus size={17} aria-hidden="true" />
+            </button>
+            <button
+              aria-label="Return to overview"
+              onClick={() => setHomeTick((t) => t + 1)}
+            >
+              <Home size={16} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </div>
+      <div className="scene-foot">
+        <span className="scene-caption">{sceneCaption}</span>
+        {mode === "investigate" && !quantitative && (
+          <button className="text-button" onClick={() => setRunning((v) => !v)}>
+            {running ? (
+              <Pause size={15} aria-hidden="true" />
+            ) : (
+              <Play size={15} aria-hidden="true" />
+            )}
+            {running ? "Pause animation" : "Play animation"}
+          </button>
+        )}
+      </div>
+      {mode === "explore" && !flat && !webglFailed && view !== "fission" && (
+        <Disclosure summary="View options" className="view-options">
+          <div className="toggle-row">
+            <button
+              aria-pressed={cutaway}
+              onClick={() => setCutaway((v) => !v)}
+            >
+              <Eye size={15} aria-hidden="true" />
+              Cutaway
+            </button>
+            <button
+              aria-pressed={exploded}
+              onClick={() => setExploded((v) => !v)}
+            >
+              <Expand size={15} aria-hidden="true" />
+              Explode
+            </button>
+            <button aria-pressed={labels} onClick={() => setLabels((v) => !v)}>
+              Labels
+            </button>
+          </div>
+          <div className="toggle-row" role="group" aria-label="Overlay">
+            {(["flow", "temperature", "neutrons"] as const).map((l, i) => (
+              <button
+                key={l}
+                aria-pressed={layer === l}
+                onClick={() => setLayer(l)}
+              >
+                <i className={`dot ${["teal", "amber", "violet"][i]}`} />
+                {["Flow", "Fuel temperature", "Neutrons"][i]}
+              </button>
+            ))}
+          </div>
+          <p className="quiet">Drag to orbit · scroll or pinch to zoom.</p>
+        </Disclosure>
+      )}
+    </section>
+  );
+
+  const componentPanel = (
+    <aside className="part-panel" aria-label="Component information">
+      <div className="part-head">
+        <span className="part-swatch" style={{ background: part.color }} />
+        <span className="eyebrow">{part.group}</span>
+      </div>
+      <h2>{part.name}</h2>
+      <p className="part-subtitle">{part.subtitle}</p>
+      <p>{part.purpose}</p>
+      <div className="part-actions">
+        <button
+          className="button secondary"
+          disabled={webglFailed}
+          onClick={() => {
+            if (flat) setFlat(false);
+            if (view === "fission") setView("plant");
+            setTimeout(() => setFocusTick((t) => t + 1), 30);
+          }}
+        >
+          <Focus size={16} aria-hidden="true" />
+          Take a closer look
+        </button>
+        {selected === "fuel" && (
+          <button
+            className="button secondary"
+            onClick={() => {
+              setView("core");
+              setCutaway(true);
+              setLabels(true);
+              setHomeTick((t) => t + 1);
+            }}
+          >
+            Pellets & cladding
+          </button>
+        )}
+        {selected === "pressuriser" && (
+          <button
+            className="button secondary"
+            onClick={() => setModal("pressure")}
+          >
+            Pressure & boiling
+          </button>
+        )}
+      </div>
+      <div className="disclosures">
+        <Disclosure summary="Why it matters">
+          <p>{part.why}</p>
+        </Disclosure>
+        <Disclosure summary="How it connects">
+          <p>{part.connection}</p>
+        </Disclosure>
+        <Disclosure summary="The physics">
+          <p>{part.physics}</p>
+        </Disclosure>
+        <Disclosure summary="A common mix-up">
+          <p>{part.misconception}</p>
+        </Disclosure>
+        <Disclosure summary="All components">
+          <nav className="component-nav" aria-label="Reactor components">
+            {parts.map((p) => (
+              <button
+                key={p.id}
+                aria-pressed={selected === p.id}
+                onClick={() => choose(p.id)}
+              >
+                <span className="part-dot" style={{ background: p.color }} />
+                {p.name}
+              </button>
+            ))}
+          </nav>
+        </Disclosure>
+      </div>
+      <button className="investigation-cta" onClick={() => startLesson(0)}>
+        <span>
+          <small>Put the ideas to work</small>
+          <strong>Start an investigation</strong>
+        </span>
+        <ArrowRight size={18} aria-hidden="true" />
+      </button>
+    </aside>
+  );
+
+  const explore = (
+    <div className="lab">
+      <div className="lab-head">
+        <h1>Explore the reactor</h1>
+        <p>Select a part to see what it does. Change one control and watch.</p>
+      </div>
+      {sceneCard}
+      {componentPanel}
+      <section className="readouts" aria-label="Current model readings">
+        <div className="readout-grid">
+          <div>
+            <span>Thermal power</span>
+            <strong>
+              {(state.thermal * 100).toFixed(1)}
+              <small>%</small>
+            </strong>
+          </div>
+          <div>
+            <span>Fuel</span>
+            <strong>
+              {state.fuel.toFixed(0)}
+              <small>°C</small>
+            </strong>
+          </div>
+          <div>
+            <span>Coolant</span>
+            <strong>
+              {state.coolant.toFixed(0)}
+              <small>°C</small>
+            </strong>
+          </div>
+          <div>
+            <span>Electrical</span>
+            <strong>
+              {(state.electric * 100).toFixed(0)}
+              <small>%</small>
+            </strong>
+          </div>
+        </div>
+        <Disclosure summary="What these readings mean">
+          <dl className="readout-notes">
+            <div>
+              <dt>Thermal power</dt>
+              <dd>Fission plus decay heat. The starting value is 100%.</dd>
+            </div>
+            <div>
+              <dt>Fuel</dt>
+              <dd>One lumped temperature for the whole core.</dd>
+            </div>
+            <div>
+              <dt>Coolant</dt>
+              <dd>A representative average for the primary water.</dd>
+            </div>
+            <div>
+              <dt>Electrical</dt>
+              <dd>A relative output index, not megawatts.</dd>
+            </div>
+          </dl>
+        </Disclosure>
+      </section>
+      <section className="controls-card" aria-labelledby="controls-title">
+        <div className="card-head">
+          <h2 id="controls-title">Experiment</h2>
+          <span className={`status-pill ${running ? "running" : ""}`}>
+            <i />
+            {modelStatus}
+          </span>
+        </div>
+        <div className="sliders">
+          <label>
+            <span>
+              Control rods <strong>{controls.rods}%</strong>
             </span>
-            <h2 tabIndex={-1} id="guided-stage-title">
+            <input
+              aria-label="Control-rod insertion"
+              type="range"
+              min="0"
+              max="100"
+              value={controls.rods}
+              onChange={(e) => changeControl("rods", +e.target.value)}
+            />
+            <small>
+              Withdrawn <span>Inserted</span>
+            </small>
+          </label>
+          <label>
+            <span>
+              Circulation <strong>{controls.flow}%</strong>
+            </span>
+            <input
+              aria-label="Coolant circulation"
+              type="range"
+              min="30"
+              max="130"
+              value={controls.flow}
+              onChange={(e) => changeControl("flow", +e.target.value)}
+            />
+            <small>
+              Less <span>More</span>
+            </small>
+          </label>
+          <label>
+            <span>
+              Heat removal <strong>{controls.sink}%</strong>
+            </span>
+            <input
+              aria-label="Heat removal at sink"
+              type="range"
+              min="50"
+              max="120"
+              value={controls.sink}
+              onChange={(e) => changeControl("sink", +e.target.value)}
+            />
+            <small>
+              Less <span>More</span>
+            </small>
+          </label>
+        </div>
+        <div className="playback">
+          <button
+            className="button primary"
+            disabled={rangeStop}
+            aria-label={running ? "Pause simulation" : "Run simulation"}
+            onClick={() => setRunning((v) => !v)}
+          >
+            {running ? (
+              <Pause size={16} aria-hidden="true" />
+            ) : (
+              <Play size={16} aria-hidden="true" />
+            )}
+            {running ? "Pause" : "Run"}
+          </button>
+          <button
+            className="text-button"
+            onClick={() => {
+              reset(false);
+              setNotice(
+                "Reset to the starting state. Your saved comparison is kept.",
+              );
+            }}
+          >
+            <RotateCcw size={15} aria-hidden="true" />
+            Reset
+          </button>
+          <label className="speed-select">
+            <span>Speed</span>
+            <select
+              aria-label="Simulation speed"
+              value={speed}
+              onChange={(e) => setSpeed(+e.target.value)}
+            >
+              <option value={0.5}>0.5×</option>
+              <option value={1}>1×</option>
+              <option value={3}>3×</option>
+              <option value={5}>5×</option>
+            </select>
+          </label>
+          <span className="model-time">{state.time.toFixed(1)} model s</span>
+          <button
+            className="button warning"
+            onClick={() => {
+              changeControl("rods", 100);
+              if (!rangeStop) setRunning(true);
+              setNotice(
+                "All rods inserted. Watch the heat that remains while circulation continues.",
+              );
+            }}
+          >
+            <ArrowDown size={15} aria-hidden="true" />
+            Insert all rods
+          </button>
+        </div>
+        {rangeStop && (
+          <p className="range-notice" role="alert">
+            The model has reached its valid range and paused. Reset to continue.
+            This is a model boundary, not a plant safety limit.
+          </p>
+        )}
+      </section>
+      <div className="lab-chart">
+        <TrendChart samples={samples} baseline={baseline} event={graphEvent} />
+        <div className="chart-actions">
+          <button className="text-button" onClick={saveBaseline}>
+            <Plus size={15} aria-hidden="true" />
+            Save run for comparison
+          </button>
+          {baseline.length > 0 && (
+            <button className="text-button" onClick={() => setBaseline([])}>
+              Clear comparison
+            </button>
+          )}
+          <button className="text-button" onClick={exportData}>
+            <Download size={15} aria-hidden="true" />
+            Export data
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  const stageBody =
+    stage === "predict" ? (
+      <>
+        <h2>{lesson.question}</h2>
+        <div className="choices">
+          {lesson.choices.map((c, i) => (
+            <button
+              key={c}
+              aria-pressed={prediction === i}
+              onClick={() => {
+                setPrediction(i);
+                setPredictionSent(false);
+              }}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        <Confidence
+          legend="How sure are you?"
+          value={predictionConfidence}
+          onChange={setPredictionConfidence}
+        />
+        {!predictionSent ? (
+          <button
+            className="button primary"
+            disabled={prediction === null}
+            onClick={() => {
+              setPredictionSent(true);
+              setRecords((r) => ({
+                ...r,
+                [lesson.id]: {
+                  ...r[lesson.id],
+                  prediction: lesson.choices[prediction ?? 0],
+                  explanation: r[lesson.id]?.explanation || "",
+                  completed: r[lesson.id]?.completed || false,
+                },
+              }));
+            }}
+          >
+            Record prediction
+          </button>
+        ) : (
+          <div className="stage-next">
+            <p className="quiet" role="status">
+              Recorded. Now test it.
+            </p>
+            <button className="button primary" onClick={beginExperiment}>
+              Begin experiment <ArrowRight size={16} aria-hidden="true" />
+            </button>
+          </div>
+        )}
+      </>
+    ) : stage === "observe" ? (
+      <>
+        <h2>Follow the pathway.</h2>
+        <p className="quiet" role="status">
+          {observed
+            ? "You have visited every part. Now explain what you noticed."
+            : "Visit each part, here or in the model."}
+        </p>
+        <div className="part-checklist">
+          {(lesson.id === "energy"
+            ? ["fuel", "steam", "turbine", "condenser"]
+            : ["fuel", "water", "rods"]
+          ).map((id) => (
+            <button
+              key={id}
+              aria-pressed={selected === id}
+              onClick={() => choose(id as PartID)}
+            >
+              {visited.includes(id as PartID) ? (
+                <Check size={16} aria-hidden="true" />
+              ) : (
+                <span className="todo-dot" aria-hidden="true" />
+              )}
+              {parts.find((p) => p.id === id)?.name}
+            </button>
+          ))}
+        </div>
+        <button
+          className="button primary"
+          disabled={!observed}
+          onClick={() => {
+            setRunning(false);
+            setStage("explain");
+          }}
+        >
+          Explain my observations <ArrowRight size={16} aria-hidden="true" />
+        </button>
+        <button
+          className="text-button"
+          onClick={() => {
+            reset(true);
+            setVisited([lesson.focus]);
+            setObserved(false);
+            setNotice("Restarted from the beginning.");
+          }}
+        >
+          <RotateCcw size={15} aria-hidden="true" />
+          Restart experiment
+        </button>
+        <LearningFocus id={lesson.id} />
+      </>
+    ) : stage === "explain" ? (
+      <>
+        <h2>What happened, and why?</h2>
+        <p className="quiet">Name a part, a process and something you saw.</p>
+        {revising && (
+          <div className="callout">
+            <h3>Use the feedback</h3>
+            <p>{misconceptionFeedback[lesson.id][answer ?? 0]}</p>
+            <Disclosure summary="The model’s explanation">
+              <p>{explanationSupport[lesson.id].deeper}</p>
+            </Disclosure>
+            <Disclosure summary="My first explanation">
+              <p>{records[lesson.id]?.firstExplanation}</p>
+            </Disclosure>
+          </div>
+        )}
+        <label className="field-label" htmlFor="reflection">
+          Your explanation
+        </label>
+        <textarea
+          id="reflection"
+          rows={5}
+          value={reflection}
+          onChange={(e) => {
+            const value = e.target.value;
+            setReflection(value);
+            setRecords((r) => ({
+              ...r,
+              [lesson.id]: {
+                ...r[lesson.id],
+                prediction: lesson.choices[prediction ?? 0],
+                explanation: value,
+                completed: r[lesson.id]?.completed || false,
+              },
+            }));
+          }}
+          placeholder={learning[lesson.id].starter}
+        />
+        <ExplanationHelp key={lesson.id} id={lesson.id} />
+        <button
+          className="button primary"
+          disabled={!reflection.trim()}
+          onClick={() => {
+            setRecords((r) => ({
+              ...r,
+              [lesson.id]: {
+                ...r[lesson.id],
+                prediction: lesson.choices[prediction ?? 0],
+                explanation: reflection,
+                completed: r[lesson.id]?.completed || false,
+                firstExplanation: r[lesson.id]?.firstExplanation ?? reflection,
+                evidence: quantitative
+                  ? `At ${state.time.toFixed(1)} model s: total thermal power ${(state.thermal * 100).toFixed(1)}% of its initial value; fuel ${state.fuel.toFixed(1)}°C; fission ${(state.neutrons * 95).toFixed(1)}% of initial total thermal power.`
+                  : `Inspected: ${visited.map((id) => parts.find((p) => p.id === id)?.name).join(", ")}.`,
+                revised:
+                  r[lesson.id]?.revised ||
+                  (revising &&
+                    reflection.trim() !==
+                      r[lesson.id]?.firstExplanation?.trim()),
+              },
+            }));
+            setAnswer(null);
+            setAnswerSent(false);
+            setRevising(false);
+            setStage("check");
+          }}
+        >
+          {revising ? "Save revision and try again" : "Test my explanation"}
+          <ArrowRight size={16} aria-hidden="true" />
+        </button>
+        <p className="quiet small">Short is fine. Your writing isn’t graded.</p>
+        {quantitative ? (
+          <Disclosure
+            summary="Look at your run again"
+            className="evidence-drawer"
+          >
+            <RunEvidence id={lesson.id} state={state} samples={samples} />
+          </Disclosure>
+        ) : (
+          <Disclosure summary="Revisit the pathway" open={revising}>
+            <ScienceTour id={lesson.id} selected={selected} onSelect={choose} />
+          </Disclosure>
+        )}
+        <LearningFocus id={lesson.id} />
+      </>
+    ) : stage === "check" ? (
+      <>
+        <p className="eyebrow">A new situation · from memory</p>
+        <h2>{learning[lesson.id].transfer}</h2>
+        <div className="choices">
+          {learning[lesson.id].transferChoices.map((c, i) => (
+            <button
+              key={c}
+              aria-pressed={answer === i}
+              onClick={() => {
+                setAnswer(i);
+                setAnswerSent(false);
+              }}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+        <Confidence
+          legend="How sure are you now?"
+          value={confidence}
+          onChange={setConfidence}
+        />
+        <button
+          className="button primary"
+          disabled={answer === null}
+          onClick={() => setAnswerSent(true)}
+        >
+          Check understanding
+        </button>
+        {answerSent && (
+          <div className={`feedback-card ${correct ? "good" : "retry"}`}>
+            <h3 role="status">
+              {correct ? "That’s right." : "Not quite yet."}
+            </h3>
+            <p>{misconceptionFeedback[lesson.id][answer ?? 0]}</p>
+            <p className="quiet">
+              {correct
+                ? confidence === "confident"
+                  ? "Keep the evidence behind your answer in mind."
+                  : "Your answer is sound. Revisit the evidence to build confidence."
+                : confidence === "confident"
+                  ? "A confident answer can still need revising."
+                  : "Uncertainty is useful here. Revisit the evidence."}
+            </p>
+            {!correct && <p>{lesson.retry}</p>}
+            <Disclosure summary="Compare with your prediction">
+              <p>{lesson.explanation}</p>
+              <p>
+                <strong>
+                  You predicted (
+                  {predictionConfidence === "tentative"
+                    ? "fairly sure"
+                    : predictionConfidence}
+                  ):
+                </strong>{" "}
+                {lesson.choices[prediction ?? 0]}
+              </p>
+              <p>
+                {prediction === lesson.correct
+                  ? "Your prediction fits this model. Which observation supports it?"
+                  : "Your prediction needs revising. Which observation changed your mind?"}
+              </p>
+            </Disclosure>
+            <div className="stage-next">
+              {correct && (
+                <button className="button primary" onClick={completeLesson}>
+                  Complete investigation <Check size={16} aria-hidden="true" />
+                </button>
+              )}
+              <button
+                className="button secondary"
+                onClick={() => {
+                  setRevising(true);
+                  setStage("explain");
+                }}
+              >
+                Revisit evidence and revise
+              </button>
+            </div>
+          </div>
+        )}
+      </>
+    ) : (
+      <div className="complete">
+        <CheckCircle2 size={44} strokeWidth={1.6} aria-hidden="true" />
+        <h2>Investigation complete.</h2>
+        <p>Your explanation is saved on this device. It isn’t graded.</p>
+        {lessonIndex < 4 ? (
+          <button
+            className="button primary"
+            onClick={() => startLesson(lessonIndex + 1)}
+          >
+            Next investigation <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        ) : (
+          <button className="button primary" onClick={() => setMode("check")}>
+            Check your understanding <ArrowRight size={16} aria-hidden="true" />
+          </button>
+        )}
+        <p className="quiet">Tomorrow, try explaining this idea from memory.</p>
+        <Disclosure summary="Your explanation">
+          <blockquote>“{reflection}”</blockquote>
+          {records[lesson.id]?.revised && <p>Revised after feedback.</p>}
+        </Disclosure>
+        <button className="text-button" onClick={exportLearning}>
+          <Download size={15} aria-hidden="true" />
+          Export your learning summary
+        </button>
+      </div>
+    );
+
+  const investigation = (
+    <div className={`investigation stage-${stage}`}>
+      <nav className="lesson-stepper" aria-label="Investigations">
+        <ol>
+          {lessons.map((l, i) => (
+            <li key={l.id}>
+              <button
+                aria-label={`${i + 1}. ${l.name}${records[l.id]?.completed ? ", done" : ""}`}
+                aria-current={i === lessonIndex ? "step" : undefined}
+                onClick={() => startLesson(i)}
+              >
+                <span className="lesson-dot">
+                  {records[l.id]?.completed ? (
+                    <Check size={14} aria-hidden="true" />
+                  ) : (
+                    i + 1
+                  )}
+                </span>
+                <span className="lesson-name">{l.name}</span>
+              </button>
+            </li>
+          ))}
+        </ol>
+        {storageFailed && (
+          <p className="quiet small">
+            Progress can’t be saved in this browser. Export your summary.
+          </p>
+        )}
+      </nav>
+      <div className="investigation-body">
+        <aside className="stage-panel" aria-label="Guided investigation">
+          <header className="stage-head">
+            <p className="eyebrow">Investigation {lessonIndex + 1} of 5</p>
+            <h1 tabIndex={-1} id="guided-stage-title">
               {lesson.name}
-            </h2>
-            <div className="stage-indicator">
+            </h1>
+            <p className="stage-goal">{learning[lesson.id].goal}</p>
+            <ol className="stage-progress" aria-label="Steps">
               {["Predict", "Observe", "Explain", "Check"].map((s, i) => (
-                <span
+                <li
                   key={s}
-                  aria-current={s.toLowerCase() === stage ? "step" : undefined}
+                  aria-current={i === stageIndex ? "step" : undefined}
                   className={
-                    i <=
-                    [
-                      "predict",
-                      "observe",
-                      "explain",
-                      "check",
-                      "complete",
-                    ].indexOf(stage)
-                      ? "done"
-                      : ""
+                    i < stageIndex ? "done" : i === stageIndex ? "current" : ""
                   }
                 >
                   {s}
-                </span>
+                </li>
               ))}
-            </div>
-          </div>
-          <div className="inspector-content">
-            {stage === "predict" && (
-              <>
-                <h3>First, make a prediction.</h3>
-                <p>{lesson.question}</p>
-                <div className="choices">
-                  {lesson.choices.map((c, i) => (
-                    <button
-                      key={c}
-                      className={prediction === i ? "chosen" : ""}
-                      aria-pressed={prediction === i}
-                      onClick={() => {
-                        setPrediction(i);
-                        setPredictionSent(false);
-                      }}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-                <label className="confidence-label">
-                  How confident is your prediction?
-                  <select
-                    value={predictionConfidence}
-                    onChange={(e) => setPredictionConfidence(e.target.value)}
-                  >
-                    <option value="unsure">Unsure — I want to test it</option>
-                    <option value="tentative">Somewhat confident</option>
-                    <option value="confident">
-                      Confident — I can explain it
-                    </option>
-                  </select>
-                </label>
-                <button
-                  className="primary-button wide"
-                  disabled={prediction === null}
-                  onClick={() => {
-                    setPredictionSent(true);
-                    setRecords((r) => ({
-                      ...r,
-                      [lesson.id]: {
-                        ...r[lesson.id],
-                        prediction: lesson.choices[prediction ?? 0],
-                        explanation: r[lesson.id]?.explanation || "",
-                        completed: r[lesson.id]?.completed || false,
-                      },
-                    }));
-                  }}
-                >
-                  Record prediction <Check size={15} />
-                </button>
-                {predictionSent && (
-                  <div className="feedback">
-                    <p>
-                      Your prediction is recorded. Now gather evidence from the
-                      model.
-                    </p>
-                    <button
-                      className="primary-button wide"
-                      onClick={beginExperiment}
-                    >
-                      Begin experiment <ArrowRight size={15} />
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-            {stage === "observe" && (
-              <>
-                <h3>
-                  {learning[lesson.id].duration
-                    ? "Change one thing. Watch closely."
-                    : "Follow the pathway."}
-                </h3>
-                <div className="observation-tip">
-                  <Eye size={19} />
-                  <p>
-                    {observed
-                      ? "You have gathered the required observations. Pause and explain what you noticed."
-                      : lesson.id === "energy" || lesson.id === "neutrons"
-                        ? "Visit the named components using the list below or by clicking the model."
-                        : "Use the single experiment button below. Other settings stay fixed, and the run pauses automatically."}
-                  </p>
-                </div>
-                <div className="mini-parts">
-                  {(lesson.id === "energy"
-                    ? ["fuel", "steam", "turbine", "condenser"]
-                    : lesson.id === "neutrons"
-                      ? ["fuel", "water", "rods"]
-                      : [lesson.focus]
-                  ).map((id) => (
-                    <button
-                      key={id}
-                      aria-pressed={selected === id}
-                      onClick={() => choose(id as PartID)}
-                    >
-                      {visited.includes(id as PartID) ? (
-                        <Check size={13} />
-                      ) : (
-                        <Focus size={13} />
-                      )}{" "}
-                      {parts.find((p) => p.id === id)?.name}
-                    </button>
-                  ))}
-                </div>
-                {learning[lesson.id].duration > 0 && (
-                  <p className="selected-excerpt">
-                    <strong>{part.name}</strong>
-                    {part.purpose}
-                  </p>
-                )}
-                <button
-                  className="primary-button wide"
-                  disabled={!observed}
-                  onClick={() => {
-                    setRunning(false);
-                    setStage("explain");
-                  }}
-                >
-                  Explain my observations <ArrowRight size={15} />
-                </button>
-                <button
-                  className="text-button"
-                  onClick={() => {
-                    reset(learning[lesson.id].duration === 0);
-                    setVisited([lesson.focus]);
-                    setObserved(false);
-                    setNotice("Experiment restarted at equilibrium.");
-                  }}
-                >
-                  <RotateCcw size={14} />
-                  Restart experiment
-                </button>
-              </>
-            )}
-            {stage === "explain" && (
-              <>
-                <h3>What happened, and why?</h3>
-                <p>
-                  Use a component, a process and an observation in your
-                  explanation.
-                </p>
-                {revising && (
-                  <div className="revision-context">
-                    <h3>Use the feedback to improve your explanation</h3>
-                    <p>{misconceptionFeedback[lesson.id][answer ?? 0]}</p>
-                    <p>{explanationSupport[lesson.id].deeper}</p>
-                    <details>
-                      <summary>My first explanation</summary>
-                      <p>{records[lesson.id]?.firstExplanation}</p>
-                    </details>
-                  </div>
-                )}
-                <ExplanationHelp key={lesson.id} id={lesson.id} />
-                <label className="reflection-label" htmlFor="reflection">
-                  Your explanation
-                </label>
-                <textarea
-                  id="reflection"
-                  rows={4}
-                  value={reflection}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    setReflection(value);
-                    setRecords((r) => ({
-                      ...r,
-                      [lesson.id]: {
-                        ...r[lesson.id],
-                        prediction: lesson.choices[prediction ?? 0],
-                        explanation: value,
-                        completed: r[lesson.id]?.completed || false,
-                      },
-                    }));
-                  }}
-                  placeholder={learning[lesson.id].starter}
-                />
-                <small className="subtle">
-                  A short explanation is enough. Link what changed to a physical
-                  process. This is a reflection, not an automatically graded
-                  answer.
-                </small>
-                <button
-                  className="primary-button wide"
-                  disabled={!reflection.trim()}
-                  onClick={() => {
-                    setRecords((r) => ({
-                      ...r,
-                      [lesson.id]: {
-                        ...r[lesson.id],
-                        prediction: lesson.choices[prediction ?? 0],
-                        explanation: reflection,
-                        completed: r[lesson.id]?.completed || false,
-                      },
-                    }));
-                    setRecords((r) => ({
-                      ...r,
-                      [lesson.id]: {
-                        ...r[lesson.id],
-                        firstExplanation:
-                          r[lesson.id]?.firstExplanation ?? reflection,
-                        evidence: learning[lesson.id].duration
-                          ? `At ${state.time.toFixed(1)} model s: total thermal power ${(state.thermal * 100).toFixed(1)}% of its initial value; fuel ${state.fuel.toFixed(1)}°C; fission ${(state.neutrons * 95).toFixed(1)}% of initial total thermal power.`
-                          : `Inspected: ${visited.map((id) => parts.find((p) => p.id === id)?.name).join(", ")}.`,
-                        revised:
-                          r[lesson.id]?.revised ||
-                          (revising &&
-                            reflection.trim() !==
-                              r[lesson.id]?.firstExplanation?.trim()),
-                      },
-                    }));
-                    setAnswer(null);
-                    setAnswerSent(false);
-                    setRevising(false);
-                    setStage("check");
-                  }}
-                >
-                  {revising
-                    ? "Save revision and try again"
-                    : "Test my explanation"}{" "}
-                  <ArrowRight size={15} />
-                </button>
-              </>
-            )}
-            {stage === "check" && (
-              <>
-                <p className="retrieval-prompt">
-                  Try this new situation from memory before checking the
-                  explanation.
-                </p>
-                <h3>{learning[lesson.id].transfer}</h3>
-                <div className="choices">
-                  {learning[lesson.id].transferChoices.map((c, i) => (
-                    <button
-                      key={c}
-                      className={answer === i ? "chosen" : ""}
-                      aria-pressed={answer === i}
-                      onClick={() => {
-                        setAnswer(i);
-                        setAnswerSent(false);
-                      }}
-                    >
-                      {c}
-                    </button>
-                  ))}
-                </div>
-                <label className="confidence-label">
-                  How confident are you now?
-                  <select
-                    value={confidence}
-                    onChange={(e) => setConfidence(e.target.value)}
-                  >
-                    <option value="unsure">Unsure</option>
-                    <option value="tentative">Somewhat confident</option>
-                    <option value="confident">Confident</option>
-                  </select>
-                </label>
-                <button
-                  className="primary-button wide"
-                  disabled={answer === null}
-                  onClick={() => setAnswerSent(true)}
-                >
-                  Check understanding
-                </button>
-                {answerSent && (
-                  <div className="explanation-card">
-                    <span className="eyebrow">COMPARE YOUR REASONING</span>
-                    <p>{lesson.explanation}</p>
-                    <p>
-                      <strong>
-                        Your original prediction (
-                        {predictionConfidence === "tentative"
-                          ? "somewhat confident"
-                          : predictionConfidence}
-                        ):
-                      </strong>{" "}
-                      {lesson.choices[prediction ?? 0]}
-                    </p>
-                    <p>
-                      {prediction === lesson.correct
-                        ? "Your prediction fits this model. Which observation supports it?"
-                        : "Your prediction needs revising. Which observation changed your mind?"}
-                    </p>
-                  </div>
-                )}
-                {answerSent && (
-                  <div
-                    className={`feedback ${answer === learning[lesson.id].transferCorrect ? "good" : ""}`}
-                  >
-                    <p>
-                      {answer === learning[lesson.id].transferCorrect
-                        ? "That’s right. "
-                        : "Try that again. "}
-                      {misconceptionFeedback[lesson.id][answer ?? 0]}
-                    </p>
-                    <p>
-                      {answer === learning[lesson.id].transferCorrect
-                        ? confidence === "confident"
-                          ? "Keep the evidence behind your answer in mind."
-                          : "Your answer is sound. Revisit the evidence to strengthen your confidence."
-                        : confidence === "confident"
-                          ? "A confident answer can still need revision. Use the explanation to locate the mistaken link."
-                          : "Uncertainty is useful here. Revisit the relevant part and try again."}
-                    </p>
-                    <button
-                      className="secondary-button wide"
-                      onClick={() => {
-                        setRevising(true);
-                        setStage("explain");
-                      }}
-                    >
-                      Revisit evidence and revise
-                    </button>
-                    {answer === learning[lesson.id].transferCorrect ? (
-                      <button
-                        className="primary-button wide"
-                        onClick={completeLesson}
-                      >
-                        Complete investigation <Check size={15} />
-                      </button>
-                    ) : (
-                      <p>{lesson.retry}</p>
-                    )}
-                  </div>
-                )}
-              </>
-            )}
-            {stage === "complete" && (
-              <div className="complete-card">
-                <CheckCircle2 size={40} />
-                <h3>Investigation complete.</h3>
-                <p>
-                  You recorded an explanation and answered the transfer
-                  question. Compare your written reasoning with the feedback; it
-                  has not been automatically graded.
-                </p>
-                <details>
-                  <summary>Review my explanation</summary>
-                  <p className="reflection-quote">“{reflection}”</p>
-                  {records[lesson.id]?.revised && (
-                    <p>Revised after feedback.</p>
-                  )}
-                </details>
-                <p className="revisit-prompt">
-                  Tomorrow, explain the same idea without opening the model
-                  first. Then return to check your reasoning.
-                </p>
-                {lessonIndex < 4 ? (
-                  <button
-                    className="primary-button wide"
-                    onClick={() => startLesson(lessonIndex + 1)}
-                  >
-                    Next investigation <ArrowRight size={15} />
-                  </button>
-                ) : (
-                  <button
-                    className="primary-button wide"
-                    onClick={() => setMode("check")}
-                  >
-                    Check your understanding
-                  </button>
-                )}
-                <button className="text-button" onClick={exportLearning}>
-                  <Download size={14} />
-                  Export your learning summary
-                </button>
-              </div>
-            )}
-          </div>
-        </>
-      ) : (
-        <>
-          <div className="inspector-top">
-            <div className="part-category">
-              <span className="eyebrow">{part.group.toUpperCase()}</span>
-              <span className="part-badge">
-                {String(parts.indexOf(part) + 1).padStart(2, "0")}
-              </span>
-            </div>
-            <div className="component-illustration">
-              <Atom size={64} strokeWidth={0.8} />
-              <span style={{ background: part.color }} />
-            </div>
-            <h2>{part.name}</h2>
-            <p className="part-subtitle">{part.subtitle}</p>
-          </div>
-          <div className="inspector-content">
-            <h3>What it does</h3>
-            <p>{part.purpose}</p>
-            <h3>Why it matters</h3>
-            <p>{part.why}</p>
-            <div className="connection-card">
-              <span className="eyebrow">CONNECTED TO THE SYSTEM</span>
-              <p>{part.connection}</p>
-            </div>
-            <button
-              className="secondary-button wide"
-              disabled={webglFailed}
-              onClick={() => {
-                if (flat) setFlat(false);
-                if (view === "fission") setView("plant");
-                setTimeout(() => setFocusTick((t) => t + 1), 30);
+            </ol>
+          </header>
+          <div className="stage-body">{stageBody}</div>
+        </aside>
+        {stage === "observe" && !quantitative && (
+          <div className="observe-lab">
+            {sceneCard}
+            <ScienceTour
+              id={lesson.id}
+              selected={selected}
+              onSelect={(id) => {
+                choose(id);
+                if (!flat && !webglFailed && view !== "fission")
+                  setFocusTick((t) => t + 1);
               }}
-            >
-              <Focus size={15} />
-              Take a closer look
-            </button>
-            {selected === "fuel" && (
-              <button
-                className="secondary-button wide"
-                onClick={() => {
-                  setView("core");
-                  setCutaway(true);
-                  setLabels(true);
-                  setHomeTick((t) => t + 1);
-                }}
-              >
-                Inspect pellets & cladding <ArrowRight size={15} />
-              </button>
-            )}
-            {selected === "pressuriser" && (
-              <button
-                className="secondary-button wide"
-                onClick={() => setModal("pressure")}
-              >
-                Explore pressure & boiling <ArrowRight size={15} />
-              </button>
-            )}
-            <details className="physics-detail">
-              <summary>
-                Explain the physics <Plus size={14} />
-              </summary>
-              <p>{part.physics}</p>
-            </details>
-            <div className="misconception">
-              <Info size={16} />
-              <p>{part.misconception}</p>
-            </div>
-            {mode === "explore" && (
-              <button
-                className="investigation-cta"
-                onClick={() => startLesson(0)}
-              >
-                <span>
-                  <small>PUT THE IDEAS TO WORK</small>
-                  <strong>Start an investigation</strong>
-                </span>
-                <ArrowRight size={18} />
-              </button>
-            )}
+            />
           </div>
-        </>
-      )}
-    </aside>
+        )}
+      </div>
+    </div>
   );
+
+  const quiz = (
+    <section className="quiz">
+      <p className="eyebrow">Connect what you have learned</p>
+      <h1>Explain the system.</h1>
+      <p className="quiet">Five questions about how the parts work together.</p>
+      <div className="recall-card">
+        <label htmlFor="recall">
+          Before seeing answer choices, explain one relationship from memory.
+        </label>
+        <textarea
+          id="recall"
+          value={recall}
+          placeholder="For example: why can fuel stay hot after shutdown?"
+          onChange={(e) => setRecall(e.target.value)}
+        />
+        <button
+          className="button secondary"
+          disabled={recalled}
+          onClick={() => setRecalled(true)}
+        >
+          {recalled
+            ? "Answer choices revealed"
+            : "Reveal the questions when ready"}
+        </button>
+      </div>
+      {recalled &&
+        lessons.map((l, i) => (
+          <fieldset key={l.id} className="quiz-question">
+            <legend>
+              <span>{i + 1}</span>
+              {l.check}
+            </legend>
+            {l.checkChoices.map((choice, j) => (
+              <label
+                key={choice}
+                className={`quiz-choice ${quizSubmitted && j === l.checkCorrect ? "correct" : ""}`}
+              >
+                <input
+                  type="radio"
+                  name={l.id}
+                  checked={quizAnswers[l.id] === j}
+                  onChange={() => {
+                    setQuizAnswers((a) => ({ ...a, [l.id]: j }));
+                    setQuizSubmitted(false);
+                  }}
+                />
+                <span>{choice}</span>
+              </label>
+            ))}
+            {quizSubmitted && (
+              <p
+                className={`quiz-feedback ${quizAnswers[l.id] === l.checkCorrect ? "good" : ""}`}
+              >
+                {quizAnswers[l.id] === l.checkCorrect
+                  ? "Correct. "
+                  : "Revisit this idea. "}
+                {l.feedback}
+              </p>
+            )}
+          </fieldset>
+        ))}
+      {recalled && (
+        <div className="stage-next">
+          <button
+            className="button primary"
+            disabled={Object.keys(quizAnswers).length < 5}
+            onClick={() => setQuizSubmitted(true)}
+          >
+            Check my answers <ArrowRight size={16} aria-hidden="true" />
+          </button>
+          <button
+            className="button secondary"
+            onClick={() => setMode("explore")}
+          >
+            Return to the model
+          </button>
+        </div>
+      )}
+      {quizSubmitted && (
+        <p className="quiz-score" role="status">
+          {lessons.filter((l) => quizAnswers[l.id] === l.checkCorrect).length} /
+          5 correct. Review the explanations, then try again.
+        </p>
+      )}
+    </section>
+  );
+
   if (!started)
     return (
       <Welcome
@@ -929,10 +1337,10 @@ export default function App() {
     );
   return (
     <div
-      className={`app mode-${mode} stage-${stage} ${learning[lesson.id].duration > 0 ? "quantitative" : "qualitative"}${beats ? " focus-stage" : ""}`}
+      className={`app mode-${mode} stage-${stage}${beats ? " focus-stage" : ""}`}
     >
       <a className="skip-link" href="#main">
-        Skip to reactor laboratory
+        Skip to content
       </a>
       <header className="app-header">
         <button
@@ -943,19 +1351,15 @@ export default function App() {
           }}
           aria-label="Learning home"
         >
-          <span className="brand-icon">
-            <Atom size={27} strokeWidth={1.4} />
-          </span>
-          <span>
-            CORE<span className="brand-divider">/</span>
-            <small>Reactor laboratory</small>
-          </span>
+          <Atom size={24} strokeWidth={1.6} aria-hidden="true" />
+          <span>CORE</span>
         </button>
         <nav className="main-nav" aria-label="Learning mode">
           {(["explore", "investigate", "check"] as Mode[]).map((m, i) => (
             <button
               key={m}
-              className={mode === m ? "active" : ""}
+              aria-label={["Explore", "Investigate", "Check understanding"][i]}
+              aria-current={mode === m ? "page" : undefined}
               onClick={() =>
                 m === "investigate" && mode !== "investigate"
                   ? startLesson(lessonIndex)
@@ -964,766 +1368,120 @@ export default function App() {
             >
               {
                 [
-                  <Layers size={15} />,
-                  <BookOpen size={15} />,
-                  <Target size={15} />,
+                  <Layers size={16} aria-hidden="true" />,
+                  <BookOpen size={16} aria-hidden="true" />,
+                  <Target size={16} aria-hidden="true" />,
                 ][i]
               }
-              {["Explore", "Investigate", "Check understanding"][i]}
+              <span className="nav-long">
+                {["Explore", "Investigate", "Check understanding"][i]}
+              </span>
+              <span className="nav-short" aria-hidden="true">
+                {["Explore", "Investigate", "Check"][i]}
+              </span>
             </button>
           ))}
         </nav>
-        <div className="header-meta">
-          <span>PHYSM0047</span>
-          <button
-            className="icon-button"
-            aria-label="How to use the laboratory"
-            onClick={() => setModal("help")}
-          >
-            <Info size={19} />
-          </button>
-        </div>
+        <button
+          className="icon-button"
+          aria-label="How to use the laboratory"
+          onClick={() => setModal("help")}
+        >
+          <Info size={20} aria-hidden="true" />
+        </button>
       </header>
-      <div className="workspace">
-        <aside className="sidebar">
-          <div className="sidebar-top">
-            <span className="eyebrow">THE VIRTUAL LAB</span>
-            <h2>Inside a reactor.</h2>
-            <p>
-              Explore the parts.
-              <br />
-              Discover the connections.
-            </p>
-          </div>
-          {mode === "investigate" ? (
-            <>
-              <div className="section-label">
-                YOUR INVESTIGATIONS <span>{count}/5</span>
-              </div>
-              <div className="lesson-nav">
-                {lessons.map((l, i) => (
-                  <button
-                    key={l.id}
-                    className={i === lessonIndex ? "selected" : ""}
-                    onClick={() => startLesson(i)}
-                  >
-                    <span className="lesson-number">
-                      {records[l.id]?.completed ? (
-                        <Check size={14} />
-                      ) : (
-                        String(i + 1).padStart(2, "0")
-                      )}
-                    </span>
-                    <span>
-                      <strong>{l.name}</strong>
-                      <small>{l.minutes}</small>
-                    </span>
-                    <ChevronRight size={14} />
-                  </button>
-                ))}
-              </div>
-              <div className="progress-track">
-                <span style={{ width: `${(count / 5) * 100}%` }} />
-              </div>
-              <p className="sidebar-note">
-                {storageFailed
-                  ? "Progress cannot be saved in this browser. Export your summary."
-                  : "Progress is saved on this device."}
-              </p>
-              <button
-                className="text-button summary-export"
-                onClick={exportLearning}
-              >
-                <Download size={14} />
-                Export learning summary
-              </button>
-            </>
-          ) : (
-            <>
-              <div className="section-label">
-                COMPONENTS <span>10</span>
-              </div>
-              <nav className="component-nav" aria-label="Reactor components">
-                {parts.map((p, i) => (
-                  <button
-                    key={p.id}
-                    className={selected === p.id ? "selected" : ""}
-                    onClick={() => choose(p.id)}
-                  >
-                    <span className="part-index">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span>{p.name}</span>
-                    <span
-                      className="part-dot"
-                      style={{ background: p.color }}
-                    />
-                  </button>
-                ))}
-              </nav>
-            </>
-          )}
-          <div className="sidebar-bottom">
-            <div className="reactor-tag">
-              <span className="dot teal" />
-              PRESSURISED-WATER REACTOR
-            </div>
-            <button className="text-button" onClick={() => setModal("science")}>
-              <BookOpen size={14} />
-              The science & sources <ArrowRight size={14} />
-            </button>
-            <label className="motion-toggle">
-              <input
-                type="checkbox"
-                checked={reduced}
-                onChange={(e) => setReduced(e.target.checked)}
-              />
-              Reduce visual motion
-            </label>
-          </div>
-        </aside>
-        <main id="main" className="main-content" tabIndex={-1}>
-          {mode === "check" ? (
-            <section className="quiz">
-              <span className="eyebrow">CONNECT WHAT YOU HAVE LEARNED</span>
-              <h1>Explain the system.</h1>
-              <p>
-                Five questions about the relationships inside a PWR. Use the
-                model whenever you need to revisit an idea.
-              </p>
-              <div className="retrieval-before-quiz">
-                <label htmlFor="recall">
-                  Before seeing answer choices, explain one relationship from
-                  memory.
-                </label>
-                <textarea
-                  id="recall"
-                  value={recall}
-                  placeholder="For example: why can fuel remain hot after shutdown?"
-                  onChange={(e) => setRecall(e.target.value)}
-                />
-                <button
-                  className="secondary-button"
-                  onClick={() => setRecalled(true)}
-                >
-                  {recalled
-                    ? "Answer choices revealed"
-                    : "Reveal the questions when ready"}
-                </button>
-              </div>
-              {recalled &&
-                lessons.map((l, i) => (
-                  <fieldset key={l.id}>
-                    <legend>
-                      <span>{String(i + 1).padStart(2, "0")}</span>
-                      {l.check}
-                    </legend>
-                    {l.checkChoices.map((choice, j) => (
-                      <label
-                        key={choice}
-                        className={`quiz-choice ${quizSubmitted && j === l.checkCorrect ? "correct" : ""}`}
-                      >
-                        <input
-                          type="radio"
-                          name={l.id}
-                          checked={quizAnswers[l.id] === j}
-                          onChange={() => {
-                            setQuizAnswers((a) => ({ ...a, [l.id]: j }));
-                            setQuizSubmitted(false);
-                          }}
-                        />
-                        {choice}
-                      </label>
-                    ))}
-                    {quizSubmitted && (
-                      <p
-                        className={`feedback ${quizAnswers[l.id] === l.checkCorrect ? "good" : ""}`}
-                      >
-                        {quizAnswers[l.id] === l.checkCorrect
-                          ? "Correct. "
-                          : "Revisit this idea. "}
-                        {l.feedback}
-                      </p>
-                    )}
-                  </fieldset>
-                ))}
-              {recalled && (
-                <div className="quiz-actions">
-                  <button
-                    className="primary-button"
-                    disabled={Object.keys(quizAnswers).length < 5}
-                    onClick={() => setQuizSubmitted(true)}
-                  >
-                    Check my answers <ArrowRight size={16} />
-                  </button>
-                  <button
-                    className="secondary-button"
-                    onClick={() => setMode("explore")}
-                  >
-                    Return to the model
-                  </button>
-                </div>
-              )}
-              {quizSubmitted && (
-                <p className="quiz-score" role="status">
-                  {
-                    lessons.filter((l) => quizAnswers[l.id] === l.checkCorrect)
-                      .length
-                  }{" "}
-                  / 5 correct. Review the explanations, then try again.
-                </p>
-              )}
-            </section>
-          ) : beats ? (
-            <ExperimentBeats
-              key={lesson.id}
-              design={beats}
-              action={learning[lesson.id].action!}
-              duration={learning[lesson.id].duration}
-              samples={samples}
-              running={running}
-              started={guidedStarted}
-              observed={observed}
-              onRun={runGuided}
-              onToggle={() => setRunning((v) => !v)}
-              onDone={() => {
-                setRunning(false);
-                setStage("explain");
-              }}
-            />
-          ) : (
-            <>
-              {mode === "investigate" && (
-                <>
-                  {stage !== "check" && stage !== "complete" && (
-                    <LearningFocus
-                      id={lesson.id}
-                      showWatch={stage === "observe" || stage === "explain"}
-                    />
-                  )}
-                  {inspectorPanel}
-                </>
-              )}
-              <section className="lab-intro">
-                <div>
-                  <div className="eyebrow">
-                    NUCLEAR SCIENCE <span>/</span> INTERACTIVE STUDY 01
-                  </div>
-                  <h1>
-                    {mode === "investigate"
-                      ? lesson.name
-                      : "Small changes. Visible consequences."}
-                  </h1>
-                  <p>
-                    {mode === "investigate"
-                      ? lesson.short
-                      : "Look inside a PWR and discover how its systems work together."}
-                  </p>
-                </div>
-                <button
-                  className="intro-help"
-                  onClick={() => setModal("help")}
-                  aria-label="View navigation help"
-                >
-                  <Maximize2 size={18} />
-                </button>
-              </section>
-              <div
-                className="lab-workbench"
-                hidden={
-                  mode === "investigate" &&
-                  ["predict", "check", "complete"].includes(stage)
-                }
-              >
-                {mode !== "investigate" && (
-                  <div className="metrics" aria-label="Current model readings">
-                    <div>
-                      <span>TOTAL THERMAL POWER</span>
-                      <strong>
-                        {(state.thermal * 100).toFixed(1)}
-                        <small>%</small>
-                      </strong>
-                      <small>fission + decay heat; initial = 100%</small>
-                    </div>
-                    <div>
-                      <span>FUEL TEMPERATURE</span>
-                      <strong>
-                        {state.fuel.toFixed(0)}
-                        <small>°C</small>
-                      </strong>
-                      <small>lumped fuel temperature</small>
-                    </div>
-                    <div>
-                      <span>PRIMARY COOLANT</span>
-                      <strong>
-                        {state.coolant.toFixed(0)}
-                        <small>°C</small>
-                      </strong>
-                      <small>representative average</small>
-                    </div>
-                    <div>
-                      <span>ELECTRICAL OUTPUT</span>
-                      <strong>
-                        {(state.electric * 100).toFixed(0)}
-                        <small>%</small>
-                      </strong>
-                      <small>relative output index</small>
-                    </div>
-                  </div>
-                )}
-                <section
-                  className="scene-card"
-                  aria-label="Reactor visualisation"
-                >
-                  <div className="scene-toolbar">
-                    <div className="segmented" aria-label="Scale of model">
-                      {(["plant", "core", "fission"] as View[]).map((v, i) => (
-                        <button
-                          key={v}
-                          className={view === v && !flat ? "active" : ""}
-                          onClick={() => {
-                            setFlat(false);
-                            switchView(v);
-                          }}
-                        >
-                          {["Whole plant", "Reactor core", "Fission"][i]}
-                        </button>
-                      ))}
-                    </div>
-                    <button
-                      className={`diagram-button ${flat ? "active" : ""}`}
-                      disabled={webglFailed}
-                      onClick={() => setFlat((v) => !v)}
-                    >
-                      <Layers size={14} />
-                      {webglFailed
-                        ? "2D mode"
-                        : flat
-                          ? "3D view"
-                          : "2D diagram"}
-                    </button>
-                  </div>
-                  <div className="scene-area">
-                    {(flat || webglFailed) && view === "fission" ? (
-                      <FissionDiagram selected={selected} onSelect={choose} />
-                    ) : flat || webglFailed ? (
-                      <Schematic
-                        selected={selected}
-                        onSelect={choose}
-                        state={state}
-                        controls={controls}
-                      />
-                    ) : (
-                      <ReactorScene
-                        view={view}
-                        selected={selected}
-                        onSelect={choose}
-                        state={state}
-                        controls={controls}
-                        cutaway={cutaway}
-                        exploded={exploded}
-                        labels={labels}
-                        focusParts={
-                          mode === "investigate"
-                            ? learning[lesson.id].focus
-                            : undefined
-                        }
-                        layer={layer}
-                        reduced={reduced}
-                        focusTick={focusTick}
-                        homeTick={homeTick}
-                        zoomTick={zoomTick}
-                        onError={() => {
-                          setWebglFailed(true);
-                          setNotice(
-                            "3D is unavailable in this browser. The interactive 2D diagram is ready.",
-                          );
-                        }}
-                      />
-                    )}
-                    {view === "fission" && !flat && !webglFailed && (
-                      <div className="fission-stage">
-                        <span>
-                          {reduced
-                            ? "Fission outcomes"
-                            : state.time % 12 < 3
-                              ? "01 · A neutron reaches the fuel"
-                              : state.time % 12 < 5
-                                ? "02 · The nucleus splits"
-                                : state.time % 12 < 8
-                                  ? "03 · Neutrons are released"
-                                  : "04 · Absorption, moderation or further fission"}
-                        </span>
-                        <small>
-                          Selected outcomes · not every neutron causes fission
-                        </small>
-                      </div>
-                    )}
-                    <div className="scene-caption">
-                      <span className="eyebrow">
-                        {flat || webglFailed
-                          ? "SYSTEM SCHEMATIC"
-                          : view === "plant"
-                            ? "THE ENERGY PATHWAY"
-                            : view === "core"
-                              ? "INSIDE THE PRESSURE VESSEL"
-                              : "FISSION · MODERATION · ABSORPTION"}
-                      </span>
-                      <p>
-                        {view === "fission" && !flat
-                          ? "Particles enlarged · motion slowed · illustrative paths"
-                          : "Simplified teaching model · geometry not to scale"}
-                      </p>
-                    </div>
-                    {!flat && !webglFailed && (
-                      <div className="camera-tools">
-                        <button
-                          aria-label="Zoom in"
-                          onClick={() => setZoomTick((v) => Math.abs(v) + 1)}
-                        >
-                          <Plus size={17} />
-                        </button>
-                        <button
-                          aria-label="Zoom out"
-                          onClick={() => setZoomTick((v) => -Math.abs(v) - 1)}
-                        >
-                          <Minus size={17} />
-                        </button>
-                        <span />
-                        <button
-                          aria-label="Return to overview"
-                          onClick={() => setHomeTick((t) => t + 1)}
-                        >
-                          <Home size={16} />
-                        </button>
-                      </div>
-                    )}
-                    {!flat && !webglFailed && view !== "fission" && (
-                      <div className="scene-options advanced-display">
-                        <button
-                          className={cutaway ? "active" : ""}
-                          onClick={() => setCutaway((v) => !v)}
-                          aria-pressed={cutaway}
-                        >
-                          <Eye size={14} />
-                          Cutaway
-                        </button>
-                        <button
-                          className={exploded ? "active" : ""}
-                          onClick={() => setExploded((v) => !v)}
-                          aria-pressed={exploded}
-                        >
-                          <Expand size={14} />
-                          Explode
-                        </button>
-                        <button
-                          className={labels ? "active" : ""}
-                          onClick={() => setLabels((v) => !v)}
-                          aria-pressed={labels}
-                        >
-                          Labels
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                  <div className="scene-bottom advanced-display">
-                    <div className="layer-select">
-                      <span>SHOW</span>
-                      {(["flow", "temperature", "neutrons"] as const).map(
-                        (l, i) => (
-                          <button
-                            key={l}
-                            className={layer === l ? "active" : ""}
-                            onClick={() => setLayer(l)}
-                          >
-                            <i
-                              className={`dot ${["teal", "amber", "dark"][i]}`}
-                            />
-                            {["Flow", "Fuel temperature", "Neutrons"][i]}
-                          </button>
-                        ),
-                      )}
-                    </div>
-                    <span className="navigation-hint">
-                      Drag to orbit · scroll to zoom
-                    </span>
-                  </div>
-                </section>
-                {mode === "investigate" &&
-                  learning[lesson.id].duration === 0 && (
-                    <ScienceTour
-                      id={lesson.id}
-                      selected={selected}
-                      onSelect={(id) => {
-                        choose(id);
-                        if (!flat && !webglFailed && view !== "fission")
-                          setFocusTick((t) => t + 1);
-                      }}
-                    />
-                  )}
-                {mode === "investigate" && learning[lesson.id].duration > 0 && (
-                  <GuidedExperiment
-                    id={lesson.id}
-                    state={state}
-                    samples={samples}
-                    running={running}
-                    started={guidedStarted}
-                    observed={observed}
-                    onRun={runGuided}
-                    onToggle={() => setRunning((v) => !v)}
-                  />
-                )}
-                {mode === "investigate" &&
-                  learning[lesson.id].duration === 0 && (
-                    <button
-                      className="secondary-button motion-control"
-                      onClick={() => setRunning((v) => !v)}
-                    >
-                      {running ? "Pause animation" : "Play animation"}
-                    </button>
-                  )}
-                {mode !== "investigate" && (
-                  <>
-                    <section className="experiment-panel">
-                      <div className="experiment-heading">
-                        <h2>
-                          <SlidersHorizontal size={16} />
-                          Experiment controls
-                        </h2>
-                        <span
-                          className={`status-pill ${running ? "running" : ""}`}
-                        >
-                          <i />
-                          {modelStatus}
-                        </span>
-                      </div>
-                      <div className="sliders">
-                        <label>
-                          <span>
-                            Control-rod insertion
-                            <strong>{controls.rods}%</strong>
-                          </span>
-                          <input
-                            aria-label="Control-rod insertion"
-                            type="range"
-                            min="0"
-                            max="100"
-                            value={controls.rods}
-                            onChange={(e) =>
-                              changeControl("rods", +e.target.value)
-                            }
-                          />
-                          <small>
-                            Withdrawn <span>Fully inserted</span>
-                          </small>
-                        </label>
-                        <label>
-                          <span>
-                            Coolant circulation<strong>{controls.flow}%</strong>
-                          </span>
-                          <input
-                            aria-label="Coolant circulation"
-                            type="range"
-                            min="30"
-                            max="130"
-                            value={controls.flow}
-                            onChange={(e) =>
-                              changeControl("flow", +e.target.value)
-                            }
-                          />
-                          <small>
-                            Reduced flow <span>Increased flow</span>
-                          </small>
-                        </label>
-                        <label>
-                          <span>
-                            Heat removal at sink
-                            <strong>{controls.sink}%</strong>
-                          </span>
-                          <input
-                            aria-label="Heat removal at sink"
-                            type="range"
-                            min="50"
-                            max="120"
-                            value={controls.sink}
-                            onChange={(e) =>
-                              changeControl("sink", +e.target.value)
-                            }
-                          />
-                          <small>Simplified external cooling</small>
-                        </label>
-                      </div>
-                      <div className="playback">
-                        <button
-                          className="play-button"
-                          disabled={rangeStop}
-                          aria-label={
-                            running ? "Pause simulation" : "Run simulation"
-                          }
-                          onClick={() => setRunning((v) => !v)}
-                        >
-                          {running ? <Pause size={15} /> : <Play size={15} />}{" "}
-                          {running ? "Pause" : "Run"}
-                        </button>
-                        <button
-                          className="text-button"
-                          onClick={() => {
-                            reset(false);
-                            setNotice(
-                              "Reset to initial equilibrium. Your saved comparison is retained.",
-                            );
-                          }}
-                        >
-                          <RotateCcw size={14} />
-                          Reset
-                        </button>
-                        <label className="speed-select">
-                          <span>Speed</span>
-                          <select
-                            aria-label="Simulation speed"
-                            value={speed}
-                            onChange={(e) => setSpeed(+e.target.value)}
-                          >
-                            <option value={0.5}>0.5×</option>
-                            <option value={1}>1×</option>
-                            <option value={3}>3×</option>
-                            <option value={5}>5×</option>
-                          </select>
-                        </label>
-                        <span className="model-time">
-                          {state.time.toFixed(1)} model s
-                        </span>
-                        <button
-                          className="shutdown-button"
-                          onClick={() => {
-                            changeControl("rods", 100);
-                            if (!rangeStop) setRunning(true);
-                            setNotice(
-                              "All rods inserted. Observe the remaining heat while circulation continues.",
-                            );
-                          }}
-                        >
-                          <ArrowDown size={14} />
-                          Insert all rods
-                        </button>
-                      </div>
-                      {rangeStop && (
-                        <p className="range-notice" role="alert">
-                          This simplified model has reached its valid range. The
-                          simulation is paused; reset to continue. This is a
-                          model boundary, not a plant safety threshold.
-                        </p>
-                      )}
-                    </section>
-                    <TrendChart
-                      samples={samples}
-                      baseline={baseline}
-                      event={graphEvent}
-                    />
-                    <div className="chart-actions">
-                      <button className="text-button" onClick={saveBaseline}>
-                        <Plus size={14} />
-                        Save run for comparison
-                      </button>
-                      {baseline.length > 0 && (
-                        <button
-                          className="text-button"
-                          onClick={() => setBaseline([])}
-                        >
-                          Clear comparison
-                        </button>
-                      )}
-                      <button className="text-button" onClick={exportData}>
-                        <Download size={14} />
-                        Export data
-                      </button>
-                    </div>
-                  </>
-                )}
-              </div>
-            </>
-          )}
-          <footer className="lab-footer">
-            <span>
-              <Atom size={13} />
-              CORE · A nuclear science learning environment
-            </span>
-            <button onClick={() => setModal("science")}>
-              Model assumptions & references <ArrowRight size={12} />
-            </button>
-          </footer>
-        </main>
-        {mode === "explore" && inspectorPanel}
-      </div>
+      <main id="main" className="main-content" tabIndex={-1}>
+        {mode === "check" ? (
+          quiz
+        ) : beats ? (
+          <ExperimentBeats
+            key={lesson.id}
+            design={beats}
+            action={learning[lesson.id].action!}
+            duration={learning[lesson.id].duration}
+            samples={samples}
+            running={running}
+            started={guidedStarted}
+            observed={observed}
+            onRun={runGuided}
+            onToggle={() => setRunning((v) => !v)}
+            onDone={() => {
+              setRunning(false);
+              setStage("explain");
+            }}
+          />
+        ) : mode === "investigate" ? (
+          investigation
+        ) : (
+          explore
+        )}
+      </main>
+      <footer className="app-footer">
+        <span>CORE · a simplified teaching model of a PWR</span>
+        <button className="text-button" onClick={() => setModal("science")}>
+          Model & sources
+        </button>
+        <label className="motion-toggle">
+          <input
+            type="checkbox"
+            checked={reduced}
+            onChange={(e) => setReduced(e.target.checked)}
+          />
+          Reduce motion
+        </label>
+      </footer>
       {notice && (
         <div className="toast" role="status">
-          <CheckCircle2 size={17} />
+          <CheckCircle2 size={18} aria-hidden="true" />
           {notice}
         </div>
       )}
       {modal === "help" && (
-        <Modal
-          title="Make the model your laboratory."
-          onClose={() => setModal(null)}
-        >
-          <p>
-            Start with a component, then follow its connections. Try a guided
-            investigation when you are ready to test an idea.
-          </p>
-          <div className="help-grid">
-            <div>
-              <strong>01 · Look inside</strong>
-              <p>
-                Drag to orbit, scroll to zoom, or use the + / − buttons. Select
-                a component from the left-hand list and choose “Take a closer
-                look”.
-              </p>
-            </div>
-            <div>
-              <strong>02 · Run an experiment</strong>
-              <p>
-                Change one slider. Watch the output and temperature graphs.
-                Pause to inspect the results and reset to repeat.
-              </p>
-            </div>
-            <div>
-              <strong>03 · Compare evidence</strong>
-              <p>
-                Save a run, reset, change a setting and compare the traces.
-                Export the data for further analysis.
-              </p>
-            </div>
-            <div>
-              <strong>04 · Explain what you see</strong>
-              <p>
-                Five investigations ask you to predict, observe and explain.
-                Your progress is stored on this device and can be exported.
-              </p>
-            </div>
-          </div>
-          <p>
-            The 2D diagram, component list and data table provide alternatives
-            to the 3D view. All experiment controls work with a keyboard.
-          </p>
+        <Modal title="How to use CORE" onClose={() => setModal(null)}>
+          <ol className="help-steps">
+            <li>
+              <strong>Look inside</strong>
+              <span>Drag to orbit, scroll to zoom, or select a part.</span>
+            </li>
+            <li>
+              <strong>Change one thing</strong>
+              <span>Move one slider and watch the response.</span>
+            </li>
+            <li>
+              <strong>Compare</strong>
+              <span>Save a run, reset, change a setting, compare.</span>
+            </li>
+            <li>
+              <strong>Explain</strong>
+              <span>Five investigations: predict, observe, explain.</span>
+            </li>
+          </ol>
+          <Disclosure summary="Other ways in">
+            <p>
+              The 2D diagram, component list and data table are alternatives to
+              the 3D view. Every control works with a keyboard. Progress is
+              stored on this device and can be exported.
+            </p>
+          </Disclosure>
           <button
-            className="primary-button"
+            className="button primary"
             onClick={() => {
               setModal(null);
               startLesson(0);
             }}
           >
-            Start the first investigation <ArrowRight size={16} />
+            Start the first investigation{" "}
+            <ArrowRight size={16} aria-hidden="true" />
           </button>
         </Modal>
       )}
       {modal === "pressure" && (
         <Modal title="Why pressurise the water?" onClose={() => setModal(null)}>
-          <p>
-            Increasing pressure raises water’s boiling temperature. Move the
-            slider to compare a few rounded reference conditions.
-          </p>
+          <p>Higher pressure raises water’s boiling temperature.</p>
           <label className="pressure-slider">
-            Pressure <strong>{pressure.toFixed(1)} MPa</strong>
+            <span>
+              Pressure <strong>{pressure.toFixed(1)} MPa</strong>
+            </span>
             <input
               aria-label="Demonstration pressure"
               type="range"
@@ -1736,18 +1494,16 @@ export default function App() {
           </label>
           <div className="pressure-reading">
             <strong>≈ {Math.round(saturation)}°C</strong>
-            <span>illustrative saturation temperature</span>
+            <span>boiling point at this pressure</span>
           </div>
-          <p>
-            At atmospheric pressure (about 0.1 MPa), water boils near 100°C. At
-            15.5 MPa, it boils near 345°C. This helps explain how primary water
-            can stay liquid while carrying heat at much higher temperatures.
-          </p>
-          <p className="model-note">
-            This separate demonstration interpolates between rounded reference
-            points; it is not a steam-table calculator. It does not change
-            pressure in the main simulation, which is held fixed.
-          </p>
+          <Disclosure summary="About these numbers">
+            <p>
+              At about 0.1 MPa water boils near 100°C; at 15.5 MPa, near 345°C.
+              That is how primary water stays liquid at high temperature. This
+              demonstration interpolates rounded reference points; it is not a
+              steam-table calculator and does not change the main model.
+            </p>
+          </Disclosure>
         </Modal>
       )}
       {modal === "science" && (
@@ -1756,63 +1512,56 @@ export default function App() {
           onClose={() => setModal(null)}
         >
           <p>
-            CORE is a conceptual PWR companion for PHYSM0047. The lesson
-            sequence covers reactor components, energy pathways, neutron
-            balance, heat transfer and shutdown heat. It has not been mapped to
-            a verified current unit assessment specification.
-          </p>
-          <h3>What is calculated</h3>
-          <p>
-            A simplified, deliberately slowed neutron-balance model is coupled
-            to fuel and coolant energy balances. Control rods and negative
-            temperature feedback change reactivity. Three illustrative decay
-            inventories continue producing heat after shutdown.
+            A conceptual PWR companion for PHYSM0047. It has not been mapped to
+            a verified assessment specification.
           </p>
           <div className="equations">
-            Change in stored heat = heat generated − heat removed
-            <br />
-            Heat transfer increases with temperature difference and circulation
-            <br />
-            Total thermal power = fission power + decay heat
+            <span>Change in stored heat = heat generated − heat removed</span>
+            <span>Total thermal power = fission power + decay heat</span>
           </div>
-          <h3>What is illustrative</h3>
-          <p>
-            Geometry, particle paths, timescales, transfer coefficients and
-            baseline temperatures are teaching choices. “Model seconds” are not
-            predictions of a real reactor’s response. The fuel-temperature
-            colour is a visual aid, not a calculated spatial heat map.
-            Electrical output is a lagged relative index with a fixed efficiency
-            assumption.
-          </p>
-          <h3>What is held fixed or omitted</h3>
-          <p>
-            Primary pressure and secondary saturation temperature are fixed. The
-            app does not calculate detailed fluid flow, boiling, spatial neutron
-            transport, fuel burnup, xenon, soluble boron control, protection
-            systems or accident progression. It pauses outside its declared
-            teaching range.
-          </p>
-          <h3>For teaching use</h3>
-          <p>
-            A nuclear-science lecturer should review the model and activities
-            before they are used for formal teaching or assessment. In an AGR,
-            graphite is the fixed moderator and separate absorbing control rods
-            move; this PWR uses water as moderator.
-          </p>
-          <h3>References</h3>
-          <ul className="source-list">
-            {sources.map((s) => (
-              <li key={s.url}>
-                <a href={s.url} target="_blank" rel="noreferrer">
-                  {s.name} ↗
-                </a>
-              </li>
-            ))}
-          </ul>
-          <p className="subtle">
-            The repository includes the equations, assumptions, test cases and a
-            lecturer review checklist.
-          </p>
+          <Disclosure summary="What is calculated">
+            <p>
+              A simplified, deliberately slowed neutron-balance model coupled to
+              fuel and coolant energy balances. Control rods and negative
+              temperature feedback change reactivity. Three illustrative decay
+              inventories keep producing heat after shutdown.
+            </p>
+          </Disclosure>
+          <Disclosure summary="What is illustrative">
+            <p>
+              Geometry, particle paths, timescales, transfer coefficients and
+              starting temperatures are teaching choices. “Model seconds” are
+              not predictions for a real reactor. The fuel colour is a visual
+              aid, not a calculated heat map. Electrical output is a lagged
+              relative index with a fixed efficiency.
+            </p>
+          </Disclosure>
+          <Disclosure summary="What is held fixed or left out">
+            <p>
+              Primary pressure and secondary saturation temperature are fixed.
+              There is no detailed fluid flow, boiling, spatial neutron
+              transport, burnup, xenon, soluble boron, protection system or
+              accident progression. The model pauses outside its teaching range.
+            </p>
+          </Disclosure>
+          <Disclosure summary="For teaching use">
+            <p>
+              A nuclear-science lecturer should review the model and activities
+              before formal use. In an AGR, graphite is the fixed moderator and
+              separate absorbing rods move; this PWR uses water as moderator.
+            </p>
+          </Disclosure>
+          <Disclosure summary="References">
+            <ul className="source-list">
+              {sources.map((s) => (
+                <li key={s.url}>
+                  <a href={s.url} target="_blank" rel="noreferrer">
+                    {s.name} ↗
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </Disclosure>
         </Modal>
       )}
     </div>

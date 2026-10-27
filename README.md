@@ -28,6 +28,8 @@ The standalone HTML can be downloaded and opened in a normal desktop browser. Br
 
 Start with the essentials for a guided route: one goal, a prediction, a focused observation, your explanation and a new situation to test it. Guided experiments change one variable and pause automatically. Each releases its evidence one step at a time on a single focused screen: predict, watch one line, reveal the lines that explain it, then see the moment that matters marked. Feedback follows the attempt. Free exploration retains the full 3D model, sliders and comparison tools.
 
+Each screen shows one question and one primary action in a single calm column. Definitions, hints, physics detail, sources and model limits sit in labelled expanders, so they are available on request rather than competing for attention. Explore mode keeps the model, readings, controls and response graph together, with component detail folded beside it.
+
 The student-review revision adds a calm entry, optional key terms, clearer attention cues, larger type and controls, annotated graphs, autosaved short reflections and recall prompts. See the [adversarial review and research rationale](docs/STUDENT-REVIEW.md). These improvements have automated workflow coverage; learner efficacy and visual device validation remain untested.
 
 The [second student review](docs/STUDENT-REVIEW-2.md) adds three further improvements: numbered science annotations, recorded evidence checkpoints with a fuel energy balance, and misconception-specific feedback with revision of the original explanation. It also corrects the distinction between neutron absorption and non-fission capture, and makes all power readouts use one explicit reference.

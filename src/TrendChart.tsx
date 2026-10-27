@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef, useState } from "react";
 import type { Sample } from "./simulation";
+import { Disclosure } from "./ui";
 type Metric = "power" | "temperature";
 export default function TrendChart({
   samples,
@@ -62,7 +63,7 @@ export default function TrendChart({
   return (
     <section ref={chart} className="trend" aria-label="Experiment graphs">
       <div className="trend-head">
-        <div className="small-heading">OBSERVE THE RESPONSE</div>
+        <h2 className="small-heading">Response</h2>
         <div className="segmented small" aria-label="Graph measurement">
           <button
             aria-pressed={metric === "power"}
@@ -232,8 +233,7 @@ export default function TrendChart({
           </span>
         )}
       </div>
-      <details className="chart-table">
-        <summary>View data table</summary>
+      <Disclosure summary="View data table" className="chart-table">
         <div className="table-scroll">
           <table>
             <caption>Latest ten recorded measurements</caption>
@@ -261,7 +261,7 @@ export default function TrendChart({
             </tbody>
           </table>
         </div>
-      </details>
+      </Disclosure>
     </section>
   );
 }

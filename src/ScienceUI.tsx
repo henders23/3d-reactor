@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ExternalLink } from "lucide-react";
 import type { PartID } from "./content";
 import type { Sample } from "./simulation";
 import {
@@ -8,6 +8,7 @@ import {
   checkpoints,
   describeBalance,
 } from "./science";
+import { Disclosure } from "./ui";
 export function ScienceTour({
   id,
   selected,
@@ -24,11 +25,9 @@ export function ScienceTour({
   return (
     <section className="science-tour" aria-label="Annotated science pathway">
       <div className="tour-heading">
-        <span className="eyebrow">FOLLOW ONE RELATIONSHIP</span>
+        <h2>The pathway</h2>
         <span>
-          {index >= 0
-            ? `${index + 1} / ${steps.length}`
-            : "Choose a pathway step"}
+          {index >= 0 ? `${index + 1} of ${steps.length}` : "Choose a step"}
         </span>
       </div>
       <nav aria-label="Science pathway steps">
@@ -45,34 +44,27 @@ export function ScienceTour({
       {current ? (
         <div className="tour-annotation">
           <h3>{current.title}</h3>
-          <p>
-            <strong>Notice </strong>
-            {current.notice}
-          </p>
-          <p>
-            <strong>Why </strong>
-            {current.mechanism}
-          </p>
+          <p>{current.notice}</p>
+          <p>{current.mechanism}</p>
           <p className="science-distinction">{current.distinction}</p>
           {id === "energy" && current.part === "steam" && <BoundaryDiagram />}
           <div className="tour-actions">
-            <a href={current.source} target="_blank" rel="noreferrer">
-              Science source ↗
-            </a>
             {index < steps.length - 1 && (
               <button
-                className="secondary-button"
+                className="button secondary"
                 onClick={() => onSelect(steps[index + 1].part)}
               >
-                Next relationship <ArrowRight size={15} />
+                Next relationship <ArrowRight size={16} aria-hidden="true" />
               </button>
             )}
+            <a href={current.source} target="_blank" rel="noreferrer">
+              Source <ExternalLink size={13} aria-hidden="true" />
+            </a>
           </div>
         </div>
       ) : (
         <p className="tour-outside">
-          This component is outside this short pathway. Select a numbered step
-          to return to its explanation.
+          This part is outside the pathway. Choose a numbered step.
         </p>
       )}
     </section>
@@ -96,7 +88,7 @@ function BoundaryDiagram() {
         </div>
       </div>
       <p className="heat-arrow">
-        Energy as heat <ArrowRight aria-hidden="true" size={28} />
+        Energy as heat <ArrowRight aria-hidden="true" size={22} />
         <span>through the wall</span>
       </p>
       <figcaption>
@@ -118,11 +110,7 @@ export function CheckpointControls({
   const points = checkpoints(samples);
   return (
     <div className="checkpoint-controls">
-      <h3>Read the evidence in time order</h3>
-      <p>
-        Choose a recorded moment. Readings and graph marker follow your choice;
-        the reactor view stays at the end of the run.
-      </p>
+      <h3>Choose a moment</h3>
       <div className="checkpoint-buttons">
         {points.map((p, i) => (
           <button
@@ -149,7 +137,6 @@ export function EvidenceInspector({
 }) {
   const points = checkpoints(samples),
     point = points[selectedIndex] ?? points[2];
-  const [showWhy, setShowWhy] = useState(false);
   if (!point) return null;
   const s = point.sample;
   return (
@@ -168,8 +155,11 @@ export function EvidenceInspector({
           Fuel temperature <strong>{s.fuel.toFixed(1)}°C</strong>
         </span>
       </div>
-      <details className="heat-balance" open={id === "cooling"}>
-        <summary>Why is the fuel warming or cooling?</summary>
+      <Disclosure
+        summary="Why is the fuel warming or cooling?"
+        open={id === "cooling"}
+        className="heat-balance"
+      >
         <p className="balance-equation">
           Rate of change of stored energy = generation − transfer to coolant
         </p>
@@ -191,34 +181,18 @@ export function EvidenceInspector({
           </div>
         </dl>
         <p>{describeBalance(s)}</p>
-        <small>
-          All power values use the same reference: the initial total thermal
-          power. “Net into fuel” is a rate of energy accumulation, not an amount
-          of heat or a temperature. It is distinct from heat rejected by the
-          plant.
-        </small>
-      </details>
-      <button
-        className="text-button"
-        aria-expanded={showWhy}
-        onClick={() => setShowWhy((v) => !v)}
-      >
-        {showWhy
-          ? "Hide the causal explanation"
-          : "Help me connect these readings"}
-      </button>
-      {showWhy && (
-        <p className="causal-explanation">{explanationSupport[id].deeper}</p>
-      )}
-      <details className="model-boundary">
-        <summary>What can these numbers tell me?</summary>
+      </Disclosure>
+      <Disclosure summary="Help me connect these readings">
+        <p>{explanationSupport[id].deeper}</p>
+      </Disclosure>
+      <Disclosure summary="What can these numbers tell me?">
         <p>
-          The calculation demonstrates directions of change and energy balance.
-          Its initial 95% fission / 5% decay split, temperatures and response
-          times are illustrative. They are not measurements, efficiency
-          percentages or operating predictions for a real plant.
+          Directions of change and energy balance. The 95% fission / 5% decay
+          starting split, temperatures and response times are illustrative, not
+          measurements or predictions for a real plant. “Net into fuel” is a
+          rate of energy accumulation, not an amount of heat.
         </p>
-      </details>
+      </Disclosure>
     </section>
   );
 }
@@ -235,20 +209,17 @@ export function ExplanationHelp({ id }: { id: string }) {
         {hint ? "Hide the hint" : "I need a hint"}
       </button>
       {hint && <p className="support-hint">{d.hint}</p>}
-      <details>
-        <summary>Help me structure my explanation</summary>
+      <Disclosure summary="Help me structure my explanation">
         <ol>
           <li>
             <strong>Claim:</strong> what changed, or what relationship did you
-            identify?
+            find?
           </li>
           <li>
-            <strong>Evidence:</strong> give a reading or describe a labelled
-            pathway.
+            <strong>Evidence:</strong> a reading, or a labelled pathway.
           </li>
           <li>
-            <strong>Reasoning:</strong> explain the physical process connecting
-            them.
+            <strong>Reasoning:</strong> the physical process that connects them.
           </li>
         </ol>
         <p>Check your own explanation:</p>
@@ -257,7 +228,7 @@ export function ExplanationHelp({ id }: { id: string }) {
             <li key={s}>{s}</li>
           ))}
         </ul>
-      </details>
+      </Disclosure>
     </div>
   );
 }

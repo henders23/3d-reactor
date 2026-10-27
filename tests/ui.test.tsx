@@ -277,15 +277,7 @@ test("after a staged run, the explanation step keeps the captured evidence inspe
     clock += 100;
     t.mock.timers.tick(100);
   });
-  assert.ok(
-    Math.abs(
-      Number(
-        screen
-          .getByRole("progressbar", { name: "Observation progress" })
-          .getAttribute("value"),
-      ) - 20,
-    ) < 1e-8,
-  );
+  assert.ok(screen.getByRole("region", { name: "Your run" }));
   const evidence = screen.getByLabelText("Before and after evidence");
   assert.match(evidence.textContent!, /percentage points/);
   fireEvent.click(screen.getByRole("button", { name: /Before change/ }));

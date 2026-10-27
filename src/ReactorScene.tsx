@@ -65,7 +65,7 @@ export default function ReactorScene(props: Props) {
       return;
     }
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.6));
-    renderer.setClearColor("#edf0ec");
+    renderer.setClearColor("#eef1eb");
     renderer.shadowMap.enabled = true;
     renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     renderer.toneMapping = THREE.ACESFilmicToneMapping;
