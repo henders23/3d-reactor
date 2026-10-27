@@ -54,3 +54,13 @@ The available cloud browser rejected the local development-server URL, and its s
 - Full class use or formal subject-specialist validation.
 
 Responsive CSS, component-list alternatives, labelled sliders, data tables, reduced motion and fallback diagrams are implemented, but they should not be mistaken for a completed accessibility audit. Browser screenshots are not included because a visual review could not be performed.
+
+## Equation and diagram revision · 27 October 2026
+
+The supplied standalone file was matched byte-for-byte to a fresh build of commit `6cafd2d` before edits. The attachment's checkpoint workflow was restored as the base for this revision. The physical simulation coefficients were not changed.
+
+The revised suite contains 27 tests. New coverage checks numerical answers independently in the requested units, cooling signs, Unicode-minus input, invalid/non-finite entries, example-to-practice feedback for all five investigations, visible introductory outcomes, evidence reopening and equation concealment during conceptual checks. The DOM order places the equation before the reflection and moves focus to its heading. Tests re-query the active investigation panel after stage changes because it moves after the equation in Explain.
+
+Production type checking/build and the bundled standalone build pass. A Vite advisory remains for the existing Three.js chunk size; it is not a build failure.
+
+The three authored neutron SVGs and tube-wall SVG were rendered with Sharp and inspected as static images. This found a missing fluid arrowhead caused by two subpaths sharing one `marker-end`; the fluid paths were separated. This is diagram-only verification, not a browser screenshot or a check of the surrounding HTML/CSS. The responsive energy map, complete interface, real WebGL, device layouts and assistive-technology behaviour still need the manual verification listed above. No learning-gain study has been performed.

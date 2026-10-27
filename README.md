@@ -26,11 +26,13 @@ The standalone HTML can be downloaded and opened in a normal desktop browser. Br
 
 ## Learning design
 
-Start with the essentials for a guided route: one goal, a prediction, a focused observation, your explanation and a new situation to test it. Guided experiments change one variable and pause automatically. Each releases its evidence one step at a time on a single focused screen: predict, watch one line, reveal the lines that explain it, then see the moment that matters marked. Feedback follows the attempt. Free exploration retains the full 3D model, sliders and comparison tools.
+Start with the essentials for a guided route: one goal, a prediction, a focused observation, your explanation and a new situation to test it. Guided experiments change one variable, pause automatically and show before/after evidence. Feedback follows the attempt. Free exploration retains the full 3D model, sliders and comparison tools.
 
 The student-review revision adds a calm entry, optional key terms, clearer attention cues, larger type and controls, annotated graphs, autosaved short reflections and recall prompts. See the [adversarial review and research rationale](docs/STUDENT-REVIEW.md). These improvements have automated workflow coverage; learner efficacy and visual device validation remain untested.
 
 The [second student review](docs/STUDENT-REVIEW-2.md) adds three further improvements: numbered science annotations, recorded evidence checkpoints with a fuel energy balance, and misconception-specific feedback with revision of the original explanation. It also corrects the distinction between neutron absorption and non-fission capture, and makes all power readouts use one explicit reference.
+
+The [equations and cognitive-load review](docs/REVIEW-COGNITIVE-LOAD.md) restores the supplied checkpoint-based version, adds explicit context and outcomes, and introduces one equation per investigation through meaning, a worked example and ungraded practice. Focused energy and neutron diagrams reduce competing detail; the full equipment layout and 3D exploration remain available.
 
 ## What is included
 
@@ -74,10 +76,11 @@ src/simulation.ts       Pure simulation model, independent of rendering
 src/content.ts          Editable components, lessons and references
 src/learning.ts         Goals, focused experiments and transfer questions
 src/LearningUI.tsx      Orientation, attention cues and before/after evidence
-src/beats.ts            What each guided run reveals, in what order
-src/ExperimentBeats.tsx Focused, step-by-step guided runs
 src/science.ts         Scientific annotations, hints and misconception feedback
 src/ScienceUI.tsx      Science pathways, evidence inspection and writing support
+src/EquationLesson.tsx  Equation meaning, worked examples and retryable practice
+src/equations.ts        Equation definitions, assumptions and numerical checks
+src/EnergyPath.tsx      Responsive energy map with separate water circuits
 src/TrendChart.tsx      Traces and equivalent data table
 src/styles.css         Responsive interface styling
 tests/                 Model and DOM-based integration tests

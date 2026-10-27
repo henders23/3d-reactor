@@ -104,3 +104,9 @@ Recorded samples now include fission power, transfer to coolant and net power in
 The evidence inspector selects actual recorded samples: the initial state, the first sample at or beyond two model seconds, and the final sample. It labels the actual selected time and updates graph markers and readings. It does not interpolate invented measurements or rewind the 3D view.
 
 The numerical equations and coefficients are unchanged by the second science review. Power readouts are now evaluated at the returned end-of-step state, correcting a one-substep reporting offset in the original implementation.
+
+## Learner-facing equations
+
+`src/equations.ts` and `src/EquationLesson.tsx` add physical relationships to the Explain stage. They do not replace or recalibrate the numerical model above. The dimensional worked examples are separate from live normalised powers and model seconds. In particular, the UI does not infer efficiency from the two percentage indices, does not derive outlet/inlet temperatures from the average coolant state, and does not fit the three decay inventories to the isolated-population half-life example. The displayed current-state heat-balance connection is computed with the same `heatBalance` function as the simulator.
+
+See [the review](REVIEW-COGNITIVE-LOAD.md) for assumptions and scientific references for each taught relation.

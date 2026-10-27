@@ -3414,211 +3414,346 @@ textarea:focus-visible {
   }
 }
 
-/* Staged experiment: one centred column, one beat at a time. */
-.mode-investigate.focus-stage .workspace {
-  grid-template-columns: minmax(0, 1fr);
+/* Equations belong to the explanation step, with one task visible at a time. */
+.welcome-outcomes {
+  margin: 25px 0;
+  padding: 22px;
+  border: 1px solid #c9d7bf;
+  border-radius: 10px;
+  background: #fffef9;
+  max-width: 860px;
 }
-.focus-stage .sidebar {
-  display: none;
+.welcome-outcomes h2 {
+  font-size: 21px;
+  margin-bottom: 12px;
 }
-.mode-investigate.focus-stage .main-content {
-  display: block;
-}
-.beats {
-  max-width: 720px;
-  margin: 0 auto;
-  padding: 24px 0 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  color: var(--ink);
-}
-.beats > p,
-.beats-more p {
-  font-size: 18px;
-  line-height: 1.6;
-  color: #3d4f47;
-}
-.beats .beats-change {
-  align-self: flex-start;
-  padding: 10px 18px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: #fff;
+.welcome-outcomes ol {
+  padding-left: 22px;
+  line-height: 1.65;
   font-size: 16px;
+}
+.welcome-outcomes li + li {
+  margin-top: 6px;
+}
+.welcome-outcomes details {
+  margin-top: 16px;
+  font-size: 15px;
+}
+.welcome-outcomes summary,
+.equation-lesson summary {
+  cursor: pointer;
+  padding: 8px 0;
+}
+.welcome-outcomes details p {
+  font-size: 15px;
+}
+.equation-lesson {
+  padding: 24px;
+  border: 1px solid #bbcbb0;
+  background: #fffef9;
+  border-radius: 10px;
+  min-width: 0;
+}
+.equation-lesson h2 {
+  font-size: clamp(21px, 2.1vw, 27px);
+  line-height: 1.3;
+  margin: 8px 0 18px;
+}
+.equation-lesson p,
+.equation-lesson label,
+.equation-lesson dd {
+  font-size: 16px;
+  line-height: 1.65;
+}
+.equation-lesson p {
+  margin: 12px 0;
+}
+.equation-pages,
+.diagram-mode,
+.neutron-selector {
+  display: flex;
+  gap: 7px;
+  flex-wrap: wrap;
+}
+.equation-pages button,
+.diagram-mode button,
+.neutron-selector button {
+  min-height: 44px;
+  padding: 9px 13px;
+  border: 1px solid #afc2a3;
+  background: #f3f7ee;
+  border-radius: 6px;
+  color: #304b33;
+  font-size: 14px;
+}
+:is(.equation-pages, .diagram-mode, .neutron-selector)
+  button[aria-pressed="true"] {
+  background: #34553b;
+  border-color: #34553b;
+  color: #fff;
+}
+.equation-lesson .equation-formula {
+  font-family: Georgia, serif;
+  font-size: clamp(21px, 2.2vw, 28px);
+  background: #eef3e8;
+  padding: 20px 14px;
+  border-radius: 8px;
+  text-align: center;
+  overflow-wrap: anywhere;
+}
+.equation-symbols {
+  margin: 16px 0;
+}
+.equation-symbols > div {
+  display: grid;
+  grid-template-columns: 95px 1fr;
+  gap: 12px;
+  padding: 9px 0;
+  border-bottom: 1px solid #e0e7da;
+}
+.equation-symbols dt {
+  font-family: Georgia, serif;
+  font-size: 18px;
+}
+.equation-symbols dd {
+  margin: 0;
+}
+.equation-connection {
+  border-left: 3px solid #648e7c;
+  padding: 10px 15px;
+  background: #f1f7f3;
+  margin: 18px 0;
+}
+.equation-connection p {
+  margin: 7px 0 0;
+}
+.equation-assumption {
+  color: #4d5e4b;
+}
+.equation-lesson .equation-example-label {
+  color: #5b684f;
+  font-size: 13px;
+  margin-top: 24px;
+}
+.equation-substitution {
+  padding: 16px;
+  background: #f4ecd9;
+  border-radius: 6px;
   font-weight: 600;
-  color: var(--ink);
+  overflow-wrap: anywhere;
 }
-.beats .beats-note {
-  font-size: 16px;
-  color: #5e6b64;
+.equation-lesson .secondary-button {
+  margin-top: 16px;
 }
-.beats h2 {
-  font-size: clamp(24px, 3vw, 30px);
-  line-height: 1.2;
-  letter-spacing: -0.6px;
-  outline: none;
-}
-.beats-choices {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.beats-choices button {
-  text-align: left;
-  font-size: 18px;
-  line-height: 1.45;
-  padding: 16px 18px;
-  min-height: 56px;
-  border: 1px solid #c3cfba;
-  border-radius: 12px;
-  background: #fff;
-}
-.beats-choices button[aria-pressed="true"] {
-  border: 2px solid #3c5b42;
-  padding: 15px 17px;
-  background: #e9efe1;
-  font-weight: 700;
-}
-.beats-action {
-  align-self: flex-start;
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  min-height: 56px;
-  padding: 15px 26px;
-  border-radius: 10px;
-  background: #3c5b42;
-  color: #f7f9f1 !important;
-  font-size: 18px;
-  font-weight: 700;
-}
-.beats-action:hover {
-  background: #52754e;
-}
-.beats-secondary {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 48px;
-  padding: 12px 18px;
-  border: 1px solid #c3cfba !important;
-  border-radius: 10px;
-  background: #fff;
-  color: #3c5b42 !important;
-  font-size: 16px;
-  font-weight: 700;
-}
-.beats-progress {
+.equation-answer {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 12px 16px;
-  font-size: 16px;
-  color: #5e6b64;
+  gap: 10px;
+  margin-top: 15px;
 }
-.beats-progress progress {
-  flex: 1 1 200px;
-  height: 10px;
-  accent-color: #3c5b42;
-}
-.beats-charts {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 18px 18px 10px;
-  border: 1px solid var(--line);
-  border-radius: 16px;
+.equation-answer input {
+  width: 110px;
+  max-width: 100%;
+  min-height: 44px;
+  padding: 10px;
+  font: inherit;
+  color: #263d31;
+  border: 1px solid #829875;
+  border-radius: 5px;
   background: #fff;
 }
-.beats-chart svg {
-  display: block;
-  width: 100%;
+.equation-feedback {
+  min-height: 28px;
+  color: #754b21;
+}
+.equation-feedback.correct {
+  color: #2c633e;
+}
+.equation-source {
+  display: inline-block;
+  margin-top: 20px;
+  font-size: 13px;
+  color: #365d42;
+  text-decoration: underline;
+}
+.diagram-container {
+  padding-top: 64px;
+}
+.diagram-mode {
+  padding: 10px 16px;
+}
+.diagram-container .schematic {
+  padding-top: 12px;
+}
+.scene-area:has(.diagram-container),
+.mode-investigate .scene-area:has(.diagram-container) {
   height: auto;
 }
-.beats-chart text {
+.energy-path {
+  margin: 0;
+  padding: 14px 20px 20px;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.energy-path figcaption {
+  margin-bottom: 18px;
+  font-weight: 600;
+}
+.energy-circuit {
+  padding: 16px;
+  border: 2px solid #ae7342;
+  border-radius: 10px;
+  background: #faf0df;
+}
+.energy-circuit h3 {
+  font-size: 17px;
+  margin-bottom: 12px;
+}
+.energy-circuit h3 small {
+  display: block;
   font-size: 13px;
-  fill: #5e6b64;
+  font-weight: 400;
 }
-.beats-chart .beats-chart-title {
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 1px;
+.secondary-circuit {
+  border-color: #3f847a;
+  background: #e9f3ed;
 }
-.beats-chart .beats-chart-mark {
-  font-size: 14px;
-  font-weight: 700;
-  fill: var(--ink);
+.external-circuit {
+  border-color: #64879d;
+  background: #eaf2f7;
 }
-.beats-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 20px;
-  font-size: 15px;
-  font-weight: 600;
+.energy-component {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  color: #263d31;
+  text-align: left;
+  background: #fffef9;
+  border: 1px solid #abbda0;
+  border-radius: 7px;
 }
-.beats-legend i {
-  display: inline-block;
-  width: 22px;
-  margin-right: 8px;
-  border-top: 3px solid;
-  vertical-align: middle;
-}
-.beats .beats-equation {
-  font-family: Georgia, "Times New Roman", serif;
-  font-size: 24px;
-  color: var(--ink);
-}
-.beats-in {
-  color: #9a4f16;
-}
-.beats-out {
-  color: #2f6690;
-}
-.beats-more {
-  border-top: 1px solid var(--line);
-}
-.beats-more details {
-  border-bottom: 1px solid var(--line);
-}
-.beats-more summary {
-  display: flex;
-  align-items: center;
-  min-height: 52px;
+.energy-component strong {
+  display: block;
   font-size: 16px;
-  font-weight: 600;
-  color: #3d4f47;
-  cursor: pointer;
 }
-.beats-more details > :not(summary) {
-  margin: 0 0 18px;
-}
-.beats-more table {
-  border-collapse: collapse;
-  font-size: 15px;
-}
-.beats-more caption {
-  text-align: left;
+.energy-component span {
+  display: block;
   font-size: 14px;
-  color: #5e6b64;
-  padding-bottom: 6px;
+  line-height: 1.6;
+  margin-top: 5px;
 }
-.beats-more th,
-.beats-more td {
-  text-align: left;
-  padding: 6px 16px 6px 0;
-  border-bottom: 1px solid var(--line);
+.energy-component[aria-pressed="true"] {
+  outline: 3px solid #476a40;
+  outline-offset: 1px;
 }
-@media (max-width: 640px) {
-  .beats {
-    padding-top: 8px;
+.energy-path .fluid-return {
+  font-size: 14px;
+  margin: 12px 0 0;
+}
+.energy-bridge {
+  padding: 0 20px;
+  display: grid;
+  justify-items: center;
+  border-left: 2px dashed #a17c45;
+  margin-left: 20px;
+}
+.energy-bridge > span {
+  font-size: 25px;
+  color: #92501f;
+  line-height: 1.3;
+}
+.energy-bridge small {
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  margin-top: 8px;
+  color: #704a23;
+  text-align: center;
+}
+.energy-path .path-key {
+  font-size: 13px;
+  margin: 16px 0 0;
+}
+.boundary-diagram svg {
+  width: 100%;
+  max-width: 560px;
+  height: auto;
+  display: block;
+  margin: 0 auto;
+}
+.neutron-focus {
+  margin: 12px 0 0;
+  padding: 10px;
+  background: #fffef9;
+  border: 1px solid #c8d6bf;
+  border-radius: 8px;
+}
+.neutron-focus svg {
+  width: 100%;
+  max-width: 600px;
+  height: auto;
+  max-height: none;
+  display: block;
+  margin: auto;
+  font-size: 18px;
+  fill: #263d31;
+}
+.neutron-focus figcaption {
+  font-size: 15px;
+  line-height: 1.65;
+  padding: 5px 10px 10px;
+}
+[hidden] {
+  display: none !important;
+}
+@media (max-width: 600px) {
+  .equation-lesson {
+    padding: 16px;
   }
-  .beats-charts {
-    padding: 14px 10px 8px;
+  .equation-symbols > div {
+    grid-template-columns: 75px 1fr;
+    gap: 8px;
+  }
+  .equation-pages {
+    gap: 5px;
+  }
+  .equation-pages button {
+    padding: 8px;
+    font-size: 13px;
+  }
+  .energy-path {
+    padding: 12px;
+  }
+  .energy-circuit {
+    padding: 12px;
+  }
+  .energy-bridge {
+    margin-left: 10px;
+    padding: 0 8px;
   }
 }
-.beats-panel {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+/* On small screens, encounter the equation before writing the explanation. */
+@media (max-width: 1249px) {
+  .mode-investigate.stage-explain .main-content {
+    display: flex;
+    flex-direction: column;
+  }
+  .mode-investigate.stage-explain .learning-focus {
+    order: 0;
+  }
+  .mode-investigate.stage-explain .lab-workbench {
+    order: 1;
+  }
+  .mode-investigate.stage-explain .inspector {
+    order: 2;
+    margin-top: 20px;
+  }
+  .mode-investigate.stage-explain .lab-footer {
+    order: 3;
+  }
+}
+@media (min-width: 1250px) {
+  .mode-investigate.stage-explain .main-content {
+    grid-template-columns: minmax(0, 1fr) minmax(290px, 360px);
+  }
 }

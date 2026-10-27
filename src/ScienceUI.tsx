@@ -78,30 +78,82 @@ export function ScienceTour({
     </section>
   );
 }
-function BoundaryDiagram() {
+export function BoundaryDiagram() {
   return (
     <figure className="boundary-diagram">
-      <div className="boundary-columns">
-        <div>
-          <strong>Primary water</strong>
-          <span>Hot liquid inside tubes</span>
-        </div>
-        <div className="solid-wall">
-          <strong>Tube wall</strong>
-          <span>Solid metal</span>
-        </div>
-        <div>
-          <strong>Secondary water</strong>
-          <span>Boils outside tubes</span>
-        </div>
-      </div>
-      <p className="heat-arrow">
-        Energy as heat <ArrowRight aria-hidden="true" size={28} />
-        <span>through the wall</span>
-      </p>
+      <svg
+        viewBox="0 0 400 250"
+        role="img"
+        aria-label="Heat travels through the solid tube wall from primary liquid to secondary water. Fluid paths run beside the wall and do not cross it."
+      >
+        <defs>
+          <marker
+            id="wall-heat"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="5"
+            markerHeight="5"
+            orient="auto"
+          >
+            <path d="M0 0L10 5L0 10Z" fill="#92501f" />
+          </marker>
+          <marker
+            id="wall-water"
+            viewBox="0 0 10 10"
+            refX="9"
+            refY="5"
+            markerWidth="4"
+            markerHeight="4"
+            orient="auto"
+          >
+            <path d="M0 0L10 5L0 10Z" fill="#266771" />
+          </marker>
+        </defs>
+        <rect x="0" y="40" width="182" height="180" rx="10" fill="#f7e9d7" />
+        <rect x="182" y="40" width="36" height="180" fill="#7c8981" />
+        <rect x="218" y="40" width="182" height="180" rx="10" fill="#dcece8" />
+        <g fontSize="18" textAnchor="middle" fill="#263d31">
+          <text x="85" y="24">
+            Primary liquid
+          </text>
+          <text x="310" y="24">
+            Secondary water
+          </text>
+          <text x="85" y="75">
+            Hotter
+          </text>
+          <text x="310" y="75">
+            Boils here
+          </text>
+          <text x="200" y="244">
+            Solid tube wall
+          </text>
+        </g>
+        <g
+          fill="none"
+          stroke="#266771"
+          strokeWidth="3"
+          markerEnd="url(#wall-water)"
+        >
+          <path d="M55 95V190" />
+          <path d="M345 190V95" />
+        </g>
+        <path
+          d="M100 130H300"
+          stroke="#92501f"
+          strokeWidth="4"
+          strokeDasharray="7 4"
+          markerEnd="url(#wall-heat)"
+        />
+        <rect x="123" y="148" width="154" height="30" rx="5" fill="#fffef9" />
+        <text x="200" y="169" textAnchor="middle" fontSize="17" fill="#703e1c">
+          Heat through wall
+        </text>
+      </svg>
       <figcaption>
-        No fluid crosses the intact wall. This is a section through one tube,
-        not another water circuit.
+        No fluid crosses the intact wall. Dashed arrow: heat. Solid arrows:
+        example fluid directions. Local wall section; not to scale.
       </figcaption>
     </figure>
   );

@@ -2,15 +2,15 @@
 
 ## Intended learning outcomes
 
-After the investigations, a student should be able to identify major PWR components and explain their purposes; trace energy across the separate circuits; distinguish fission, moderation and absorption; explain power/temperature lag; reason about heat generation versus heat removal; and distinguish decay heat from stored heat after shutdown.
+After the investigations, a student should be able to trace energy through separate circuits and calculate efficiency; distinguish fission, moderation and capture and interpret a multiplication factor; use a fuel energy balance to explain power/temperature lag; relate mass flow to heat transport while stating what is fixed; and distinguish decay heat from stored thermal energy while applying a simple half-life model. These outcomes appear before entry.
 
 PHYSM0047 provides the project context supplied by the user. Current unit-level outcomes and assessments have not been verified. This companion addresses selected nuclear-reactor concepts, not the whole nuclear-science curriculum.
 
 ## A 35–45 minute session
 
-1. **Orient (5 minutes).** Ask: “Where is the electricity actually made?” Use the calm welcome screen to distinguish making heat, moving heat and making electricity. The essentials route starts with a 2D circuit diagram; students can switch to 3D.
-2. **Investigate (20–30 minutes).** Use the five activities in sequence or assign contrasting activities to pairs. Students make their own prediction before touching controls.
-3. **Explain (5 minutes).** Students connect a component, a physical process and an observation. Compare explanations in pairs before revealing the app’s explanation.
+1. **Orient (5 minutes).** Ask: “Where is the electricity actually made?” Use the calm welcome screen to distinguish making heat, moving heat and making electricity. The energy and neutron investigations start with focused 2D diagrams; students can switch to 3D.
+2. **Investigate (20–25 minutes).** Use the five activities in sequence or assign contrasting activities to pairs. Students make their own prediction before touching controls.
+3. **Explain and calculate (5–10 minutes, distributed across activities).** Students connect each observation to its equation, inspect the worked example and try one changed case. They then connect a component, a physical process and an observation. Compare explanations in pairs before revealing the app’s explanation.
 4. **Transfer (5 minutes).** Use the understanding check and an unfamiliar case: “Can fuel become hotter while fission power falls?”
 
 Avoid equating completing the interface with mastering the physics. The app checks factual multiple-choice responses and whether required observations were attempted. It does not grade the quality of written explanations.
@@ -35,15 +35,7 @@ Avoid equating completing the interface with mastering the physics. The app chec
 
 ## Evidence and feedback
 
-The activity sequence is prediction → observation → explanation → a conceptual check. Guided quantitative activities use one experiment button: the relevant control changes from equilibrium, other settings remain fixed and the response pauses automatically after 20 or 40 model seconds. Each run releases its evidence in stages on a single focused screen: students predict the shape of the response, watch one line, reveal the lines that explain it, and then see one marked moment.
-
-| Activity            | First line       | Revealed               | Marked moment                                             |
-| ------------------- | ---------------- | ---------------------- | --------------------------------------------------------- |
-| Change the reaction | Thermal power    | Fuel temperature       | About 2 s in: power has fallen fast, temperature has not  |
-| Move the heat       | Fuel temperature | Heat in and heat out   | The temperature peak, where heat in and heat out cross    |
-| After shutdown      | Heat generated   | Fission and decay heat | Decay heat overtakes fission, while the fuel is still hot |
-
-Before/after readings and checkpoints remain beside the explanation step. Students write a brief explanation before answering a new transfer situation. Feedback and the reference explanation appear only after an attempt. Written responses autosave without an arbitrary length requirement. Confidence choices support reflection, not grading.
+The activity sequence is prediction → observation → explanation → a conceptual check. Guided quantitative activities use one experiment button: the relevant control changes from equilibrium, other settings remain fixed and the response pauses automatically after 20 or 30 model seconds. Before/after readings and intervention markers support comparison. Students write a brief explanation before answering a new transfer situation. Feedback and the reference explanation appear only after an attempt. Written responses autosave without an arbitrary length requirement. Confidence choices support reflection, not grading.
 
 The cumulative check starts with an optional written recall attempt before answer choices appear. Suggest returning the next day to explain a relationship from memory. In free exploration, students can change all controls, compare saved runs and export data. Guided lesson entry starts a fresh baseline; comparison runs belong to free exploration.
 
@@ -71,3 +63,11 @@ After a wrong transfer answer, use “Revisit evidence and revise”. Optional h
 - Have representative students attempt the tasks and explain their reasoning aloud.
 
 Those reviews remain to be completed by a lecturer and representative learners; no such sign-off is claimed by the repository.
+
+## Equation practice
+
+The Explain step introduces one relation at a time: efficiency, neutron multiplication, fuel energy balance, single-phase heat transport and an isolated-population half-life law. Learners can navigate between meaning, example and practice, reopen recorded evidence and write a physical explanation. The relation and definitions remain close together; advanced numerical kinetics remain in the model documentation.
+
+Ask “what is held fixed?” before the cooling calculation and “what does the sign mean?” after the fuel balance. Never calculate efficiency by dividing the electrical and thermal indices. The half-life task is a hypothetical population, not a prediction of the simulated shutdown curve. Practice is optional, ungraded and not persisted; completion status does not demonstrate mathematical mastery. The expected 35–45 minute pace is an estimate, not a measured student completion time.
+
+See [the cognitive-load review](REVIEW-COGNITIVE-LOAD.md) for the equation-to-outcome mapping, scientific assumptions and remaining student risks.

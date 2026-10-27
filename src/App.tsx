@@ -32,13 +32,13 @@ import {
 } from "lucide-react";
 import ReactorScene, { type View } from "./ReactorScene";
 import Schematic from "./Schematic";
+import EquationLesson from "./EquationLesson";
+import type { EquationID } from "./equations";
 import FissionDiagram from "./FissionDiagram";
 import TrendChart from "./TrendChart";
 import { ScienceTour, ExplanationHelp } from "./ScienceUI";
 import { misconceptionFeedback, explanationSupport } from "./science";
 import { Welcome, LearningFocus, GuidedExperiment } from "./LearningUI";
-import ExperimentBeats from "./ExperimentBeats";
-import { experimentBeats } from "./beats";
 import { learning, guidedControls, advanceGuided } from "./learning";
 import { parts, lessons, sources, type PartID } from "./content";
 import {
@@ -127,6 +127,7 @@ function Modal({
 export default function App() {
   const [started, setStarted] = useState(false);
   const [revising, setRevising] = useState(false);
+  const [reviewEvidence, setReviewEvidence] = useState(false);
   const [guidedStarted, setGuidedStarted] = useState(false);
   const guidedRun = useRef<string | null>(null);
   const [recalled, setRecalled] = useState(false);
@@ -183,13 +184,11 @@ export default function App() {
   useEffect(() => {
     if (mode !== "investigate" || !started) guidedRun.current = null;
   }, [mode, started]);
+  useEffect(() => {
+    setReviewEvidence(false);
+  }, [stage, lessonIndex]);
   const lesson = lessons[lessonIndex],
     part = parts.find((p) => p.id === selected)!;
-  // Staged experiments replace the whole workbench with one focused column.
-  const beats =
-    mode === "investigate" && stage === "observe"
-      ? experimentBeats[lesson.id]
-      : undefined;
   useEffect(() => {
     try {
       localStorage.setItem(storageKey, JSON.stringify(records));
@@ -263,7 +262,11 @@ export default function App() {
   }, [mode, stage, lesson.id, visited, seenFission]);
   useEffect(() => {
     if (started && mode === "investigate")
-      document.getElementById("guided-stage-title")?.focus();
+      document
+        .getElementById(
+          stage === "explain" ? "equation-title" : "guided-stage-title",
+        )
+        ?.focus();
   }, [stage, lesson.id, mode, started]);
   const reset = useCallback((play = false) => {
     const s = initialState();
@@ -309,7 +312,7 @@ export default function App() {
     setSelected(l.focus);
     setView(l.view);
     setExploded(false);
-    setFlat(l.id === "energy");
+    setFlat(l.id === "energy" || l.id === "neutrons");
     setBaseline([]);
     reset(false);
   }
@@ -593,8 +596,9 @@ export default function App() {
               <>
                 <h3>What happened, and why?</h3>
                 <p>
-                  Use a component, a process and an observation in your
-                  explanation.
+                  Connect your observation to the equation, then explain it
+                  using a component and a physical process. The calculation is
+                  practice, not a requirement to continue.
                 </p>
                 {revising && (
                   <div className="revision-context">
@@ -929,7 +933,7 @@ export default function App() {
     );
   return (
     <div
-      className={`app mode-${mode} stage-${stage} ${learning[lesson.id].duration > 0 ? "quantitative" : "qualitative"}${beats ? " focus-stage" : ""}`}
+      className={`app mode-${mode} stage-${stage} ${learning[lesson.id].duration > 0 ? "quantitative" : "qualitative"}`}
     >
       <a className="skip-link" href="#main">
         Skip to reactor laboratory
@@ -1174,23 +1178,6 @@ export default function App() {
                 </p>
               )}
             </section>
-          ) : beats ? (
-            <ExperimentBeats
-              key={lesson.id}
-              design={beats}
-              action={learning[lesson.id].action!}
-              duration={learning[lesson.id].duration}
-              samples={samples}
-              running={running}
-              started={guidedStarted}
-              observed={observed}
-              onRun={runGuided}
-              onToggle={() => setRunning((v) => !v)}
-              onDone={() => {
-                setRunning(false);
-                setStage("explain");
-              }}
-            />
           ) : (
             <>
               {mode === "investigate" && (
@@ -1201,7 +1188,7 @@ export default function App() {
                       showWatch={stage === "observe" || stage === "explain"}
                     />
                   )}
-                  {inspectorPanel}
+                  {stage !== "explain" && inspectorPanel}
                 </>
               )}
               <section className="lab-intro">
@@ -1271,7 +1258,34 @@ export default function App() {
                     </div>
                   </div>
                 )}
+                {mode === "investigate" && stage === "explain" && (
+                  <>
+                    <EquationLesson
+                      key={lesson.id}
+                      id={lesson.id as EquationID}
+                      state={state}
+                      controls={controls}
+                    />
+                    {!revising && (
+                      <button
+                        className="secondary-button"
+                        aria-expanded={reviewEvidence}
+                        onClick={() => setReviewEvidence((v) => !v)}
+                      >
+                        {reviewEvidence
+                          ? "Hide the observed diagram and evidence"
+                          : "Review the observed diagram or graph"}
+                      </button>
+                    )}
+                  </>
+                )}
                 <section
+                  hidden={
+                    mode === "investigate" &&
+                    stage === "explain" &&
+                    !reviewEvidence &&
+                    !revising
+                  }
                   className="scene-card"
                   aria-label="Reactor visualisation"
                 >
@@ -1312,6 +1326,9 @@ export default function App() {
                         onSelect={choose}
                         state={state}
                         controls={controls}
+                        focused={
+                          mode === "investigate" && lesson.id === "energy"
+                        }
                       />
                     ) : (
                       <ReactorScene
@@ -1450,6 +1467,7 @@ export default function App() {
                   </div>
                 </section>
                 {mode === "investigate" &&
+                  (stage !== "explain" || reviewEvidence || revising) &&
                   learning[lesson.id].duration === 0 && (
                     <ScienceTour
                       id={lesson.id}
@@ -1461,19 +1479,22 @@ export default function App() {
                       }}
                     />
                   )}
-                {mode === "investigate" && learning[lesson.id].duration > 0 && (
-                  <GuidedExperiment
-                    id={lesson.id}
-                    state={state}
-                    samples={samples}
-                    running={running}
-                    started={guidedStarted}
-                    observed={observed}
-                    onRun={runGuided}
-                    onToggle={() => setRunning((v) => !v)}
-                  />
-                )}
                 {mode === "investigate" &&
+                  (stage !== "explain" || reviewEvidence || revising) &&
+                  learning[lesson.id].duration > 0 && (
+                    <GuidedExperiment
+                      id={lesson.id}
+                      state={state}
+                      samples={samples}
+                      running={running}
+                      started={guidedStarted}
+                      observed={observed}
+                      onRun={runGuided}
+                      onToggle={() => setRunning((v) => !v)}
+                    />
+                  )}
+                {mode === "investigate" &&
+                  (stage !== "explain" || reviewEvidence || revising) &&
                   learning[lesson.id].duration === 0 && (
                     <button
                       className="secondary-button motion-control"
@@ -1641,6 +1662,7 @@ export default function App() {
                   </>
                 )}
               </div>
+              {mode === "investigate" && stage === "explain" && inspectorPanel}
             </>
           )}
           <footer className="lab-footer">

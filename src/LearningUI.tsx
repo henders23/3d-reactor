@@ -29,10 +29,48 @@ export function Welcome({
           why does it still need cooling?
         </h1>
         <p>
-          Explore a pressurised-water reactor and discover how its parts work
-          together. You will make a prediction, change one thing and use the
-          evidence to explain what happened.
+          A companion to PHYSM0047 Nuclear Science: connect nuclear reactions to
+          heat transfer and electricity generation in a generic
+          pressurised-water reactor (PWR). You will make a prediction, change
+          one thing and use the evidence to explain what happened.
         </p>
+        <section className="welcome-outcomes" aria-labelledby="outcomes-title">
+          <h2 id="outcomes-title">By the end, you should be able to…</h2>
+          <ol>
+            <li>
+              Trace energy through separate water circuits and calculate
+              thermal-to-electrical efficiency.
+            </li>
+            <li>
+              Distinguish fission, moderation and capture; interpret a neutron
+              multiplication factor.
+            </li>
+            <li>
+              Use an energy balance to explain why temperature lags behind a
+              power change.
+            </li>
+            <li>
+              Relate coolant flow to heat transport, stating what is held fixed.
+            </li>
+            <li>
+              Distinguish decay heat from stored thermal energy and apply a
+              simple half-life model.
+            </li>
+          </ol>
+          <details>
+            <summary>What should I know first?</summary>
+            <p>
+              Bring basic ratios, percentages and algebra. A derivative here
+              means “rate of change”; each equation has a worked example. No
+              prior reactor engineering is needed.
+            </p>
+            <p>
+              Energy is an amount (joules). Power is energy per second (watts).
+              Temperature describes thermal state (°C or K), not the amount of
+              heat stored. 1 MW = 1 million J/s.
+            </p>
+          </details>
+        </section>
         <div className="welcome-actions">
           <button className="primary-button" onClick={onLearn}>
             {completed ? "Continue learning" : "Start with the essentials"}{" "}
@@ -43,7 +81,8 @@ export function Welcome({
           </button>
         </div>
         <p className="welcome-time">
-          Five short investigations · about 25–30 minutes · go at your own pace
+          Five short investigations · allow 35–45 minutes including equation
+          practice · go at your own pace
           {completed > 0 ? ` · ${completed}/5 completed` : ""}
         </p>
         <div className="pretraining">

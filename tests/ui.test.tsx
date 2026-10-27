@@ -109,7 +109,9 @@ test("complete guided investigation records a prediction, explanation and comple
     }),
   );
   fireEvent.click(
-    within(panel).getByRole("button", {
+    within(
+      screen.getByRole("complementary", { name: "Guided investigation" }),
+    ).getByRole("button", {
       name: "Check understanding",
       exact: true,
     }),
@@ -188,102 +190,48 @@ test("full rod insertion updates the model control and starts the response", () 
   assert.ok(screen.getByText("Shutdown response"));
   assert.ok(screen.getByRole("button", { name: "Pause simulation" }));
 });
-const staged = [
-  {
-    lesson: /Change the reaction/,
-    prediction: /More neutrons are absorbed/,
-    choice: "Drop quickly at first, then keep falling slowly",
-    watch: "Watch the thermal power.",
-    ran: /It dropped to 8\d% in the first few seconds/,
-    reveal: "Show fuel temperature",
-    found: "Power fell fast. Temperature barely moved.",
-    explained: /fuel temperature had only fallen/,
-    ticks: 80,
-  },
-  {
-    lesson: /Move the heat/,
-    prediction: /It tends to rise/,
-    choice: "Rise, then stop and turn back",
-    watch: "Watch the fuel temperature.",
-    ran: /It rose to 630 °C, then turned back/,
-    reveal: "Show heat in and heat out",
-    found: "They cross.",
-    explained: /At 3\d\.\d model seconds, heat in is/,
-    ticks: 140,
-  },
-  {
-    lesson: /After shutdown/,
-    prediction: /Yes; decay heat and stored/,
-    choice: "Drop fast, but a small amount keeps going",
-    watch: "Watch the heat generated in the fuel.",
-    ran: /It fell to \d\.\d%, not to zero/,
-    reveal: "Split it into fission and decay heat",
-    found: "Decay heat takes over.",
-    explained: /the fuel is still at \d{3} °C/,
-    ticks: 140,
-  },
-];
-function walkStagedRun(c: (typeof staged)[number], advance: () => void) {
-  mount(true);
-  fireEvent.click(screen.getByRole("button", { name: c.lesson }));
-  fireEvent.click(screen.getByRole("button", { name: c.prediction }));
-  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
-  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
-  assert.equal(
-    screen.queryByRole("region", { name: "Reactor visualisation" }),
-    null,
-  );
-  assert.equal(screen.queryByRole("slider"), null);
-  assert.equal(screen.queryAllByRole("img").length, 0);
-  assert.equal(screen.queryByRole("button", { name: /Run it/ }), null);
-  fireEvent.click(screen.getByRole("button", { name: c.choice }));
-  fireEvent.click(screen.getByRole("button", { name: /Run it/ }));
-  assert.ok(screen.getByRole("heading", { name: c.watch }));
-  assert.equal(screen.getAllByRole("img").length, 1);
-  for (let i = 0; i < c.ticks; i++) act(advance);
-  assert.ok(screen.getByRole("heading", { name: c.ran }));
-  assert.ok(screen.getByText(/You predicted:/));
-  assert.equal(screen.getAllByRole("img").length, 1);
-  fireEvent.click(screen.getByRole("button", { name: c.reveal }));
-  assert.equal(screen.getAllByRole("img").length, 2);
-  assert.equal(screen.queryByText(c.explained), null);
-  fireEvent.click(
-    screen.getByRole("button", { name: "I’ve looked. Show me." }),
-  );
-  assert.ok(screen.getByRole("heading", { name: c.found }));
-  assert.ok(screen.getByText(c.explained));
-  for (const chart of screen.getAllByRole("img"))
-    assert.match(chart.getAttribute("aria-label")!, /Marked at/);
-  fireEvent.click(
-    screen.getByRole("button", { name: /Explain what happened/ }),
-  );
-  assert.ok(screen.getByLabelText("Your explanation"));
-}
-for (const c of staged)
-  test(`${c.lesson.source}: the guided run releases its evidence one beat at a time`, (t) => {
-    let clock = 0;
-    t.mock.method(performance, "now", () => clock);
-    t.mock.timers.enable({ apis: ["setInterval"] });
-    walkStagedRun(c, () => {
-      clock += 100;
-      t.mock.timers.tick(100);
-    });
-  });
-test("after a staged run, the explanation step keeps the captured evidence inspectable", (t) => {
+test("guided control changes remain fixed and stop automatically with captured evidence", (t) => {
   let clock = 0;
   t.mock.method(performance, "now", () => clock);
   t.mock.timers.enable({ apis: ["setInterval"] });
-  walkStagedRun(staged[0], () => {
-    clock += 100;
-    t.mock.timers.tick(100);
-  });
+  mount(true);
+  fireEvent.click(screen.getByRole("button", { name: /Change the reaction/ }));
+  fireEvent.click(
+    screen.getByRole("button", { name: /More neutrons are absorbed/ }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  assert.equal(screen.queryByRole("slider"), null);
+  assert.equal(
+    (
+      screen.getByRole("button", {
+        name: "Explain my observations",
+      }) as HTMLButtonElement
+    ).disabled,
+    true,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Insert rods to 65%" }));
+  for (let i = 0; i < 70; i++)
+    act(() => {
+      clock += 100;
+      t.mock.timers.tick(100);
+    });
+  assert.ok(screen.getByText(/Observation captured/));
+  assert.equal(
+    screen.queryByRole("button", { name: "Pause observation" }),
+    null,
+  );
+  assert.equal(
+    (
+      screen.getByRole("button", {
+        name: "Explain my observations",
+      }) as HTMLButtonElement
+    ).disabled,
+    false,
+  );
   assert.ok(
     Math.abs(
-      Number(
-        screen
-          .getByRole("progressbar", { name: "Observation progress" })
-          .getAttribute("value"),
-      ) - 20,
+      Number(screen.getByRole("progressbar").getAttribute("value")) - 20,
     ) < 1e-8,
   );
   const evidence = screen.getByLabelText("Before and after evidence");
@@ -298,6 +246,17 @@ test("after a staged run, the explanation step keeps the captured evidence inspe
   );
   fireEvent.click(screen.getByRole("button", { name: /Early response/ }));
   assert.ok(screen.getByText(/selected recorded instant/));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Repeat this experiment" }),
+  );
+  assert.equal(
+    (
+      screen.getByRole("button", {
+        name: "Explain my observations",
+      }) as HTMLButtonElement
+    ).disabled,
+    true,
+  );
 });
 test("entry starts with orientation and free exploration starts paused", () => {
   render(React.createElement(App));
@@ -341,7 +300,9 @@ test("explanation is withheld until an answer and short written responses persis
     }),
   );
   fireEvent.click(
-    within(panel).getByRole("button", {
+    within(
+      screen.getByRole("complementary", { name: "Guided investigation" }),
+    ).getByRole("button", {
       name: "Check understanding",
       exact: true,
     }),
@@ -414,7 +375,9 @@ test("misconception feedback supports evidence revision while preserving the fir
     }),
   );
   fireEvent.click(
-    within(panel).getByRole("button", {
+    within(
+      screen.getByRole("complementary", { name: "Guided investigation" }),
+    ).getByRole("button", {
       name: "Check understanding",
       exact: true,
     }),
@@ -444,7 +407,9 @@ test("misconception feedback supports evidence revision while preserving the fir
     }),
   );
   fireEvent.click(
-    within(panel).getByRole("button", {
+    within(
+      screen.getByRole("complementary", { name: "Guided investigation" }),
+    ).getByRole("button", {
       name: "Check understanding",
       exact: true,
     }),
@@ -480,4 +445,136 @@ test("neutron diagram selection matches its science annotation", () => {
     within(diagram).getByRole("button", { name: /Control rod · capture/ }),
   );
   assert.ok(screen.getByText(/absorption in fuel can lead to fission/));
+});
+
+test("orientation states outcomes before entry and equations support explanation without leaking into the check", () => {
+  render(React.createElement(App));
+  const outcomes = screen.getByRole("region", {
+    name: "By the end, you should be able to…",
+  });
+  assert.equal(within(outcomes).getAllByRole("listitem").length, 5);
+  assert.ok(screen.getByText(/basic ratios, percentages and algebra/));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Start with the essentials" }),
+  );
+  assert.equal(
+    screen.queryByRole("region", {
+      name: "Connect the equation to your observation",
+    }),
+    null,
+  );
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Steam from a separate secondary circuit",
+    }),
+  );
+  fireEvent.click(screen.getByRole("button", { name: "Record prediction" }));
+  fireEvent.click(screen.getByRole("button", { name: "Begin experiment" }));
+  // The focused energy map is the first diagram, with keyboard-operable native buttons.
+  const map = screen.getByRole("group", {
+    name: /Accessible reactor schematic: energy route/,
+  });
+  for (const name of [
+    "Inspect steam generator",
+    "Inspect turbine",
+    "Inspect condenser",
+  ])
+    fireEvent.click(within(map).getByRole("button", { name }));
+  fireEvent.click(
+    screen.getByRole("button", { name: "Explain my observations" }),
+  );
+  const equation = screen.getByRole("region", {
+    name: "Connect the equation to your observation",
+  });
+  assert.equal(
+    screen.queryByRole("region", { name: "Reactor visualisation" }),
+    null,
+  );
+  assert.equal(document.activeElement?.id, "equation-title");
+  assert.ok(
+    equation.compareDocumentPosition(
+      screen.getByLabelText("Your explanation"),
+    ) & dom.window.Node.DOCUMENT_POSITION_FOLLOWING,
+  );
+  assert.ok(within(equation).getByText(/their ratio is NOT efficiency/));
+  fireEvent.click(
+    within(equation).getByRole("button", { name: /See a worked example/ }),
+  );
+  assert.ok(within(equation).getByText(/1,000 MW \/ 3,000 MW/));
+  fireEvent.click(
+    within(equation).getByRole("button", { name: /Try one change yourself/ }),
+  );
+  const input = within(equation).getByRole("textbox");
+  fireEvent.change(input, { target: { value: "0.3" } });
+  fireEvent.click(
+    within(equation).getByRole("button", { name: "Check calculation" }),
+  );
+  assert.match(
+    within(equation).getByRole("status").textContent!,
+    /multiply by 100/,
+  );
+  fireEvent.change(input, { target: { value: "30" } });
+  fireEvent.click(
+    within(equation).getByRole("button", { name: "Check calculation" }),
+  );
+  assert.match(
+    within(equation).getByRole("status").textContent!,
+    /remaining 70%/,
+  );
+  fireEvent.click(
+    screen.getByRole("button", {
+      name: "Review the observed diagram or graph",
+    }),
+  );
+  assert.ok(screen.getByRole("region", { name: "Reactor visualisation" }));
+  fireEvent.change(screen.getByLabelText("Your explanation"), {
+    target: { value: "Heat crosses the wall; the condenser rejects heat." },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Test my explanation" }));
+  assert.equal(
+    screen.queryByRole("region", {
+      name: "Connect the equation to your observation",
+    }),
+    null,
+  );
+});
+
+test("each equation's worked example leads to actionable feedback and retry", async () => {
+  const { default: EquationLesson } = await import("../src/EquationLesson");
+  const { initialState, defaults } = await import("../src/simulation");
+  const cases = [
+    ["neutrons", "1.02", /above 1/],
+    ["control", "-1", /stored energy and fuel temperature fall/],
+    ["cooling", "4.2", /fixed temperature rise/],
+    ["shutdown", "1", /Three half-lives/],
+  ] as const;
+  for (const [id, answer, meaning] of cases) {
+    const view = render(
+      React.createElement(EquationLesson, {
+        id,
+        state: initialState(),
+        controls: defaults,
+      }),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /See a worked example/ }),
+    );
+    assert.ok(
+      screen.getByText("Illustrative numbers · separate from the live model"),
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: /Try one change yourself/ }),
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Check calculation" }));
+    assert.match(screen.getByRole("status").textContent!, /Enter a number/);
+    fireEvent.change(screen.getByRole("textbox"), { target: { value: "999" } });
+    fireEvent.click(screen.getByRole("button", { name: "Check calculation" }));
+    assert.match(screen.getByRole("status").textContent!, /Try again/);
+    fireEvent.change(screen.getByRole("textbox"), {
+      target: { value: answer },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Check calculation" }));
+    assert.match(screen.getByRole("status").textContent!, meaning);
+    view.unmount();
+  }
 });
